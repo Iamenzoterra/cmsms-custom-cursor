@@ -660,6 +660,7 @@
 
     function moveCursorToPopup(el) {
         if (currentPopup === el) return;
+        console.log('[DEBUG] MOVE TO POPUP', el.className.substring(0,40));
         currentPopup = el;
         popupMoveTime = Date.now();
         el.appendChild(container);
@@ -667,6 +668,7 @@
 
     function moveCursorToBody() {
         if (!currentPopup) return;
+        console.log('[DEBUG] MOVE TO BODY');
         currentPopup = null;
         document.body.appendChild(container);
         if (forcedColor) {
