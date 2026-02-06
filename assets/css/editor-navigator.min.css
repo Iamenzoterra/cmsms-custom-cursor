@@ -1,0 +1,221 @@
+/**
+ * Navigator Cursor Indicators
+ * Visual indicators in Elementor Structure panel for elements with custom cursor settings
+ *
+ * @package CMSMasters_Elementor
+ * @since 1.0.0
+ *
+ * Indicator Types:
+ * - .cmsm-nav-cursor-core    - Purple dot: non-default Core settings (hover, color, blend, effect)
+ * - .cmsm-nav-cursor-special - Blue dot: Special cursor active (Image/Text/Icon)
+ * - .cmsm-nav-cursor-hidden  - Gray dot: cursor hidden on element
+ * - .cmsm-nav-cursor-show    - Green dot: cursor shown (when addon cursor globally disabled)
+ */
+
+/* =====================================================
+   BASE INDICATOR
+   Uses Elementor's native indicator class for proper integration
+   ===================================================== */
+
+.cmsm-nav-cursor-indicator {
+	cursor: help;
+	transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.cmsm-nav-cursor-indicator:hover {
+	transform: scale(1.4);
+}
+
+/* =====================================================
+   INDICATOR TYPES
+   ===================================================== */
+
+/* Core settings (purple) - hover style, color, effect, blend */
+.cmsm-nav-cursor-core {
+	background: #9b59b6 !important;
+}
+
+/* Special cursor (light blue) - Image/Text/Icon */
+.cmsm-nav-cursor-special {
+	background: #3498db !important;
+}
+
+/* Hidden cursor (gray) - cursor hidden on element */
+.cmsm-nav-cursor-hidden {
+	background: #95a5a6 !important;
+	opacity: 0.8;
+}
+
+/* Show cursor when addon disabled (green) */
+.cmsm-nav-cursor-show {
+	background: #27ae60 !important;
+}
+
+/* =====================================================
+   TOOLTIP
+   ===================================================== */
+
+.cmsm-nav-cursor-indicator[title] {
+	position: relative;
+}
+
+/* Hover effect - simple scale (tooltip uses native title attribute) */
+
+/* =====================================================
+   LEGEND BAR
+   ===================================================== */
+
+/* Legend container */
+.cmsm-nav-cursor-legend-wrapper {
+	display: none; /* Hidden by default, shown via JS when indicators exist */
+	flex-direction: column;
+	border-top: 1px solid var(--e-a-border-color-bold, rgba(255, 255, 255, 0.1));
+	border-bottom: 1px solid var(--e-a-border-color-bold, rgba(255, 255, 255, 0.1));
+	background: var(--e-a-bg-default, #26292c);
+	flex-shrink: 0;
+	position: relative;
+	z-index: 10;
+}
+
+.cmsm-nav-cursor-legend-wrapper.cmsm-legend-visible {
+	display: flex !important;
+}
+
+/* Legend header */
+.cmsm-nav-cursor-legend-header {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 4px;
+	padding: 8px 12px 0;
+	font-size: 10px;
+	color: var(--e-a-color-txt-muted, #888);
+}
+
+.cmsm-nav-cursor-legend-header a {
+	display: inline-flex;
+	align-items: center;
+	color: var(--e-a-color-txt-muted, #888);
+	opacity: 0.6;
+	transition: opacity 0.2s ease;
+}
+
+.cmsm-nav-cursor-legend-header a:hover {
+	opacity: 1;
+}
+
+.cmsm-nav-cursor-legend-header svg {
+	width: 11px;
+	height: 11px;
+}
+
+/* Legend items row */
+.cmsm-nav-cursor-legend {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 12px;
+	padding: 6px 12px 8px;
+	font-size: 10px;
+	color: var(--e-a-color-txt-muted, #999);
+}
+
+.cmsm-legend-item {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	white-space: nowrap;
+}
+
+.cmsm-legend-item .cmsm-nav-cursor-indicator {
+	margin-left: 0;
+	cursor: default;
+	pointer-events: none;
+	width: 6px !important;
+	height: 6px !important;
+}
+
+.cmsm-legend-item .cmsm-nav-cursor-indicator:hover {
+	transform: none;
+}
+
+/* =====================================================
+   DARK MODE SUPPORT
+   ===================================================== */
+
+/* Elementor dark mode class */
+.elementor-editor-dark .cmsm-nav-cursor-core {
+	background: #b07cc5 !important;
+}
+
+.elementor-editor-dark .cmsm-nav-cursor-special {
+	background: #5dade2 !important;
+}
+
+.elementor-editor-dark .cmsm-nav-cursor-hidden {
+	background: #a0adb5 !important;
+}
+
+.elementor-editor-dark .cmsm-nav-cursor-show {
+	background: #4caf50 !important;
+}
+
+.elementor-editor-dark .cmsm-nav-cursor-legend {
+	border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Auto dark mode via media query */
+@media (prefers-color-scheme: dark) {
+	.elementor-editor-auto .cmsm-nav-cursor-core {
+		background: #b07cc5 !important;
+	}
+
+	.elementor-editor-auto .cmsm-nav-cursor-special {
+		background: #5dade2 !important;
+	}
+
+	.elementor-editor-auto .cmsm-nav-cursor-hidden {
+		background: #a0adb5 !important;
+	}
+
+	.elementor-editor-auto .cmsm-nav-cursor-show {
+		background: #4caf50 !important;
+	}
+
+	.elementor-editor-auto .cmsm-nav-cursor-legend {
+		border-top-color: rgba(255, 255, 255, 0.1);
+	}
+}
+
+/* =====================================================
+   NAVIGATOR ELEMENT ALIGNMENT FIX
+   ===================================================== */
+
+/* Position context for absolute indicators */
+.elementor-navigator__item {
+	position: relative !important;
+}
+
+/* Position indicators container absolutely to avoid overflow clipping */
+.elementor-navigator__element__indicators {
+	position: absolute !important;
+	right: 8px !important;
+	top: 50% !important;
+	transform: translateY(-50%) !important;
+	display: flex !important;
+	align-items: center !important;
+	gap: 4px !important;
+	z-index: 1;
+}
+
+/* Ensure indicator has proper dimensions and override Elementor's native styles */
+.cmsm-nav-cursor-indicator {
+	width: 8px !important;
+	height: 8px !important;
+	border-radius: 50% !important;
+	flex-shrink: 0 !important;
+	/* Override Elementor's native indicator gradient/highlight */
+	background-image: none !important;
+	border: none !important;
+	box-shadow: none !important;
+}
