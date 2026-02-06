@@ -138,6 +138,14 @@ body.cmsm-cursor-blend-strong #cmsm-cursor-container {
     filter:contrast(1.5)
 }
 
+/* P3 fix: Reset blend mode inside popups — higher specificity beats blend rules */
+body.cmsm-cursor-blend-soft .elementor-popup-modal #cmsm-cursor-container,
+body.cmsm-cursor-blend-medium .elementor-popup-modal #cmsm-cursor-container,
+body.cmsm-cursor-blend-strong .elementor-popup-modal #cmsm-cursor-container {
+    z-index: var(--cmsm-cursor-z-default);
+    mix-blend-mode: normal
+}
+
 body.cmsm-cursor-hover .cmsm-cursor-ring {
     width:60px;
     height:60px;
