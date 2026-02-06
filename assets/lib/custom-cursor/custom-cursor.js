@@ -576,6 +576,7 @@
     var isPaused = false;                  // Pause state
     var popupObserver = null;              // Track MutationObserver for cleanup
     var popupCheckInterval = null;         // Track setInterval for cleanup
+    var popupMoveTime = 0;                 // Grace period for popup entrance animation
 
     /**
      * Pause cursor render loop
@@ -660,15 +661,12 @@
     function moveCursorToPopup(el) {
         if (currentPopup === el) return;
         currentPopup = el;
+        popupMoveTime = Date.now();
         el.appendChild(container);
-        console.log('[CURSOR DEBUG] MOVE TO POPUP:', el.className.substring(0,60));
-        console.trace();
     }
 
     function moveCursorToBody() {
         if (!currentPopup) return;
-        console.log('[CURSOR DEBUG] MOVE TO BODY');
-        console.trace();
         currentPopup = null;
         document.body.appendChild(container);
         if (forcedColor) {
@@ -976,10 +974,6 @@
             var mutation = mutations[i];
             for (var j = 0; j < mutation.addedNodes.length; j++) {
                 var node = mutation.addedNodes[j];
-                // DEBUG: Log all element nodes added to DOM
-                if (node.nodeType === 1) {
-                    console.log('[CURSOR DEBUG] Node added:', node.tagName, node.className);
-                }
                 if (node.nodeType === 1 && node.classList && node.classList.contains('elementor-popup-modal')) {
                     moveCursorToPopup(node);
                     return;
@@ -995,12 +989,11 @@
         }
     }).observe(document.body, { childList: true, subtree: true });
 
-    // DEBUG: One-time scan for existing popup-like elements
-    console.log('[CURSOR DEBUG] Existing popups:', document.querySelectorAll('[class*="popup"], [class*="dialog"], [class*="modal"], [role="dialog"]').length);
-
     // Periodic check - popup hidden via CSS
     popupCheckInterval = setInterval(function() {
         if (!currentPopup) return;
+        // Grace period for popup entrance animation (500ms)
+        if (Date.now() - popupMoveTime < 500) return;
         if (!document.body.contains(currentPopup)) {
             moveCursorToBody();
             return;
