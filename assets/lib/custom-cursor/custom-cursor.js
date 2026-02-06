@@ -157,9 +157,252 @@
     }
     window.cmsmCursorInstanceActive = true;
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // CONSTANTS
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /**
+     * Position initialization — offscreen default for cursor elements
+     * Used before first valid mousemove
+     */
+    var OFFSCREEN_POSITION = -200;
+
+    /**
+     * Smoothness presets — lerp factor for cursor following
+     * Higher = snappier, lower = smoother
+     * See: DOCS/10-MAP-DATA-FLOW.md → Position Smoothing
+     */
+    var SMOOTH_PRECISE = 1;
+    var SMOOTH_SNAPPY = 0.5;
+    var SMOOTH_NORMAL = 0.25;
+    var SMOOTH_SMOOTH = 0.12;
+    var SMOOTH_FLUID = 0.06;
+    var DOT_SPEED_MULTIPLIER = 2;
+
+    /**
+     * Adaptive mode — background luminance detection
+     * See: DOCS/12-REF-BODY-CLASSES.md → on-light/on-dark
+     */
+    var DETECT_DISTANCE = 5;            // Min pixels moved before re-detecting
+    var HYSTERESIS = 3;                 // Consecutive frames before mode change
+    var MAX_DEPTH = 10;                 // Max DOM depth for background search
+    var STICKY_MODE_DURATION = 500;     // Lock mode for 500ms after change (prevents flicker)
+
+    /**
+     * Spring physics — size/rotate transitions
+     * Used for smooth image/icon cursor size changes on hover
+     */
+    var TRANSITION_STIFFNESS = 0.15;    // Spring stiffness
+    var TRANSITION_DAMPING = 0.75;      // Damping (< 1 = slight overshoot)
+
+    /**
+     * Wobble effect — spring-based directional stretch
+     * See: DOCS/13-REF-EFFECTS.md → Wobble Effect
+     */
+    var WOBBLE_MAX = 0.6;               // 60% max stretch (reference, not used in formula)
+    var WOBBLE_STIFFNESS = 0.25;        // Spring stiffness
+    var WOBBLE_DAMPING = 0.78;          // Damping (< 1 = overshoot)
+    var WOBBLE_THRESHOLD = 6;           // Min velocity for angle update
+    var WOBBLE_VELOCITY_SCALE = 0.012;  // velocity * scale for target
+    var WOBBLE_DEFORMATION_MULT = 2;    // Multiplier for more visible deformation
+    var WOBBLE_SCALE_MAX = 1.2;         // Max wobble scale (clamped)
+    var WOBBLE_STRETCH_FACTOR = 0.5;    // Stretch factor for matrix
+    var WOBBLE_ANGLE_MULTIPLIER = 2;    // Double angle for symmetric stretch
+    var WOBBLE_MIN_SCALE = 0.001;       // Threshold for applying matrix
+
+    /**
+     * Pulse effect — breathing scale oscillation
+     * See: DOCS/13-REF-EFFECTS.md → Pulse Effect
+     */
+    var PULSE_TIME_INCREMENT = 0.05;    // Per-frame time increment
+    var PULSE_CORE_AMPLITUDE = 0.15;    // ±15% for dot/ring
+    var PULSE_SPECIAL_AMPLITUDE = 0.08; // ±8% for image/text/icon
+
+    /**
+     * Shake effect — horizontal wave oscillation
+     * See: DOCS/13-REF-EFFECTS.md → Shake Effect
+     */
+    var SHAKE_TIME_INCREMENT = 0.08;    // Per-frame time increment
+    var SHAKE_CYCLE_DURATION = 10;      // Full cycle length (wave + pause)
+    var SHAKE_WAVE_PHASE = 6.28;        // ~2π, duration of active wave
+    var SHAKE_WAVE_MULTIPLIER = 2;      // sin(cycle * 2) for 2 oscillations
+    var SHAKE_CORE_AMPLITUDE = 4;       // ±4px for dot/ring
+    var SHAKE_SPECIAL_AMPLITUDE = 5;    // ±5px for image/text/icon
+
+    /**
+     * Buzz effect — rotation oscillation
+     * See: DOCS/13-REF-EFFECTS.md → Buzz Effect
+     */
+    var BUZZ_TIME_INCREMENT = 0.08;     // Per-frame time increment (same as shake)
+    var BUZZ_CYCLE_DURATION = 10;       // Full cycle length (same as shake)
+    var BUZZ_WAVE_PHASE = 6.28;         // ~2π, duration of active rotation
+    var BUZZ_WAVE_MULTIPLIER = 2;       // sin(cycle * 2) for 2 oscillations
+    var BUZZ_CORE_AMPLITUDE = 15;       // ±15° for dot/ring
+    var BUZZ_SPECIAL_AMPLITUDE = 12;    // ±12° for image/text/icon
+
+    /**
+     * Event throttling — performance optimization
+     */
+    var POPUP_CHECK_INTERVAL_MS = 100;  // Popup visibility check interval
+    var DETECTION_THROTTLE_MS = 100;    // Background detection throttle
+    var SCROLL_THROTTLE_MS = 50;        // Scroll detection throttle
+    var FADE_TRANSITION_DELAY_MS = 150; // Viewport change debounce delay
+
+    /**
+     * Element detection thresholds
+     */
+    var TRANSPARENT_ALPHA_THRESHOLD = 0.15; // Alpha below this = transparent
+    var VALID_POSITION_THRESHOLD = 5;   // Pixels from origin to be "valid"
+    var INITIAL_CURSOR_SIZE_PX = 8;     // Default cursor dot size
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // STATE MACHINE
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /**
+     * Centralized cursor state management.
+     * ALL body class changes go through CursorState.transition().
+     * This enforces mutually exclusive groups and enables debug tracing.
+     *
+     * State shape:
+     *   hover: boolean          — over interactive element
+     *   down: boolean           — mouse button pressed
+     *   hidden: boolean         — cursor hidden (form/video/iframe/leave)
+     *   text: boolean           — text input mode
+     *   mode: null|'on-light'|'on-dark'  — adaptive mode
+     *   size: null|'sm'|'md'|'lg'        — ring size modifier
+     *   blend: null|'soft'|'medium'|'strong' — blend intensity
+     *
+     * See: DOCS/12-REF-BODY-CLASSES.md for full state machine diagram
+     */
+    var CursorState = {
+        _state: {
+            hover: false,
+            down: false,
+            hidden: false,
+            text: false,
+            mode: null,       // 'on-light' | 'on-dark' | null
+            size: null,       // 'sm' | 'md' | 'lg' | null
+            blend: null       // 'soft' | 'medium' | 'strong' | null
+        },
+        _body: null,          // Cached body reference (set in init)
+
+        /**
+         * Initialize with body reference
+         * @param {HTMLElement} bodyEl — document.body
+         */
+        init: function(bodyEl) {
+            this._body = bodyEl;
+        },
+
+        /**
+         * Apply a state change. Only changed properties trigger DOM updates.
+         * @param {object} change — partial state object, e.g. { hover: true, size: 'lg' }
+         * @param {string} [source] — caller identifier for debug tracing
+         */
+        transition: function(change, source) {
+            if (!this._body) return;
+            var prev = {};
+            var changed = false;
+
+            for (var key in change) {
+                if (change.hasOwnProperty(key) && this._state[key] !== change[key]) {
+                    prev[key] = this._state[key];
+                    this._state[key] = change[key];
+                    changed = true;
+                }
+            }
+
+            if (changed) {
+                this._applyToDOM(prev);
+            }
+        },
+
+        /**
+         * Get current state value
+         * @param {string} key — state property name
+         * @returns {*} current value
+         */
+        get: function(key) {
+            return this._state[key];
+        },
+
+        /**
+         * Reset interaction state on mouseout.
+         * Resets: hover, text, hidden (from hover), size.
+         * Does NOT reset: mode, blend, down.
+         */
+        resetHover: function() {
+            this.transition({
+                hover: false,
+                text: false,
+                hidden: false,
+                size: null
+            }, 'resetHover');
+        },
+
+        /**
+         * Sync DOM classes from state. Only touches changed properties.
+         * @private
+         */
+        _applyToDOM: function(prev) {
+            var body = this._body;
+            if (!body) return;
+
+            // --- Boolean toggles ---
+            if ('hover' in prev) {
+                body.classList.toggle('cmsm-cursor-hover', this._state.hover);
+            }
+            if ('down' in prev) {
+                body.classList.toggle('cmsm-cursor-down', this._state.down);
+            }
+            if ('hidden' in prev) {
+                body.classList.toggle('cmsm-cursor-hidden', this._state.hidden);
+            }
+            if ('text' in prev) {
+                body.classList.toggle('cmsm-cursor-text', this._state.text);
+            }
+
+            // --- Mutually exclusive: Adaptive mode ---
+            if ('mode' in prev) {
+                if (prev.mode) {
+                    body.classList.remove('cmsm-cursor-' + prev.mode);
+                }
+                if (this._state.mode) {
+                    body.classList.add('cmsm-cursor-' + this._state.mode);
+                }
+            }
+
+            // --- Mutually exclusive: Size ---
+            if ('size' in prev) {
+                if (prev.size) {
+                    body.classList.remove('cmsm-cursor-size-' + prev.size);
+                }
+                if (this._state.size) {
+                    body.classList.add('cmsm-cursor-size-' + this._state.size);
+                }
+            }
+
+            // --- Mutually exclusive: Blend ---
+            if ('blend' in prev) {
+                if (prev.blend) {
+                    body.classList.remove('cmsm-cursor-blend-' + prev.blend);
+                    if (!this._state.blend) {
+                        body.classList.remove('cmsm-cursor-blend');
+                    }
+                }
+                if (this._state.blend) {
+                    body.classList.add('cmsm-cursor-blend');
+                    body.classList.add('cmsm-cursor-blend-' + this._state.blend);
+                }
+            }
+        }
+    };
+
     // === GUARDRAILS ===
     var body = document.body;
     if (!body) return;
+    CursorState.init(body); // Initialize state machine with body reference
     if (!body.classList.contains('cmsm-cursor-enabled')) return;
     if (matchMedia('(prefers-reduced-motion:reduce)').matches) return;
     if (matchMedia('(hover:none),(pointer:coarse)').matches) return;
@@ -184,8 +427,8 @@
         var ringMatch = ringTransform.match(/translate3d\(([^,]+)px,\s*([^,]+)px/);
         if (dotMatch) {
             // Use dot position as initial values for smooth takeover
-            var initX = parseFloat(dotMatch[1]) || -200;
-            var initY = parseFloat(dotMatch[2]) || -200;
+            var initX = parseFloat(dotMatch[1]) || OFFSCREEN_POSITION;
+            var initY = parseFloat(dotMatch[2]) || OFFSCREEN_POSITION;
             // Remove critical script element now that we're taking over
             var criticalScript = document.getElementById('cmsm-cursor-critical');
             if (criticalScript) criticalScript.remove();
@@ -203,16 +446,22 @@
 
     // Initial cursor positions (will be updated by critical script takeover if available)
     var _criticalPos = window.cmsmCursorCriticalPos || null;
-    var mx = _criticalPos ? _criticalPos.x : -200;
-    var my = _criticalPos ? _criticalPos.y : -200;
+    var mx = _criticalPos ? _criticalPos.x : OFFSCREEN_POSITION;
+    var my = _criticalPos ? _criticalPos.y : OFFSCREEN_POSITION;
     var dx = mx, dy = my; // dot position (lerped)
     var rx = mx, ry = my; // ring position (lerped)
     var hasValidPosition = !!_criticalPos; // Track if we have a real mouse position
 
     // Smoothness: lerp factor (higher = snappier, lower = smoother)
-    var smoothMap = { precise: 1, snappy: 0.5, normal: 0.25, smooth: 0.12, fluid: 0.06 };
-    var L = smoothMap[window.cmsmCursorSmooth] || 0.25;
-    var dotL = Math.min(L * 2, 1); // dot is faster than ring but still smooth
+    var smoothMap = {
+        precise: SMOOTH_PRECISE,
+        snappy: SMOOTH_SNAPPY,
+        normal: SMOOTH_NORMAL,
+        smooth: SMOOTH_SMOOTH,
+        fluid: SMOOTH_FLUID
+    };
+    var L = smoothMap[window.cmsmCursorSmooth] || SMOOTH_NORMAL;
+    var dotL = Math.min(L * DOT_SPEED_MULTIPLIER, 1); // dot is faster than ring but still smooth
 
     // Theme support
     var theme = window.cmsmCursorTheme || 'classic';
@@ -224,14 +473,10 @@
     var pendingMode = '';
     var pendingCount = 0;
     var lastDetect = 0;
-    var lastDetectX = -200;             // Last detection position X (for pixel debounce)
-    var lastDetectY = -200;             // Last detection position Y (for pixel debounce)
-    var DETECT_DISTANCE = 5;            // Min pixels moved before re-detecting (performance)
-    var HYSTERESIS = 3;
+    var lastDetectX = OFFSCREEN_POSITION; // Last detection position X (for pixel debounce)
+    var lastDetectY = OFFSCREEN_POSITION; // Last detection position Y (for pixel debounce)
     // BUG-002 FIX: Sticky mode prevents flicker at light/dark boundaries
     var lastModeChangeTime = 0;         // Timestamp of last mode change
-    var STICKY_MODE_DURATION = 500;     // Lock mode for 500ms after change (prevents oscillation)
-    var MAX_DEPTH = 10;
 
     // Forced color (per-element override via data-cursor-color)
     var forcedColor = null;
@@ -275,9 +520,7 @@
     var iconCachedHeight = 0;
     var iconCachedSize = 0;             // Track when to update icon cache (size changes on hover)
 
-    // Smooth size/rotate transitions (spring physics)
-    var TRANSITION_STIFFNESS = 0.15;    // Spring stiffness for size/rotate
-    var TRANSITION_DAMPING = 0.75;      // Damping (< 1 = slight overshoot)
+    // Smooth size/rotate transitions (spring physics) - see CONSTANTS section
     // Image cursor smooth values
     var imgCurrentSize = 0;
     var imgCurrentRotate = 0;
@@ -299,24 +542,20 @@
         globalBlendIntensity = 'soft';
     }
     var currentBlendIntensity = globalBlendIntensity;
-    // Wobble effect (spring physics with overshoot)
+    // Wobble effect (spring physics with overshoot) - see CONSTANTS section
     // Enabled via window.cmsmCursorWobble or body class .cmsm-cursor-wobble
     function isWobbleEnabled() { return window.cmsmCursorWobble || body.classList.contains('cmsm-cursor-wobble'); }
-    var prevDx = -200, prevDy = -200;      // Previous position for velocity calc
+    var prevDx = OFFSCREEN_POSITION, prevDy = OFFSCREEN_POSITION; // Previous position for velocity calc
     var wobbleVelocity = 0;                // Spring velocity for overshoot
     var wobbleScale = 0;                   // Current scale
     var wobbleAngle = 0;                   // Current angle (radians for matrix, degrees for simple)
-    var WOBBLE_MAX = 0.6;                  // 60% max stretch
-    var WOBBLE_STIFFNESS = 0.25;           // Spring stiffness
-    var WOBBLE_DAMPING = 0.78;             // Damping (< 1 = overshoot)
-    var WOBBLE_THRESHOLD = 6;              // Min velocity for angle update
     var perElementWobble = null;           // Per-element wobble override
     var coreEffect = '';                   // Effect: '', 'none', 'wobble', 'pulse', 'shake', 'buzz'
 
     // Separate wobble state per cursor type to prevent conflicts
-    var imgWobbleVelocity = 0, imgWobbleScale = 0, imgWobbleAngle = 0, imgPrevDx = -200, imgPrevDy = -200;
-    var textWobbleVelocity = 0, textWobbleScale = 0, textWobbleAngle = 0, textPrevDx = -200, textPrevDy = -200;
-    var iconWobbleVelocity = 0, iconWobbleScale = 0, iconWobbleAngle = 0, iconPrevDx = -200, iconPrevDy = -200;
+    var imgWobbleVelocity = 0, imgWobbleScale = 0, imgWobbleAngle = 0, imgPrevDx = OFFSCREEN_POSITION, imgPrevDy = OFFSCREEN_POSITION;
+    var textWobbleVelocity = 0, textWobbleScale = 0, textWobbleAngle = 0, textPrevDx = OFFSCREEN_POSITION, textPrevDy = OFFSCREEN_POSITION;
+    var iconWobbleVelocity = 0, iconWobbleScale = 0, iconWobbleAngle = 0, iconPrevDx = OFFSCREEN_POSITION, iconPrevDy = OFFSCREEN_POSITION;
 
     // === PAUSE/RESUME API (for editor processing mask) ===
     var rafId = null;                      // Track RAF ID for cancellation
@@ -396,13 +635,8 @@
 
 
     function setBlendIntensity(intensity) {
-        // Remove all blend classes
-        body.classList.remove('cmsm-cursor-blend', 'cmsm-cursor-blend-soft', 'cmsm-cursor-blend-medium', 'cmsm-cursor-blend-strong');
-        // Add new intensity classes
-        if (intensity && intensity !== 'off') {
-            body.classList.add('cmsm-cursor-blend');
-            body.classList.add('cmsm-cursor-blend-' + intensity);
-        }
+        // Delegate to CursorState for mutually exclusive blend classes
+        CursorState.transition({ blend: (intensity && intensity !== 'off') ? intensity : null }, 'setBlendIntensity');
         currentBlendIntensity = intensity || '';
     }
 
@@ -750,7 +984,7 @@
         if (style.display === 'none' || style.visibility === 'hidden') {
             moveCursorToBody();
         }
-    }, 100);
+    }, POPUP_CHECK_INTERVAL_MS);
 
     // Selectors built via array.join to avoid line-wrap issues
     var hoverSel = [
@@ -761,10 +995,7 @@
         'input[type="text"]','input[type="email"]','input[type="search"]',
         'input[type="number"]','input[type="password"]','textarea'
     ].join(',');
-    var resetCls = [
-        'cmsm-cursor-hover','cmsm-cursor-text','cmsm-cursor-hidden',
-        'cmsm-cursor-size-sm','cmsm-cursor-size-md','cmsm-cursor-size-lg'
-    ];
+    // resetCls array removed — now handled by CursorState.resetHover()
 
     // === UTILS ===
     // Escape URL for safe use in CSS url() - prevents CSS injection
@@ -783,8 +1014,8 @@
     }
 
     function applyMode(mode) {
-        body.classList.remove('cmsm-cursor-on-light', 'cmsm-cursor-on-dark');
-        body.classList.add('cmsm-cursor-' + mode);
+        // Delegate to CursorState for mutually exclusive mode classes
+        CursorState.transition({ mode: mode }, 'applyMode');
         lastMode = mode;
         pendingMode = '';
         pendingCount = 0;
@@ -839,7 +1070,7 @@
                 el.closest('[role="dialog"]') ||
                 el.closest('[aria-modal="true"]')
             ))) {
-            body.classList.add('cmsm-cursor-hidden');
+            CursorState.transition({ hidden: true }, 'detectCursorMode:forms');
             return;
         }
 
@@ -847,7 +1078,7 @@
         // Cross-origin iframes block mouse events, videos cause lag
         if (el.tagName === 'VIDEO' || el.tagName === 'IFRAME' ||
             (el.closest && el.closest('video, iframe'))) {
-            body.classList.add('cmsm-cursor-hidden');
+            CursorState.transition({ hidden: true }, 'detectCursorMode:video');
             return;
         }
 
@@ -1392,7 +1623,7 @@
                 }
                 if (pendingCount >= HYSTERESIS) {
                     // Reset to default state (no adaptive class)
-                    body.classList.remove('cmsm-cursor-on-light', 'cmsm-cursor-on-dark');
+                    CursorState.transition({ mode: null }, 'detectCursorMode:reset');
                     lastMode = '';
                     pendingMode = '';
                     pendingCount = 0;
@@ -1450,32 +1681,32 @@
 
             if (imageCursorEffect === 'pulse') {
                 // Pulse: smooth breathing (scale oscillation)
-                imageEffectTime += 0.05;
-                effectScale = 1 + Math.sin(imageEffectTime) * 0.08; // ±8% scale
+                imageEffectTime += PULSE_TIME_INCREMENT;
+                effectScale = 1 + Math.sin(imageEffectTime) * PULSE_SPECIAL_AMPLITUDE;
             } else if (imageCursorEffect === 'shake') {
                 // Shake: hand wave pattern (left-right, left-right, pause, repeat)
-                imageEffectTime += 0.08;
-                var cycle = imageEffectTime % 10; // Full cycle (~2s wave + ~1s pause)
-                if (cycle < 6.28) {
+                imageEffectTime += SHAKE_TIME_INCREMENT;
+                var cycle = imageEffectTime % SHAKE_CYCLE_DURATION;
+                if (cycle < SHAKE_WAVE_PHASE) {
                     // Wave phase: smooth left-right oscillation (2 full waves)
-                    effectOffsetX = Math.sin(cycle * 2) * 5; // 2 waves, 5px amplitude
+                    effectOffsetX = Math.sin(cycle * SHAKE_WAVE_MULTIPLIER) * SHAKE_SPECIAL_AMPLITUDE;
                 } else {
                     // Pause phase: ease out to center
-                    var pauseProgress = (cycle - 6.28) / (10 - 6.28);
-                    effectOffsetX = Math.sin(6.28 * 2) * 5 * (1 - pauseProgress);
+                    var pauseProgress = (cycle - SHAKE_WAVE_PHASE) / (SHAKE_CYCLE_DURATION - SHAKE_WAVE_PHASE);
+                    effectOffsetX = Math.sin(SHAKE_WAVE_PHASE * SHAKE_WAVE_MULTIPLIER) * SHAKE_SPECIAL_AMPLITUDE * (1 - pauseProgress);
                 }
             } else if (imageCursorEffect === 'buzz') {
                 // Buzz: rotate left-right, left-right, pause, repeat
-                imageEffectTime += 0.08;
-                var cycle = imageEffectTime % 10; // Same timing as shake
+                imageEffectTime += BUZZ_TIME_INCREMENT;
+                var cycle = imageEffectTime % BUZZ_CYCLE_DURATION;
                 var effectRotateOffset = 0;
-                if (cycle < 6.28) {
+                if (cycle < BUZZ_WAVE_PHASE) {
                     // Rotate phase: smooth rotation oscillation (2 full rotations)
-                    effectRotateOffset = Math.sin(cycle * 2) * 12; // 2 cycles, ±12deg
+                    effectRotateOffset = Math.sin(cycle * BUZZ_WAVE_MULTIPLIER) * BUZZ_SPECIAL_AMPLITUDE;
                 } else {
                     // Pause phase: ease out to center
-                    var pauseProgress = (cycle - 6.28) / (10 - 6.28);
-                    effectRotateOffset = Math.sin(6.28 * 2) * 12 * (1 - pauseProgress);
+                    var pauseProgress = (cycle - BUZZ_WAVE_PHASE) / (BUZZ_CYCLE_DURATION - BUZZ_WAVE_PHASE);
+                    effectRotateOffset = Math.sin(BUZZ_WAVE_PHASE * BUZZ_WAVE_MULTIPLIER) * BUZZ_SPECIAL_AMPLITUDE * (1 - pauseProgress);
                 }
                 imgRotate += effectRotateOffset;
             }
@@ -1499,15 +1730,15 @@
                 imgPrevDy = dy;
                 var velocity = Math.sqrt(deltaDx * deltaDx + deltaDy * deltaDy);
 
-                // Scale calculation (2x more deformation)
-                var targetScale = Math.min(velocity * 0.012, 1.0) * 2;
+                // Scale calculation (deformation multiplier for visibility)
+                var targetScale = Math.min(velocity * WOBBLE_VELOCITY_SCALE, 1.0) * WOBBLE_DEFORMATION_MULT;
 
                 // Spring physics for bouncy overshoot
                 var force = (targetScale - imgWobbleScale) * WOBBLE_STIFFNESS;
                 imgWobbleVelocity += force;
                 imgWobbleVelocity *= WOBBLE_DAMPING;
                 imgWobbleScale += imgWobbleVelocity;
-                imgWobbleScale = Math.max(0, Math.min(imgWobbleScale, 1.2));
+                imgWobbleScale = Math.max(0, Math.min(imgWobbleScale, WOBBLE_SCALE_MAX));
 
                 // Update angle only on significant movement (reduces jitter)
                 if (velocity > WOBBLE_THRESHOLD) {
@@ -1515,8 +1746,8 @@
                 }
 
                 // Matrix transform for symmetric directional stretch
-                var s = imgWobbleScale * 0.5; // stretch factor
-                var angle2 = imgWobbleAngle * 2;
+                var s = imgWobbleScale * WOBBLE_STRETCH_FACTOR;
+                var angle2 = imgWobbleAngle * WOBBLE_ANGLE_MULTIPLIER;
                 var cos2 = Math.cos(angle2);
                 var sin2 = Math.sin(angle2);
                 var imgMatrixA = 1 + s * cos2;
@@ -1567,31 +1798,31 @@
 
             if (textCursorEffect === 'pulse') {
                 // Pulse: smooth breathing (scale oscillation)
-                textEffectTime += 0.05;
-                textEffectScale = 1 + Math.sin(textEffectTime) * 0.08; // ±8% scale
+                textEffectTime += PULSE_TIME_INCREMENT;
+                textEffectScale = 1 + Math.sin(textEffectTime) * PULSE_SPECIAL_AMPLITUDE;
             } else if (textCursorEffect === 'shake') {
                 // Shake: hand wave pattern (left-right, left-right, pause, repeat)
-                textEffectTime += 0.08;
-                var cycle = textEffectTime % 10; // Full cycle (~2s wave + ~1s pause)
-                if (cycle < 6.28) {
+                textEffectTime += SHAKE_TIME_INCREMENT;
+                var cycle = textEffectTime % SHAKE_CYCLE_DURATION;
+                if (cycle < SHAKE_WAVE_PHASE) {
                     // Wave phase: smooth left-right oscillation (2 full waves)
-                    textEffectOffsetX = Math.sin(cycle * 2) * 5; // 2 waves, 5px amplitude
+                    textEffectOffsetX = Math.sin(cycle * SHAKE_WAVE_MULTIPLIER) * SHAKE_SPECIAL_AMPLITUDE;
                 } else {
                     // Pause phase: ease out to center
-                    var pauseProgress = (cycle - 6.28) / (10 - 6.28);
-                    textEffectOffsetX = Math.sin(6.28 * 2) * 5 * (1 - pauseProgress);
+                    var pauseProgress = (cycle - SHAKE_WAVE_PHASE) / (SHAKE_CYCLE_DURATION - SHAKE_WAVE_PHASE);
+                    textEffectOffsetX = Math.sin(SHAKE_WAVE_PHASE * SHAKE_WAVE_MULTIPLIER) * SHAKE_SPECIAL_AMPLITUDE * (1 - pauseProgress);
                 }
             } else if (textCursorEffect === 'buzz') {
                 // Buzz: rotate left-right, left-right, pause, repeat
-                textEffectTime += 0.08;
-                var cycle = textEffectTime % 10; // Same timing as shake
-                if (cycle < 6.28) {
+                textEffectTime += BUZZ_TIME_INCREMENT;
+                var cycle = textEffectTime % BUZZ_CYCLE_DURATION;
+                if (cycle < BUZZ_WAVE_PHASE) {
                     // Rotate phase: smooth rotation oscillation (2 full rotations)
-                    textEffectRotate = Math.sin(cycle * 2) * 12; // 2 cycles, ±12deg
+                    textEffectRotate = Math.sin(cycle * BUZZ_WAVE_MULTIPLIER) * BUZZ_SPECIAL_AMPLITUDE;
                 } else {
                     // Pause phase: ease out to center
-                    var pauseProgress = (cycle - 6.28) / (10 - 6.28);
-                    textEffectRotate = Math.sin(6.28 * 2) * 12 * (1 - pauseProgress);
+                    var pauseProgress = (cycle - BUZZ_WAVE_PHASE) / (BUZZ_CYCLE_DURATION - BUZZ_WAVE_PHASE);
+                    textEffectRotate = Math.sin(BUZZ_WAVE_PHASE * BUZZ_WAVE_MULTIPLIER) * BUZZ_SPECIAL_AMPLITUDE * (1 - pauseProgress);
                 }
             }
 
@@ -1614,15 +1845,15 @@
                 textPrevDy = dy;
                 var velocity = Math.sqrt(deltaDx * deltaDx + deltaDy * deltaDy);
 
-                // Scale calculation (2x more deformation)
-                var targetScale = Math.min(velocity * 0.012, 1.0) * 2;
+                // Scale calculation (deformation multiplier for visibility)
+                var targetScale = Math.min(velocity * WOBBLE_VELOCITY_SCALE, 1.0) * WOBBLE_DEFORMATION_MULT;
 
                 // Spring physics for bouncy overshoot
                 var force = (targetScale - textWobbleScale) * WOBBLE_STIFFNESS;
                 textWobbleVelocity += force;
                 textWobbleVelocity *= WOBBLE_DAMPING;
                 textWobbleScale += textWobbleVelocity;
-                textWobbleScale = Math.max(0, Math.min(textWobbleScale, 1.2));
+                textWobbleScale = Math.max(0, Math.min(textWobbleScale, WOBBLE_SCALE_MAX));
 
                 // Update angle only on significant movement (reduces jitter)
                 if (velocity > WOBBLE_THRESHOLD) {
@@ -1630,8 +1861,8 @@
                 }
 
                 // Matrix transform for symmetric directional stretch
-                var s = textWobbleScale * 0.5;
-                var angle2 = textWobbleAngle * 2;
+                var s = textWobbleScale * WOBBLE_STRETCH_FACTOR;
+                var angle2 = textWobbleAngle * WOBBLE_ANGLE_MULTIPLIER;
                 var cos2 = Math.cos(angle2);
                 var sin2 = Math.sin(angle2);
                 var textMatrixA = 1 + s * cos2;
@@ -1715,26 +1946,26 @@
             var iconEffectAngle = 0;
 
             if (iconCursorEffect === 'pulse') {
-                iconEffectTime += 0.05;
-                iconEffectScale = 1 + Math.sin(iconEffectTime) * 0.08;
+                iconEffectTime += PULSE_TIME_INCREMENT;
+                iconEffectScale = 1 + Math.sin(iconEffectTime) * PULSE_SPECIAL_AMPLITUDE;
             } else if (iconCursorEffect === 'shake') {
-                iconEffectTime += 0.08;
-                var cycle = iconEffectTime % 10;
-                if (cycle < 6.28) {
-                    iconEffectOffsetX = Math.sin(cycle * 2) * 5;
+                iconEffectTime += SHAKE_TIME_INCREMENT;
+                var cycle = iconEffectTime % SHAKE_CYCLE_DURATION;
+                if (cycle < SHAKE_WAVE_PHASE) {
+                    iconEffectOffsetX = Math.sin(cycle * SHAKE_WAVE_MULTIPLIER) * SHAKE_SPECIAL_AMPLITUDE;
                 } else {
-                    var pauseProgress = (cycle - 6.28) / (10 - 6.28);
-                    iconEffectOffsetX = Math.sin(6.28 * 2) * 5 * (1 - pauseProgress);
+                    var pauseProgress = (cycle - SHAKE_WAVE_PHASE) / (SHAKE_CYCLE_DURATION - SHAKE_WAVE_PHASE);
+                    iconEffectOffsetX = Math.sin(SHAKE_WAVE_PHASE * SHAKE_WAVE_MULTIPLIER) * SHAKE_SPECIAL_AMPLITUDE * (1 - pauseProgress);
                 }
             } else if (iconCursorEffect === 'buzz') {
-                iconEffectTime += 0.08;
-                var cycle = iconEffectTime % 10;
+                iconEffectTime += BUZZ_TIME_INCREMENT;
+                var cycle = iconEffectTime % BUZZ_CYCLE_DURATION;
                 var effectRotateOffset = 0;
-                if (cycle < 6.28) {
-                    effectRotateOffset = Math.sin(cycle * 2) * 12;
+                if (cycle < BUZZ_WAVE_PHASE) {
+                    effectRotateOffset = Math.sin(cycle * BUZZ_WAVE_MULTIPLIER) * BUZZ_SPECIAL_AMPLITUDE;
                 } else {
-                    var pauseProgress = (cycle - 6.28) / (10 - 6.28);
-                    effectRotateOffset = Math.sin(6.28 * 2) * 12 * (1 - pauseProgress);
+                    var pauseProgress = (cycle - BUZZ_WAVE_PHASE) / (BUZZ_CYCLE_DURATION - BUZZ_WAVE_PHASE);
+                    effectRotateOffset = Math.sin(BUZZ_WAVE_PHASE * BUZZ_WAVE_MULTIPLIER) * BUZZ_SPECIAL_AMPLITUDE * (1 - pauseProgress);
                 }
                 iconEffectRotate += effectRotateOffset;
             }
@@ -1758,15 +1989,15 @@
                 iconPrevDy = dy;
                 var velocity = Math.sqrt(deltaDx * deltaDx + deltaDy * deltaDy);
 
-                // Scale calculation (2x more deformation)
-                var targetScale = Math.min(velocity * 0.012, 1.0) * 2;
+                // Scale calculation (deformation multiplier for visibility)
+                var targetScale = Math.min(velocity * WOBBLE_VELOCITY_SCALE, 1.0) * WOBBLE_DEFORMATION_MULT;
 
                 // Spring physics for bouncy overshoot
                 var force = (targetScale - iconWobbleScale) * WOBBLE_STIFFNESS;
                 iconWobbleVelocity += force;
                 iconWobbleVelocity *= WOBBLE_DAMPING;
                 iconWobbleScale += iconWobbleVelocity;
-                iconWobbleScale = Math.max(0, Math.min(iconWobbleScale, 1.2));
+                iconWobbleScale = Math.max(0, Math.min(iconWobbleScale, WOBBLE_SCALE_MAX));
 
                 // Update angle only on significant movement (reduces jitter)
                 if (velocity > WOBBLE_THRESHOLD) {
@@ -1774,8 +2005,8 @@
                 }
 
                 // Matrix transform for symmetric directional stretch
-                var s = iconWobbleScale * 0.5;
-                var angle2 = iconWobbleAngle * 2;
+                var s = iconWobbleScale * WOBBLE_STRETCH_FACTOR;
+                var angle2 = iconWobbleAngle * WOBBLE_ANGLE_MULTIPLIER;
                 var cos2 = Math.cos(angle2);
                 var sin2 = Math.sin(angle2);
                 var iconMatrixA = 1 + s * cos2;
@@ -1840,14 +2071,14 @@
 
             // Velocity calculation
             var velocity = Math.sqrt(deltaDx * deltaDx + deltaDy * deltaDy);
-            var targetScale = Math.min(velocity * 0.012, 1.0) * 2;
+            var targetScale = Math.min(velocity * WOBBLE_VELOCITY_SCALE, 1.0) * WOBBLE_DEFORMATION_MULT;
 
             // Spring physics for overshoot bounce
             var force = (targetScale - wobbleScale) * WOBBLE_STIFFNESS;
             wobbleVelocity += force;
             wobbleVelocity *= WOBBLE_DAMPING;
             wobbleScale += wobbleVelocity;
-            wobbleScale = Math.max(0, Math.min(wobbleScale, 1.2));
+            wobbleScale = Math.max(0, Math.min(wobbleScale, WOBBLE_SCALE_MAX));
 
             // Update angle only on significant movement
             if (velocity > WOBBLE_THRESHOLD) {
@@ -1855,9 +2086,9 @@
             }
 
             // Matrix transform for symmetric directional stretch
-            if (wobbleScale > 0.001) {
-                var s = wobbleScale * 0.5;
-                var angle2 = wobbleAngle * 2;
+            if (wobbleScale > WOBBLE_MIN_SCALE) {
+                var s = wobbleScale * WOBBLE_STRETCH_FACTOR;
+                var angle2 = wobbleAngle * WOBBLE_ANGLE_MULTIPLIER;
                 var cos2 = Math.cos(angle2);
                 var sin2 = Math.sin(angle2);
                 var matrixA = 1 + s * cos2;
@@ -1868,29 +2099,29 @@
             }
         } else if (effectiveCoreEffect === 'pulse') {
             // Pulse: breathing scale oscillation
-            coreEffectTime += 0.05;
-            var pulseScale = 1 + Math.sin(coreEffectTime) * 0.15; // ±15% for more visible effect on small cursor
+            coreEffectTime += PULSE_TIME_INCREMENT;
+            var pulseScale = 1 + Math.sin(coreEffectTime) * PULSE_CORE_AMPLITUDE;
             coreTransform = ' scale(' + pulseScale + ')';
         } else if (effectiveCoreEffect === 'shake') {
             // Shake: left-right wave
-            coreEffectTime += 0.08;
-            var cycle = coreEffectTime % 10;
-            if (cycle < 6.28) {
-                coreOffsetX = Math.sin(cycle * 2) * 4; // 4px amplitude
+            coreEffectTime += SHAKE_TIME_INCREMENT;
+            var cycle = coreEffectTime % SHAKE_CYCLE_DURATION;
+            if (cycle < SHAKE_WAVE_PHASE) {
+                coreOffsetX = Math.sin(cycle * SHAKE_WAVE_MULTIPLIER) * SHAKE_CORE_AMPLITUDE;
             } else {
-                var pauseProgress = (cycle - 6.28) / (10 - 6.28);
-                coreOffsetX = Math.sin(6.28 * 2) * 4 * (1 - pauseProgress);
+                var pauseProgress = (cycle - SHAKE_WAVE_PHASE) / (SHAKE_CYCLE_DURATION - SHAKE_WAVE_PHASE);
+                coreOffsetX = Math.sin(SHAKE_WAVE_PHASE * SHAKE_WAVE_MULTIPLIER) * SHAKE_CORE_AMPLITUDE * (1 - pauseProgress);
             }
         } else if (effectiveCoreEffect === 'buzz') {
             // Buzz: rotation oscillation
-            coreEffectTime += 0.08;
-            var cycle = coreEffectTime % 10;
+            coreEffectTime += BUZZ_TIME_INCREMENT;
+            var cycle = coreEffectTime % BUZZ_CYCLE_DURATION;
             var buzzRotate = 0;
-            if (cycle < 6.28) {
-                buzzRotate = Math.sin(cycle * 2) * 15; // ±15deg
+            if (cycle < BUZZ_WAVE_PHASE) {
+                buzzRotate = Math.sin(cycle * BUZZ_WAVE_MULTIPLIER) * BUZZ_CORE_AMPLITUDE;
             } else {
-                var pauseProgress = (cycle - 6.28) / (10 - 6.28);
-                buzzRotate = Math.sin(6.28 * 2) * 15 * (1 - pauseProgress);
+                var pauseProgress = (cycle - BUZZ_WAVE_PHASE) / (BUZZ_CYCLE_DURATION - BUZZ_WAVE_PHASE);
+                buzzRotate = Math.sin(BUZZ_WAVE_PHASE * BUZZ_WAVE_MULTIPLIER) * BUZZ_CORE_AMPLITUDE * (1 - pauseProgress);
             }
             coreTransform = ' rotate(' + buzzRotate + 'deg)';
         }
@@ -1917,9 +2148,9 @@
             }
         }
 
-        // Throttled background detection (every 100ms + min pixel distance)
+        // Throttled background detection (every DETECTION_THROTTLE_MS + min pixel distance)
         var movedDistance = Math.abs(mx - lastDetectX) + Math.abs(my - lastDetectY);
-        if (Date.now() - lastDetect > 100 && movedDistance > DETECT_DISTANCE) {
+        if (Date.now() - lastDetect > DETECTION_THROTTLE_MS && movedDistance > DETECT_DISTANCE) {
             detectCursorMode(mx, my);
             lastDetect = Date.now();
             lastDetectX = mx;
@@ -1930,7 +2161,7 @@
     // Detect on scroll too (cursor stays in place but background changes)
     // No pixel distance check - always detect on scroll (background moves under cursor)
     window.addEventListener('scroll', function() {
-        if (mx > 0 && Date.now() - lastDetect > 50) {
+        if (mx > 0 && Date.now() - lastDetect > SCROLL_THROTTLE_MS) {
             detectCursorMode(mx, my);
             lastDetect = Date.now();
             lastDetectX = mx;
@@ -1939,10 +2170,10 @@
     }, {passive: true, capture: true});
 
     document.addEventListener('mousedown', function() {
-        body.classList.add('cmsm-cursor-down');
+        CursorState.transition({ down: true }, 'mousedown');
     });
     document.addEventListener('mouseup', function() {
-        body.classList.remove('cmsm-cursor-down');
+        CursorState.transition({ down: false }, 'mouseup');
     });
 
     document.addEventListener('mouseover', function(e) {
@@ -1970,7 +2201,7 @@
         // This fixes: data-cursor="hide" on container not working when hovering child buttons
         var hideEl = t.closest ? t.closest('[data-cursor="hide"],[data-cursor="none"]') : null;
         if (hideEl) {
-            body.classList.add('cmsm-cursor-hidden');
+            CursorState.transition({ hidden: true }, 'mouseover:hide');
             return; // Dont apply other hover effects when cursor is hidden
         }
 
@@ -1985,14 +2216,14 @@
                 t.closest('[role="dialog"]') ||
                 t.closest('[aria-modal="true"]')
             ))) {
-            body.classList.add('cmsm-cursor-hidden');
+            CursorState.transition({ hidden: true }, 'mouseover:forms');
             return;
         }
 
         // P5: Auto-hide cursor on video/iframe (immediate response)
         if (t.tagName === 'VIDEO' || t.tagName === 'IFRAME' ||
             (t.closest && t.closest('video, iframe'))) {
-            body.classList.add('cmsm-cursor-hidden');
+            CursorState.transition({ hidden: true }, 'mouseover:video');
             return;
         }
 
@@ -2002,11 +2233,10 @@
             var type = el.getAttribute('data-cursor');
             var size = el.getAttribute('data-cursor-size');
             if (type === 'text') {
-                body.classList.add('cmsm-cursor-text');
+                CursorState.transition({ text: true, hover: true, size: size || null }, 'mouseover:text');
             } else {
-                body.classList.add('cmsm-cursor-hover');
+                CursorState.transition({ hover: true, size: size || null }, 'mouseover:hover');
             }
-            if (size) body.classList.add('cmsm-cursor-size-' + size);
         }
     }, {passive:true});
 
@@ -2026,7 +2256,7 @@
                     !related.closest('[role="dialog"]') &&
                     !related.closest('[aria-modal="true"]')
                 )))) {
-                body.classList.remove('cmsm-cursor-hidden');
+                CursorState.transition({ hidden: false }, 'mouseout:forms');
             }
         }
 
@@ -2035,7 +2265,7 @@
             var related = e.relatedTarget;
             if (!related || (related.tagName !== 'VIDEO' && related.tagName !== 'IFRAME' &&
                 (!related.closest || !related.closest('video, iframe')))) {
-                body.classList.remove('cmsm-cursor-hidden');
+                CursorState.transition({ hidden: false }, 'mouseout:video');
             }
         }
 
@@ -2072,15 +2302,15 @@
         }
 
         if (el || (t.matches && t.matches(textSel))) {
-            resetCls.forEach(function(c) { body.classList.remove(c); });
+            CursorState.resetHover();
         }
     }, {passive:true});
 
     document.documentElement.addEventListener('mouseleave', function() {
-        body.classList.add('cmsm-cursor-hidden');
+        CursorState.transition({ hidden: true }, 'mouseleave');
     });
     document.documentElement.addEventListener('mouseenter', function() {
-        body.classList.remove('cmsm-cursor-hidden');
+        CursorState.transition({ hidden: false }, 'mouseenter');
     });
 
     // === TOUCH DEVICE DETECTION (live) ===
@@ -2088,7 +2318,7 @@
     var touchMQ = matchMedia('(hover:none),(pointer:coarse)');
     function resetCursorState() {
         container.style.visibility = 'hidden';
-        mx = my = dx = dy = rx = ry = -200;
+        mx = my = dx = dy = rx = ry = OFFSCREEN_POSITION;
         hasValidPosition = false;
         // Reset image cursor state
         if (imageCursorEl) {
@@ -2136,7 +2366,7 @@
             if (!touchMQ.matches) {
                 resetCursorState();
             }
-        }, 150);
+        }, FADE_TRANSITION_DELAY_MS);
     }
     window.addEventListener('resize', handleResize);
 
