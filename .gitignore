@@ -1,0 +1,24 @@
+﻿# Full addon (local reference for Claude Code)
+cmsmasters-elementor-addon/
+
+# Dependencies
+node_modules/
+
+# Build artifacts
+*.map
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Local dev
+.env
+.env.local
+
+# Docs (не деплоїмо на сервер)
+docs/
