@@ -25,7 +25,7 @@ This document consolidates all known issues, bugs, and technical debt across the
 │   Resolved: 36 issues (tracked for reference)                               │
 │   ❌ False Positives: BUG-001, UX-001, UX-002 (not bugs after review)      │
 │   ✅ v5.5-SEC: SEC-001/002/003, BUG-002, BUG-003, MEM-001/002/003          │
-│   ✅ v5.6: CSS-001 (z-index), CSS-002 (color-mix fallback)                  │
+│   ✅ v5.6: CSS-001, CSS-002, MEM-004 (SpecialCursorManager)                 │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -267,17 +267,31 @@ function cleanup() {
 
 ---
 
-### MEM-004: Special Cursor Elements Not Cleaned
+### ~~MEM-004: Special Cursor Elements Not Cleaned~~ ✅ RESOLVED
 
 | Field | Value |
 |-------|-------|
-| **Location** | `custom-cursor.js:1100-1200` |
+| **Location** | `custom-cursor.js:564-689` |
 | **Type** | Memory Leak |
-| **Status** | Open |
+| **Status** | ✅ **Resolved in v5.6** |
 | **Since** | v4.0 |
+| **Fixed** | February 6, 2026 |
+| **Commit** | `a6e5604` |
 
-**Description:**
-Image/text/icon cursor elements may accumulate if rapid hover changes occur.
+**Resolution:**
+Added `SpecialCursorManager` object that centralizes special cursor lifecycle:
+- Tracks currently active special cursor type (`'image'`, `'text'`, `'icon'`)
+- `activate(type, createFn)` automatically deactivates previous type before creating new one
+- `deactivate()` removes current special cursor and restores default
+- Prevents DOM element accumulation from rapid hover changes
+
+```javascript
+// SpecialCursorManager ensures only one special cursor exists at a time
+SpecialCursorManager.activate('image', function() {
+    createImageCursor(src);
+});
+// Previous text/icon cursors are automatically removed
+```
 
 ---
 
@@ -656,6 +670,7 @@ Latest v5.5-SEC fixes: SEC-001/002/003 (security), BUG-002/003, MEM-001/002/003 
 |----|-------------|------------|---------|
 | CSS-001 | z-index 2147483647 conflicts | CSS custom properties (999999) | v5.6 |
 | CSS-002 | color-mix() no fallback | @supports rgba fallback | v5.6 |
+| MEM-004 | Special cursor DOM accumulation | SpecialCursorManager | v5.6 |
 | SEC-001 | XSS via innerHTML | SVG sanitizer with whitelist | v5.5-SEC |
 | SEC-002 | postMessage no origin check (editor) | TRUSTED_ORIGIN validation | v5.5-SEC |
 | SEC-003 | postMessage no origin check (preview) | TRUSTED_ORIGIN validation | v5.5-SEC |

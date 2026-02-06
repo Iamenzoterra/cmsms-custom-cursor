@@ -1,6 +1,6 @@
-# Custom Cursor v5.5 - Architecture Overview
+# Custom Cursor v5.6 - Architecture Overview
 
-**Last Updated:** February 5, 2026
+**Last Updated:** February 6, 2026
 
 ---
 
@@ -8,7 +8,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                         CUSTOM CURSOR SYSTEM v5.5                           │
+│                         CUSTOM CURSOR SYSTEM v5.6                           │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │   ┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐ │
@@ -297,10 +297,12 @@
   │     │ │+dot │ │     │ │     │ │     │ │     │ │     │ │     │ │     │
   └─────┘ └─────┘ └─────┘ └─────┘ └─────┘ └─────┘ └─────┘ └─────┘ └─────┘
 
-  THEMES:               CREATED BY:           TOGGLED BY:
-  • theme-dot           • createImageCursor() • mouseover/mouseout
-  • theme-classic       • createTextCursor()  • mousedown/mouseup
-                        • createIconCursor()  • forms/video detect
+  THEMES:               MANAGED BY:                   TOGGLED BY:
+  • theme-dot           • SpecialCursorManager        • mouseover/mouseout
+  • theme-classic         (v5.6 - lifecycle coord)    • mousedown/mouseup
+                        • createImageCursor()         • forms/video detect
+                        • createTextCursor()
+                        • createIconCursor()
 ```
 
 ---
@@ -403,6 +405,24 @@ function render() {
 }
 ```
 
+### 5. SpecialCursorManager (v5.6)
+
+Coordinates special cursor lifecycle to prevent DOM element accumulation:
+
+```javascript
+// Only one special cursor type can be active at a time
+SpecialCursorManager.activate('image', function() {
+    createImageCursor(src);
+});
+// Previous text/icon cursors are automatically cleaned up
+
+// When leaving special cursor zone:
+SpecialCursorManager.deactivate();
+// Removes current special cursor, restores default dot/ring
+```
+
+**Key Benefit:** Prevents MEM-004 (DOM accumulation from rapid hover changes between different special cursor types).
+
 ---
 
 ## Quick Reference
@@ -429,4 +449,4 @@ function render() {
 
 ---
 
-*Last Updated: February 5, 2026 | Version: 5.5*
+*Last Updated: February 6, 2026 | Version: 5.6*

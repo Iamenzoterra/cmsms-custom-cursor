@@ -259,6 +259,102 @@ Sync DOM classes from state. Only touches changed properties.
 
 ---
 
+### SpecialCursorManager (Internal)
+
+**Location:** Lines ~564-689
+
+Coordinates special cursor lifecycle (image, text, icon). Ensures only one special cursor type is active at a time and handles cleanup automatically.
+
+**Note:** This is an internal API, not exposed publicly.
+
+#### State
+
+```javascript
+SpecialCursorManager._activeType = null  // 'image' | 'text' | 'icon' | null
+```
+
+#### SpecialCursorManager.activate(type, createFn)
+
+**Line:** ~580
+
+```javascript
+SpecialCursorManager.activate('image', function() {
+    createImageCursor(src);
+})
+```
+
+Activates a special cursor type. Automatically deactivates any previously active type first.
+
+**Parameters:**
+
+| Name | Type | Values | Description |
+|------|------|--------|-------------|
+| type | string | `'image'` \| `'text'` \| `'icon'` | Special cursor type to activate |
+| createFn | function | required | Function that creates the cursor element |
+
+**Returns:** `void`
+
+**Side Effects:**
+- Calls appropriate `remove*Cursor()` for previous type
+- Calls `hideDefaultCursor()`
+- Calls the provided `createFn()`
+- Updates `_activeType`
+
+---
+
+#### SpecialCursorManager.deactivate()
+
+**Line:** ~620
+
+```javascript
+SpecialCursorManager.deactivate()
+```
+
+Deactivates the currently active special cursor and restores the default cursor.
+
+**Returns:** `void`
+
+**Side Effects:**
+- Calls `remove*Cursor()` for current type
+- Calls `showDefaultCursor()`
+- Sets `_activeType = null`
+
+---
+
+#### SpecialCursorManager.isActive(type)
+
+**Line:** ~660
+
+```javascript
+SpecialCursorManager.isActive('image')  // Returns: true|false
+```
+
+Checks if a specific special cursor type is currently active.
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| type | string | Type to check (`'image'`, `'text'`, `'icon'`) |
+
+**Returns:** `boolean`
+
+---
+
+#### SpecialCursorManager.getActive()
+
+**Line:** ~675
+
+```javascript
+SpecialCursorManager.getActive()  // Returns: 'image'|'text'|'icon'|null
+```
+
+Gets the currently active special cursor type.
+
+**Returns:** `string | null`
+
+---
+
 ### Public API
 
 #### pauseCursor()

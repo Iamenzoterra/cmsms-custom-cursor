@@ -165,9 +165,71 @@ Due to the CONSTANTS (~96 lines) and CursorState (~122 lines) additions, all sub
 
 ---
 
+#### 4. SpecialCursorManager (Lines ~564-689)
+
+Introduced `SpecialCursorManager` object to coordinate special cursor lifecycle (image, text, icon).
+
+**Purpose:**
+- Centralizes special cursor activation/deactivation logic
+- Fixes MEM-004 (DOM element accumulation from rapid hover changes)
+- Removes ~90 lines of duplicated code from `detectCursorMode()`
+
+**API:**
+
+| Method | Purpose |
+|--------|---------|
+| `SpecialCursorManager.activate(type, createFn)` | Activate a special cursor type |
+| `SpecialCursorManager.deactivate()` | Deactivate current special cursor, restore default |
+| `SpecialCursorManager.isActive(type)` | Check if specific type is active |
+| `SpecialCursorManager.getActive()` | Get currently active type (or null) |
+
+**Supported Types:** `'image'`, `'text'`, `'icon'`
+
+**Usage in detectCursorMode():**
+
+```javascript
+// BEFORE (v5.5) - duplicated in 3 places
+if (imageEl) {
+    removeTextCursor();
+    removeIconCursor();
+    createImageCursor(src);
+    hideDefaultCursor();
+}
+
+// AFTER (v5.6) - centralized
+if (imageEl) {
+    SpecialCursorManager.activate('image', function() {
+        createImageCursor(src);
+    });
+}
+```
+
+**Benefits:**
+- Single responsibility for special cursor state
+- Automatic cleanup of previous cursor type
+- Prevents DOM element accumulation (MEM-004 fix)
+- Easier to add new special cursor types in future
+
+---
+
+### Files Changed (v5.6 Complete)
+
+| File | Changes |
+|------|---------|
+| `assets/lib/custom-cursor/custom-cursor.css` | Z-index CSS custom properties (CSS-001 fix) |
+| `assets/lib/custom-cursor/custom-cursor.js` | Added CONSTANTS, CursorState, SpecialCursorManager |
+| `DOCS/02-CHANGELOG-v5_6.md` | Updated (this file) |
+| `DOCS/04-KNOWN-ISSUES.md` | Marked CSS-001 and MEM-004 resolved |
+| `DOCS/05-API-JAVASCRIPT.md` | Documented CONSTANTS, CursorState, SpecialCursorManager |
+| `DOCS/06-API-CSS.md` | Updated z-index documentation, added new CSS variables |
+| `DOCS/09-MAP-DEPENDENCY.md` | Updated with SpecialCursorManager dependencies |
+| `DOCS/12-REF-BODY-CLASSES.md` | Added CursorState references |
+
+---
+
 ## See Also
 
-- [05-API-JAVASCRIPT.md](./05-API-JAVASCRIPT.md) - Full CursorState API documentation
+- [05-API-JAVASCRIPT.md](./05-API-JAVASCRIPT.md) - Full CursorState and SpecialCursorManager API documentation
 - [12-REF-BODY-CLASSES.md](./12-REF-BODY-CLASSES.md) - Body class state machine diagram
 
 ---

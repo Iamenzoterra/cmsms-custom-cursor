@@ -28,7 +28,8 @@ Many functions have shifted ~120+ lines from v5.5 references.
 | ~145-158 | Singleton Guard | Prevents duplicate instances |
 | ~160-256 | **CONSTANTS** | All named constants (v5.6) |
 | ~278-399 | **CursorState** | State machine for body classes (v5.6) |
-| ~400+ | Core Functions | Cursor creation, detection, rendering |
+| ~564-689 | **SpecialCursorManager** | Special cursor lifecycle coordination (v5.6) |
+| ~690+ | Core Functions | Cursor creation, detection, rendering |
 
 ### Function Index (Line Numbers - Approximate)
 
@@ -41,7 +42,12 @@ Many functions have shifted ~120+ lines from v5.5 references.
 | ~326 | `CursorState.get(key)` | Get current state value |
 | ~335 | `CursorState.resetHover()` | Reset interaction state |
 | ~348 | `CursorState._applyToDOM(prev)` | Sync body classes from state |
-| ~405 | `isWobbleEnabled()` | Check if wobble effect is enabled |
+| ~564 | `SpecialCursorManager{}` | Special cursor lifecycle manager (v5.6) |
+| ~580 | `SpecialCursorManager.activate(type, createFn)` | Activate special cursor |
+| ~620 | `SpecialCursorManager.deactivate()` | Deactivate and restore default |
+| ~660 | `SpecialCursorManager.isActive(type)` | Check if type is active |
+| ~675 | `SpecialCursorManager.getActive()` | Get currently active type |
+| ~690 | `isWobbleEnabled()` | Check if wobble effect is enabled |
 | ~430 | `pauseCursor()` | Pause render loop (editor processing) |
 | ~445 | `resumeCursor()` | Resume render loop with teleport |
 | ~500 | `setBlendIntensity(intensity)` | Set blend mode via CursorState |
@@ -142,31 +148,33 @@ detectCursorMode(x, y) [line 645]
 │   └─▶ findWithBoundary(el, 'data-cursor', excludeAttrs)
 │
 ├─▶ IMAGE CURSOR [line 822-885]
-│   ├─▶ removeTextCursor() [line 440]
-│   ├─▶ removeIconCursor() [line 556]
-│   ├─▶ createImageCursor(src) [line 292]
-│   ├─▶ hideDefaultCursor() [line 338]
-│   └─▶ setBlendIntensity() [line 251]
+│   └─▶ SpecialCursorManager.activate('image', fn) [line 580]
+│       ├─▶ (internal) removeTextCursor()
+│       ├─▶ (internal) removeIconCursor()
+│       ├─▶ createImageCursor(src)
+│       ├─▶ hideDefaultCursor()
+│       └─▶ setBlendIntensity()
 │
 ├─▶ TEXT CURSOR [line 887-965]
-│   ├─▶ removeImageCursor() [line 314]
-│   ├─▶ removeIconCursor() [line 556]
-│   ├─▶ createTextCursor(content, styles) [line 345]
-│   ├─▶ hideDefaultCursor() [line 338]
-│   └─▶ setBlendIntensity() [line 251]
+│   └─▶ SpecialCursorManager.activate('text', fn) [line 580]
+│       ├─▶ (internal) removeImageCursor()
+│       ├─▶ (internal) removeIconCursor()
+│       ├─▶ createTextCursor(content, styles)
+│       ├─▶ hideDefaultCursor()
+│       └─▶ setBlendIntensity()
 │
 ├─▶ ICON CURSOR [line 968-1047]
-│   ├─▶ removeImageCursor() [line 314]
-│   ├─▶ removeTextCursor() [line 440]
-│   ├─▶ createIconCursor(content, styles) [line 452]
-│   ├─▶ hideDefaultCursor() [line 338]
-│   └─▶ setBlendIntensity() [line 251]
+│   └─▶ SpecialCursorManager.activate('icon', fn) [line 580]
+│       ├─▶ (internal) removeImageCursor()
+│       ├─▶ (internal) removeTextCursor()
+│       ├─▶ createIconCursor(content, styles)
+│       ├─▶ hideDefaultCursor()
+│       └─▶ setBlendIntensity()
 │
 ├─▶ Restore default cursor [line 1049-1055]
-│   ├─▶ removeImageCursor()
-│   ├─▶ removeTextCursor()
-│   ├─▶ removeIconCursor()
-│   └─▶ showDefaultCursor() [line 332]
+│   └─▶ SpecialCursorManager.deactivate() [line 620]
+│       ├─▶ (internal) remove[Image|Text|Icon]Cursor()
+│       └─▶ showDefaultCursor()
 │
 ├─▶ Apply color [line 1058-1095]
 │   └─▶ hasCursorSettings() for boundary [line 701]
