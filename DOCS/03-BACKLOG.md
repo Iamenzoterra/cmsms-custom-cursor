@@ -69,16 +69,20 @@ Auto-detect `<video>` and `<iframe>` elements, hide custom cursor.
 
 ---
 
-## P3: Popup Cursor Regression - BACKLOG
+## P3: Popup Cursor Regression - WON'T FIX
 
-**Status:** 📋 BACKLOG
-**Priority:** LOW
+**Status:** ⚠️ WON'T FIX
+**Priority:** N/A
+**Investigated:** February 6, 2026
 
 ### Problem
 Custom cursor shows SYSTEM cursor on CMSMasters Elementor popup.
 
-### Hypothesis
-Detection skips popups without `.dialog-widget-content` or `.dialog-lightbox-widget` classes.
+### Investigation Summary
+Extensive debugging revealed three conflicting systems that cannot be reliably fixed without reverse-engineering CMSMasters popup internals. See `DOCS/04-KNOWN-ISSUES.md` for full investigation findings.
+
+### Current Behavior
+System cursor works normally in popups. All popup functionality (forms, buttons, links) works correctly.
 
 ---
 

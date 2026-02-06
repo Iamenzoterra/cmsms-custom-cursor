@@ -121,30 +121,54 @@ window.cmsmCursorInstanceActive = true;
 
 | Field | Value |
 |-------|-------|
-| **Location** | `custom-cursor.css:1-10` |
+| **Location** | `custom-cursor.css` |
 | **Type** | Compatibility |
 | **Status** | ✅ **Resolved in v5.6** |
 | **Since** | v1.0 |
 | **Fixed** | February 6, 2026 |
 
-**Resolution:**
-Consolidated z-index to 999999 with CSS custom properties for user override:
-```css
-#cmsm-cursor-container {
-    --cmsm-cursor-z-default: 999999;
-    --cmsm-cursor-z-blend: 9999;
-    z-index: var(--cmsm-cursor-z-default);
-}
-```
+**Resolution:** Replaced three hardcoded z-index values with CSS custom properties:
+- Default: `--cmsm-cursor-z-default: 999999` (was `2147483647`)
+- Blend: `--cmsm-cursor-z-blend: 9999` (unchanged value, now via variable)
+- Popup: uses `--cmsm-cursor-z-default` (removed `!important`)
 
-**Why 999999?** High enough to be above page content, low enough to not conflict with browser extensions using max-int.
+Users can override via custom CSS: `#cmsm-cursor-container { --cmsm-cursor-z-default: 99999; }`
 
-**User Override:**
-```css
-#cmsm-cursor-container {
-    --cmsm-cursor-z-default: 99999; /* lower if conflicts */
-}
-```
+---
+
+### P3: Custom Cursor Not Working in CMSMasters Popups
+
+| Field | Value |
+|-------|-------|
+| **Location** | `custom-cursor.js` (detectCursorMode, moveCursorToPopup, setInterval) |
+| **Type** | UX Limitation |
+| **Status** | ⚠️ WON'T FIX (complexity too high) |
+| **Since** | v5.5 |
+| **Investigated** | February 6, 2026 |
+
+**Description:**
+Custom cursor shows system cursor inside CMSMasters Elementor popups. Cursor falls back to system cursor which is functional but not styled.
+
+**Root Cause (investigated):**
+Three systems conflict:
+1. `moveCursorToPopup()` moves cursor container into popup DOM ✅ works
+2. P4 v2 detects `role="dialog"` → hides cursor ❌ overrides step 1
+3. `setInterval` popup check → `moveCursorToBody()` fires during popup entrance animation ❌ reverses step 1
+
+**Attempted fixes and why they failed:**
+- **isInsidePopup guard** — skip dialog hide when container already in popup. Didn't work because setInterval reversed moveCursorToPopup before the guard could take effect
+- **Grace period (500ms)** — delay setInterval checks after moveCursorToPopup. Fixed first open, but second open failed because Elementor doesn't remove popup from DOM on close
+- **Re-open detection** — scan for visible `.elementor-popup-modal` in setInterval. Failed because CMSMasters popup wrapper stays `visibility: hidden` even when popup content is visible — visibility is controlled at a deeper nested level
+- **Elementor popup events** — `elementor/popup/show` and `elementor/popup/hide` jQuery events don't fire for CMSMasters custom popups
+- **CSS class/inline style detection** — popup has identical classes and no inline styles in both open and closed states. No CSS-based detection possible
+- **Blend + popup specificity fix** — higher specificity rule for blend inside popup. Fixed z-index but cursor still hidden by P4 v2
+
+**Why won't fix:**
+CMSMasters popup uses non-standard open/close mechanism with no JavaScript events, no CSS class changes, and nested visibility control. Reliably detecting popup state would require reverse-engineering CMSMasters popup internals, which is fragile and maintenance-heavy.
+
+**Current behavior:** System cursor works normally in popups. All popup functionality (forms, buttons, links) works correctly with system cursor.
+
+**Possible future fix:** If CMSMasters adds standard popup events or Elementor popup API support, revisit this issue.
 
 ---
 
