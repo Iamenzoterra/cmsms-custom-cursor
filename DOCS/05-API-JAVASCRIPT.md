@@ -1,6 +1,6 @@
-# Custom Cursor v5.5 - JavaScript API Reference
+# Custom Cursor v5.6 - JavaScript API Reference
 
-**Last Updated:** February 5, 2026
+**Last Updated:** February 6, 2026
 
 ---
 
@@ -18,22 +18,244 @@
 
 **Location:** `assets/lib/custom-cursor/custom-cursor.js`
 
-### Constants
+### Constants (CONSTANTS Section)
+
+**Location:** Lines ~160-256
+
+All magic numbers have been extracted to named constants for maintainability.
+
+#### Position & Smoothness
 
 | Name | Line | Value | Description |
 |------|------|-------|-------------|
-| smoothMap | 69 | `{ precise: 1, snappy: 0.5, normal: 0.25, smooth: 0.12, fluid: 0.06 }` | Lerp factor mapping |
-| L | 70 | `smoothMap[window.cmsmCursorSmooth] \|\| 0.25` | Ring lerp factor |
-| dotL | 71 | `Math.min(L * 2, 1)` | Dot lerp factor (faster) |
-| DETECT_DISTANCE | 85 | `5` | Min pixels moved before re-detecting |
-| HYSTERESIS | 86 | `3` | Adaptive mode change threshold |
-| MAX_DEPTH | 87 | `10` | Max DOM depth for bg detection |
-| TRANSITION_STIFFNESS | 132 | `0.15` | Spring stiffness for size/rotate transitions |
-| TRANSITION_DAMPING | 133 | `0.75` | Damping (< 1 = slight overshoot) |
-| WOBBLE_MAX | 162 | `0.6` | 60% max stretch |
-| WOBBLE_STIFFNESS | 163 | `0.25` | Wobble spring stiffness |
-| WOBBLE_DAMPING | 164 | `0.78` | Wobble damping (< 1 = overshoot) |
-| WOBBLE_THRESHOLD | 165 | `6` | Min velocity for angle update |
+| OFFSCREEN_POSITION | ~168 | `-200` | Initial offscreen position |
+| SMOOTH_PRECISE | ~175 | `1` | Lerp factor: instant |
+| SMOOTH_SNAPPY | ~176 | `0.5` | Lerp factor: fast |
+| SMOOTH_NORMAL | ~177 | `0.25` | Lerp factor: default |
+| SMOOTH_SMOOTH | ~178 | `0.12` | Lerp factor: smooth |
+| SMOOTH_FLUID | ~179 | `0.06` | Lerp factor: very smooth |
+| DOT_SPEED_MULTIPLIER | ~180 | `2` | Dot moves 2x faster than ring |
+
+#### Adaptive Mode Detection
+
+| Name | Line | Value | Description |
+|------|------|-------|-------------|
+| DETECT_DISTANCE | ~186 | `5` | Min pixels moved before re-detecting |
+| HYSTERESIS | ~187 | `3` | Consecutive frames before mode change |
+| MAX_DEPTH | ~188 | `10` | Max DOM depth for bg detection |
+| STICKY_MODE_DURATION | ~189 | `500` | Lock mode for 500ms (prevents flicker) |
+
+#### Spring Physics
+
+| Name | Line | Value | Description |
+|------|------|-------|-------------|
+| TRANSITION_STIFFNESS | ~195 | `0.15` | Size/rotate spring stiffness |
+| TRANSITION_DAMPING | ~196 | `0.75` | Damping (< 1 = slight overshoot) |
+
+#### Wobble Effect
+
+| Name | Line | Value | Description |
+|------|------|-------|-------------|
+| WOBBLE_MAX | ~202 | `0.6` | 60% max stretch (reference) |
+| WOBBLE_STIFFNESS | ~203 | `0.25` | Spring stiffness |
+| WOBBLE_DAMPING | ~204 | `0.78` | Damping (< 1 = overshoot) |
+| WOBBLE_THRESHOLD | ~205 | `6` | Min velocity for angle update |
+| WOBBLE_VELOCITY_SCALE | ~206 | `0.012` | Velocity to target multiplier |
+| WOBBLE_DEFORMATION_MULT | ~207 | `2` | Deformation visibility multiplier |
+| WOBBLE_SCALE_MAX | ~208 | `1.2` | Max wobble scale (clamped) |
+| WOBBLE_STRETCH_FACTOR | ~209 | `0.5` | Stretch factor for matrix |
+| WOBBLE_ANGLE_MULTIPLIER | ~210 | `2` | Double angle for symmetric stretch |
+| WOBBLE_MIN_SCALE | ~211 | `0.001` | Threshold for applying matrix |
+
+#### Pulse Effect
+
+| Name | Line | Value | Description |
+|------|------|-------|-------------|
+| PULSE_TIME_INCREMENT | ~217 | `0.05` | Per-frame time increment |
+| PULSE_CORE_AMPLITUDE | ~218 | `0.15` | ±15% for dot/ring |
+| PULSE_SPECIAL_AMPLITUDE | ~219 | `0.08` | ±8% for image/text/icon |
+
+#### Shake Effect
+
+| Name | Line | Value | Description |
+|------|------|-------|-------------|
+| SHAKE_TIME_INCREMENT | ~225 | `0.08` | Per-frame time increment |
+| SHAKE_CYCLE_DURATION | ~226 | `10` | Full cycle length |
+| SHAKE_WAVE_PHASE | ~227 | `6.28` | ~2π, active wave duration |
+| SHAKE_WAVE_MULTIPLIER | ~228 | `2` | 2 oscillations per cycle |
+| SHAKE_CORE_AMPLITUDE | ~229 | `4` | ±4px for dot/ring |
+| SHAKE_SPECIAL_AMPLITUDE | ~230 | `5` | ±5px for image/text/icon |
+
+#### Buzz Effect
+
+| Name | Line | Value | Description |
+|------|------|-------|-------------|
+| BUZZ_TIME_INCREMENT | ~236 | `0.08` | Per-frame time increment |
+| BUZZ_CYCLE_DURATION | ~237 | `10` | Full cycle length |
+| BUZZ_WAVE_PHASE | ~238 | `6.28` | ~2π, active rotation duration |
+| BUZZ_WAVE_MULTIPLIER | ~239 | `2` | 2 oscillations per cycle |
+| BUZZ_CORE_AMPLITUDE | ~240 | `15` | ±15° for dot/ring |
+| BUZZ_SPECIAL_AMPLITUDE | ~241 | `12` | ±12° for image/text/icon |
+
+#### Throttling & Thresholds
+
+| Name | Line | Value | Description |
+|------|------|-------|-------------|
+| POPUP_CHECK_INTERVAL_MS | ~246 | `100` | Popup visibility check interval |
+| DETECTION_THROTTLE_MS | ~247 | `100` | Background detection throttle |
+| SCROLL_THROTTLE_MS | ~248 | `50` | Scroll detection throttle |
+| FADE_TRANSITION_DELAY_MS | ~249 | `150` | Viewport change debounce |
+| TRANSPARENT_ALPHA_THRESHOLD | ~254 | `0.15` | Alpha below = transparent |
+| VALID_POSITION_THRESHOLD | ~255 | `5` | Pixels from origin to be valid |
+| INITIAL_CURSOR_SIZE_PX | ~256 | `8` | Default cursor dot size |
+
+---
+
+### CursorState (State Machine)
+
+**Location:** Lines ~278-399
+
+Centralized cursor state management. ALL body class changes go through `CursorState.transition()`.
+
+#### State Shape
+
+```javascript
+CursorState._state = {
+    hover: boolean,          // Over interactive element
+    down: boolean,           // Mouse button pressed
+    hidden: boolean,         // Cursor hidden (form/video/iframe/leave)
+    text: boolean,           // Text input mode
+    mode: null|'on-light'|'on-dark',     // Adaptive mode
+    size: null|'sm'|'md'|'lg',           // Ring size modifier
+    blend: null|'soft'|'medium'|'strong' // Blend intensity
+}
+```
+
+#### CursorState.init(bodyEl)
+
+**Line:** ~294
+
+```javascript
+CursorState.init(document.body)
+```
+
+Initialize with body reference. Called once during cursor init.
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| bodyEl | HTMLElement | `document.body` reference |
+
+**Returns:** `void`
+
+---
+
+#### CursorState.transition(change, source)
+
+**Line:** ~303
+
+```javascript
+CursorState.transition({ hover: true, size: 'lg' }, 'mouseover')
+```
+
+Apply a state change. Only changed properties trigger DOM updates.
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| change | object | Partial state object |
+| source | string | (optional) Caller ID for debug tracing |
+
+**Returns:** `void`
+
+**Example:**
+
+```javascript
+// On mousedown
+CursorState.transition({ down: true }, 'mousedown');
+
+// On adaptive mode change
+CursorState.transition({ mode: 'on-light' }, 'detectCursorMode');
+
+// Multiple changes at once
+CursorState.transition({ hover: true, size: 'lg', hidden: false }, 'mouseover');
+```
+
+**Side Effects:** Updates body classes via `_applyToDOM()`
+
+---
+
+#### CursorState.get(key)
+
+**Line:** ~326
+
+```javascript
+CursorState.get('hover')  // Returns: true|false
+CursorState.get('mode')   // Returns: null|'on-light'|'on-dark'
+```
+
+Get current state value.
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| key | string | State property name |
+
+**Returns:** Current value for that property
+
+---
+
+#### CursorState.resetHover()
+
+**Line:** ~335
+
+```javascript
+CursorState.resetHover()
+```
+
+Reset interaction state on mouseout. Called when cursor leaves an element.
+
+**Resets:**
+- `hover` → false
+- `text` → false
+- `hidden` → false
+- `size` → null
+
+**Does NOT reset:**
+- `mode` (adaptive stays)
+- `blend` (blend stays)
+- `down` (mouse button stays until mouseup)
+
+**Returns:** `void`
+
+---
+
+#### CursorState._applyToDOM(prev)
+
+**Line:** ~348 (private)
+
+Sync DOM classes from state. Only touches changed properties.
+
+**Body Class Mappings:**
+
+| State | Body Class |
+|-------|------------|
+| `hover: true` | `cmsm-cursor-hover` |
+| `down: true` | `cmsm-cursor-down` |
+| `hidden: true` | `cmsm-cursor-hidden` |
+| `text: true` | `cmsm-cursor-text` |
+| `mode: 'on-light'` | `cmsm-cursor-on-light` |
+| `mode: 'on-dark'` | `cmsm-cursor-on-dark` |
+| `size: 'lg'` | `cmsm-cursor-size-lg` |
+| `blend: 'medium'` | `cmsm-cursor-blend cmsm-cursor-blend-medium` |
+
+**Mutually Exclusive Groups:**
+- Mode: only one of `on-light`/`on-dark` at a time
+- Size: only one of `sm`/`md`/`lg` at a time
+- Blend: only one of `soft`/`medium`/`strong` at a time
 
 ---
 
@@ -1391,4 +1613,4 @@ Main initialization function.
 
 ---
 
-*Last Updated: February 5, 2026 | Version: 5.5*
+*Last Updated: February 6, 2026 | Version: 5.6*

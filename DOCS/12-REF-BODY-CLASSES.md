@@ -1,12 +1,33 @@
-# Custom Cursor v5.5 - Body Classes Reference
+# Custom Cursor v5.6 - Body Classes Reference
 
-**Last Updated:** February 5, 2026
+**Last Updated:** February 6, 2026
 
 ---
 
 ## Overview
 
 Custom Cursor uses body classes to control cursor state and appearance. Classes are added by PHP on page load and toggled by JavaScript during runtime.
+
+### CursorState (v5.6)
+
+**As of v5.6, all runtime body class changes go through the `CursorState` state machine.**
+
+Direct `classList.add/remove` calls have been replaced with `CursorState.transition()` for:
+- Centralized state management
+- Automatic handling of mutually exclusive groups (mode, size, blend)
+- Debug traceability via optional `source` parameter
+
+```javascript
+// OLD (pre-v5.6): Direct classList manipulation
+body.classList.add('cmsm-cursor-hover');
+body.classList.remove('cmsm-cursor-on-light');
+body.classList.add('cmsm-cursor-on-dark');
+
+// NEW (v5.6): CursorState.transition()
+CursorState.transition({ hover: true, mode: 'on-dark' }, 'mouseover');
+```
+
+**See:** [05-API-JAVASCRIPT.md](./05-API-JAVASCRIPT.md) for full CursorState API documentation.
 
 ---
 
@@ -215,13 +236,15 @@ if ( 'yes' === $wobble ) {
 
 These classes are added/removed by JavaScript during user interaction.
 
+**v5.6 Note:** All runtime class changes now go through `CursorState.transition()` instead of direct `classList` manipulation. The line numbers below refer to where the transition is triggered, not direct classList calls.
+
 ### cmsm-cursor-hover
 
 Added when hovering over interactive elements.
 
 | Added | Removed |
 |-------|---------|
-| `mouseover` on hover selector | `mouseout` (with related target check) |
+| `mouseover` on hover selector | `mouseout` via `CursorState.resetHover()` |
 
 **Hover selectors** (`hoverSel`):
 - `a`
@@ -234,8 +257,8 @@ Added when hovering over interactive elements.
 - `[data-cursor]`
 
 ```javascript
-// custom-cursor.js:1852
-body.classList.add('cmsm-cursor-hover');
+// custom-cursor.js - via CursorState (v5.6)
+CursorState.transition({ hover: true }, 'mouseover');
 ```
 
 **CSS Effect:**
@@ -261,14 +284,11 @@ Added during mouse button press.
 | `mousedown` | `mouseup` |
 
 ```javascript
-// custom-cursor.js:1787
-document.addEventListener('mousedown', function() {
-    body.classList.add('cmsm-cursor-down');
-});
-// custom-cursor.js:1790
-document.addEventListener('mouseup', function() {
-    body.classList.remove('cmsm-cursor-down');
-});
+// custom-cursor.js - via CursorState (v5.6)
+// mousedown
+CursorState.transition({ down: true }, 'mousedown');
+// mouseup
+CursorState.transition({ down: false }, 'mouseup');
 ```
 
 **CSS Effect:**
@@ -297,9 +317,9 @@ Added when hovering elements with `data-cursor="text"`.
 | `mouseover` on `[data-cursor="text"]` | `mouseout` |
 
 ```javascript
-// custom-cursor.js:1850
+// custom-cursor.js - via CursorState (v5.6)
 if (type === 'text') {
-    body.classList.add('cmsm-cursor-text');
+    CursorState.transition({ text: true }, 'mouseover');
 }
 ```
 
@@ -345,18 +365,15 @@ Hides the custom cursor and shows system cursor.
 11. Mouse leaves document (`mouseleave` on `documentElement`)
 
 ```javascript
-// custom-cursor.js:1818
+// custom-cursor.js - via CursorState (v5.6)
 if (hideEl) {
-    body.classList.add('cmsm-cursor-hidden');
+    CursorState.transition({ hidden: true }, 'hide-element');
 }
-// custom-cursor.js:1833
 if (t.tagName === 'SELECT' || ...) {
-    body.classList.add('cmsm-cursor-hidden');
+    CursorState.transition({ hidden: true }, 'form-element');
 }
-// custom-cursor.js:1925
-document.documentElement.addEventListener('mouseleave', function() {
-    body.classList.add('cmsm-cursor-hidden');
-});
+// mouseleave
+CursorState.transition({ hidden: true }, 'mouseleave');
 ```
 
 **CSS Effect:**
@@ -382,9 +399,11 @@ Added by adaptive mode based on background luminance.
 | `detectCursorMode()` on mousemove/scroll | Replaced by opposite class |
 
 ```javascript
-// custom-cursor.js:638-639
-body.classList.remove('cmsm-cursor-on-light', 'cmsm-cursor-on-dark');
-body.classList.add('cmsm-cursor-' + mode);
+// custom-cursor.js - via CursorState (v5.6)
+// Mode is mutually exclusive - CursorState handles removing old class
+CursorState.transition({ mode: 'on-light' }, 'detectCursorMode');
+// or
+CursorState.transition({ mode: 'on-dark' }, 'detectCursorMode');
 ```
 
 **CSS Effect:**
@@ -416,8 +435,9 @@ Size modifier classes for cursor ring.
 | `mouseover` with `data-cursor-size` attribute | `mouseout` (via resetCls) |
 
 ```javascript
-// custom-cursor.js:1854
-if (size) body.classList.add('cmsm-cursor-size-' + size);
+// custom-cursor.js - via CursorState (v5.6)
+// Size is mutually exclusive - CursorState handles removing old class
+if (size) CursorState.transition({ size: size }, 'mouseover');
 ```
 
 **CSS Effect:**
@@ -591,17 +611,21 @@ iconCursorEl.classList.add('cmsm-cursor-icon-preserve');
 
 ## Reset Classes
 
-The following classes are removed on `mouseout` via `resetCls`:
+**v5.6:** Classes are now reset via `CursorState.resetHover()` on `mouseout`:
 
 ```javascript
-var resetCls = [
-    'cmsm-cursor-hover',
-    'cmsm-cursor-text',
-    'cmsm-cursor-hidden',
-    'cmsm-cursor-size-sm',
-    'cmsm-cursor-size-md',
-    'cmsm-cursor-size-lg'
-];
+// CursorState.resetHover() resets:
+CursorState.transition({
+    hover: false,
+    text: false,
+    hidden: false,
+    size: null       // Removes any size class
+}, 'resetHover');
+
+// Does NOT reset:
+// - mode (on-light/on-dark stays)
+// - blend (blend intensity stays)
+// - down (mouse button state stays until mouseup)
 ```
 
 ---
@@ -614,4 +638,4 @@ var resetCls = [
 
 ---
 
-*Last Updated: February 5, 2026 | Version: 5.5*
+*Last Updated: February 6, 2026 | Version: 5.6*

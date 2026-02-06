@@ -1,49 +1,71 @@
-# Custom Cursor v5.5 - Dependency Map
+# Custom Cursor v5.6 - Dependency Map
 
-**Last Updated:** February 5, 2026
+**Last Updated:** February 6, 2026
 
 ---
 
 ## Overview
 
-This document shows function call graphs and dependencies for all major files with accurate line numbers.
+This document shows function call graphs and dependencies for all major files.
+
+**Note:** Line numbers are approximate due to the v5.6 refactor which added:
+- CONSTANTS section (~lines 160-256)
+- CursorState state machine (~lines 278-399)
+
+Many functions have shifted ~120+ lines from v5.5 references.
 
 ---
 
 ## custom-cursor.js
 
-**File:** `version-5.5/assets/lib/custom-cursor/custom-cursor.js`
+**File:** `assets/lib/custom-cursor/custom-cursor.js`
 
-### Function Index (Line Numbers)
+### Major Sections
+
+| Lines | Section | Description |
+|-------|---------|-------------|
+| ~10-143 | SVG Sanitizer | XSS prevention for icon HTML |
+| ~145-158 | Singleton Guard | Prevents duplicate instances |
+| ~160-256 | **CONSTANTS** | All named constants (v5.6) |
+| ~278-399 | **CursorState** | State machine for body classes (v5.6) |
+| ~400+ | Core Functions | Cursor creation, detection, rendering |
+
+### Function Index (Line Numbers - Approximate)
 
 | Line | Function | Description |
 |------|----------|-------------|
-| 6 | `initCursor()` | Main IIFE, entry point |
-| 157 | `isWobbleEnabled()` | Check if wobble effect is enabled |
-| 184 | `pauseCursor()` | Pause render loop (editor processing) |
-| 199 | `resumeCursor()` | Resume render loop with teleport |
-| 251 | `setBlendIntensity(intensity)` | Set blend mode classes on body |
-| 265 | `moveCursorToPopup(el)` | Move cursor container to popup |
-| 271 | `moveCursorToBody()` | Move cursor container back to body |
-| 292 | `createImageCursor(src)` | Create image cursor element |
-| 314 | `removeImageCursor()` | Remove image cursor from DOM |
-| 332 | `showDefaultCursor()` | Show default dot/ring cursor |
-| 338 | `hideDefaultCursor()` | Hide default dot/ring cursor |
-| 345 | `createTextCursor(content, styles)` | Create text cursor element |
-| 440 | `removeTextCursor()` | Remove text cursor from DOM |
-| 452 | `createIconCursor(content, styles)` | Create icon cursor element |
-| 556 | `removeIconCursor()` | Remove icon cursor from DOM |
-| 623 | `escapeCssUrl(url)` | Escape URL for CSS url() |
-| 629 | `getLuminance(r, g, b)` | Calculate luminance for adaptive mode |
-| 637 | `applyMode(mode)` | Apply on-light/on-dark class |
-| 645 | `detectCursorMode(x, y)` | Main detection function for cursor modes |
-| 701 | `hasCursorSettings(el)` | Check if element has cursor attributes |
-| 716 | `findWithBoundary(startEl, attrName, excludeAttrs)` | Find attribute with smart boundary |
-| 757 | `getDepthTo(element, ancestor)` | Calculate DOM depth between elements |
-| 1250 | `render()` | Main RAF render loop |
-| 1934 | `resetCursorState()` | Reset all cursor state (touch device) |
-| 1954 | `handleTouchChange(e)` | Handle touch/mouse mode switch |
-| 1976 | `handleResize()` | Handle viewport resize |
+| ~7 | `initCursor()` | Main IIFE, entry point |
+| ~278 | `CursorState{}` | State machine object (v5.6) |
+| ~294 | `CursorState.init(bodyEl)` | Initialize state with body ref |
+| ~303 | `CursorState.transition(change, source)` | Apply state change |
+| ~326 | `CursorState.get(key)` | Get current state value |
+| ~335 | `CursorState.resetHover()` | Reset interaction state |
+| ~348 | `CursorState._applyToDOM(prev)` | Sync body classes from state |
+| ~405 | `isWobbleEnabled()` | Check if wobble effect is enabled |
+| ~430 | `pauseCursor()` | Pause render loop (editor processing) |
+| ~445 | `resumeCursor()` | Resume render loop with teleport |
+| ~500 | `setBlendIntensity(intensity)` | Set blend mode via CursorState |
+| ~515 | `moveCursorToPopup(el)` | Move cursor container to popup |
+| ~520 | `moveCursorToBody()` | Move cursor container back to body |
+| ~540 | `createImageCursor(src)` | Create image cursor element |
+| ~565 | `removeImageCursor()` | Remove image cursor from DOM |
+| ~585 | `showDefaultCursor()` | Show default dot/ring cursor |
+| ~590 | `hideDefaultCursor()` | Hide default dot/ring cursor |
+| ~600 | `createTextCursor(content, styles)` | Create text cursor element |
+| ~700 | `removeTextCursor()` | Remove text cursor from DOM |
+| ~715 | `createIconCursor(content, styles)` | Create icon cursor element |
+| ~820 | `removeIconCursor()` | Remove icon cursor from DOM |
+| ~890 | `escapeCssUrl(url)` | Escape URL for CSS url() |
+| ~895 | `getLuminance(r, g, b)` | Calculate luminance for adaptive mode |
+| ~905 | `applyMode(mode)` | Apply on-light/on-dark via CursorState |
+| ~915 | `detectCursorMode(x, y)` | Main detection function for cursor modes |
+| ~970 | `hasCursorSettings(el)` | Check if element has cursor attributes |
+| ~985 | `findWithBoundary(startEl, attrName, excludeAttrs)` | Find attribute with smart boundary |
+| ~1025 | `getDepthTo(element, ancestor)` | Calculate DOM depth between elements |
+| ~1520 | `render()` | Main RAF render loop |
+| ~2200 | `resetCursorState()` | Reset all cursor state (touch device) |
+| ~2220 | `handleTouchChange(e)` | Handle touch/mouse mode switch |
+| ~2245 | `handleResize()` | Handle viewport resize |
 
 ---
 
@@ -766,4 +788,4 @@ sendInitialCursorSettings()                │
 
 ---
 
-*Last Updated: February 5, 2026 | Version: 5.5*
+*Last Updated: February 6, 2026 | Version: 5.6*

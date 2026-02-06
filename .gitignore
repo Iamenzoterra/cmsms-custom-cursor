@@ -20,5 +20,5 @@ Thumbs.db
 .env
 .env.local
 
-# Docs (не деплоїмо на сервер)
-docs/
+node_modules/
+
