@@ -891,6 +891,52 @@
     // Wobble effect (spring physics with overshoot) - see CONSTANTS section
     // Enabled via window.cmsmCursorWobble or body class .cmsm-cursor-wobble
     function isWobbleEnabled() { return window.cmsmCursorWobble || body.classList.contains('cmsm-cursor-wobble'); }
+
+    /**
+     * Checks if element is inside a "form zone" where custom cursor should hide.
+     * Used by P4 v2 auto-hide in detectCursorMode(), mouseover, and mouseout handlers.
+     *
+     * @param {Element|null} el - DOM element to check
+     * @returns {boolean} True if custom cursor should hide
+     */
+    function isFormZone(el) {
+        if (!el || !el.tagName) return false;
+
+        var tag = el.tagName;
+        var reason = '';
+
+        // Submit/button inputs and <button> elements — NOT form zones (user expects custom cursor)
+        if (tag === 'BUTTON') return false;
+        if (tag === 'INPUT' && (el.type === 'submit' || el.type === 'button')) return false;
+
+        // Direct form elements
+        if (tag === 'SELECT' || tag === 'TEXTAREA') {
+            reason = tag;
+        } else if (tag === 'INPUT') {
+            reason = 'INPUT[' + el.type + ']';
+        } else if (el.closest && el.closest('form')) {
+            reason = 'inside <form>';
+        } else if (el.closest && (
+            el.closest('[role="listbox"]') ||
+            el.closest('[role="combobox"]') ||
+            el.closest('[role="menu"]') ||
+            el.closest('[role="dialog"]') ||
+            el.closest('[aria-modal="true"]') ||
+            el.closest('.air-datepicker') ||
+            el.closest('.flatpickr-calendar') ||
+            el.closest('.daterangepicker') ||
+            el.closest('.ui-datepicker')
+        )) {
+            reason = 'role/datepicker';
+        }
+
+        if (reason) {
+            debugLog('event', 'Form zone hit: ' + reason);
+            return true;
+        }
+        return false;
+    }
+
     // Wobble state objects — mutated in-place by calcWobbleMatrix() to avoid per-frame allocation
     var coreWobbleState = { velocity: 0, scale: 0, angle: 0, prevDx: OFFSCREEN_POSITION, prevDy: OFFSCREEN_POSITION };
     var imgWobbleState = { velocity: 0, scale: 0, angle: 0, prevDx: OFFSCREEN_POSITION, prevDy: OFFSCREEN_POSITION };
@@ -1423,17 +1469,7 @@
         }
 
         // P4 v2: Auto-hide cursor on forms/popups (graceful degradation)
-        // Forms and popups create stacking contexts that break cursor z-index.
-        // Instead of fighting CSS, we hide custom cursor and let system cursor work.
-        if (el.tagName === 'SELECT' ||
-            (el.tagName === 'INPUT' && el.type !== 'submit' && el.type !== 'button') ||
-            (el.closest && (
-                el.closest('[role="listbox"]') ||
-                el.closest('[role="combobox"]') ||
-                el.closest('[role="menu"]') ||
-                el.closest('[role="dialog"]') ||
-                el.closest('[aria-modal="true"]')
-            ))) {
+        if (isFormZone(el)) {
             CursorState.transition({ hidden: true }, 'detectCursorMode:forms');
             return;
         }
@@ -2236,16 +2272,7 @@
         }
 
         // P4 v2: Auto-hide cursor on forms/popups (immediate response)
-        // This provides instant feedback when entering form elements
-        if (t.tagName === 'SELECT' ||
-            (t.tagName === 'INPUT' && t.type !== 'submit' && t.type !== 'button') ||
-            (t.closest && (
-                t.closest('[role="listbox"]') ||
-                t.closest('[role="combobox"]') ||
-                t.closest('[role="menu"]') ||
-                t.closest('[role="dialog"]') ||
-                t.closest('[aria-modal="true"]')
-            ))) {
+        if (isFormZone(t)) {
             CursorState.transition({ hidden: true }, 'mouseover:forms');
             return;
         }
@@ -2274,18 +2301,11 @@
         var t = e.target;
         var el = t.closest ? t.closest(hoverSel) : null;
 
-        // P4 v2: Restore cursor when leaving form elements
-        // Only restore if moving to non-form element
-        if (t.tagName === 'SELECT' || t.tagName === 'INPUT') {
+        // P4 v2: Restore cursor when leaving form zone
+        // Only restore if moving to a non-form element
+        if (isFormZone(t)) {
             var related = e.relatedTarget;
-            if (!related || (related.tagName !== 'SELECT' && related.tagName !== 'INPUT' &&
-                (!related.closest || (
-                    !related.closest('[role="listbox"]') &&
-                    !related.closest('[role="combobox"]') &&
-                    !related.closest('[role="menu"]') &&
-                    !related.closest('[role="dialog"]') &&
-                    !related.closest('[aria-modal="true"]')
-                )))) {
+            if (!related || !isFormZone(related)) {
                 CursorState.transition({ hidden: false }, 'mouseout:forms');
             }
         }
