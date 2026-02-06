@@ -1,6 +1,6 @@
-# Custom Cursor v5.5 - Effects Reference
+# Custom Cursor v5.6 - Effects Reference
 
-**Last Updated:** February 5, 2026
+**Last Updated:** February 6, 2026
 
 ---
 
@@ -14,6 +14,20 @@ Custom Cursor supports 4 visual effects that animate the cursor in real-time. Ef
 | Pulse | Scale oscillation | Attention, loading states |
 | Shake | Horizontal wave | Playful, error indication |
 | Buzz | Rotation oscillation | Energy, vibration |
+
+### v5.6 Pure Functions
+
+As of v5.6 Phase 4, effect calculations are extracted into pure functions for better maintainability:
+
+| Function | Effect | Location |
+|----------|--------|----------|
+| `calcPulseScale(time, amplitude)` | Pulse | Line ~714 |
+| `calcShakeOffset(time, amplitude)` | Shake | Line ~718 |
+| `calcBuzzRotation(time, amplitude)` | Buzz | Line ~728 |
+| `calcWobbleMatrix(wState, dx, dy)` | Wobble | Line ~738 |
+| `resolveEffect(cursorEffect, globalWobble)` | All | Line ~764 |
+
+See: [05-API-JAVASCRIPT.md](./05-API-JAVASCRIPT.md#pure-effect-functions-internal) for full API documentation.
 
 ---
 

@@ -423,6 +423,37 @@ SpecialCursorManager.deactivate();
 
 **Key Benefit:** Prevents MEM-004 (DOM accumulation from rapid hover changes between different special cursor types).
 
+### 6. Pure Effect Functions (v5.6 Phase 4)
+
+Effect calculations are extracted into pure functions for maintainability and testability:
+
+```javascript
+// Pure functions - no side effects, deterministic
+calcPulseScale(time, amplitude)     // → scale multiplier
+calcShakeOffset(time, amplitude)    // → X pixel offset
+calcBuzzRotation(time, amplitude)   // → rotation degrees
+calcWobbleMatrix(wState, dx, dy)    // → CSS matrix string
+resolveEffect(cursorEffect, global) // → effective effect name
+```
+
+**Usage in render():**
+
+```javascript
+var effect = resolveEffect(cursorEffect, globalWobble);
+switch (effect) {
+    case 'pulse':  scale = calcPulseScale(pulseTime, PULSE_AMPLITUDE); break;
+    case 'shake':  offset = calcShakeOffset(shakeTime, SHAKE_AMPLITUDE); break;
+    case 'buzz':   rotate = calcBuzzRotation(buzzTime, BUZZ_AMPLITUDE); break;
+    case 'wobble': matrix = calcWobbleMatrix(wState, dx, dy); break;
+}
+```
+
+**Key Benefits:**
+- Eliminates ~350 lines of duplicated effect code across 4 cursor types
+- State objects use in-place mutation for 60fps performance (no GC pressure)
+- Easy to unit test each effect calculation independently
+- Wobble state reset on cursor type change prevents stale deformation
+
 ---
 
 ## Quick Reference

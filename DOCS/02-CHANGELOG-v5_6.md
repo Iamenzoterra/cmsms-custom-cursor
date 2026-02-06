@@ -212,18 +212,55 @@ if (imageEl) {
 
 ---
 
+#### 5. Pure Effect Functions (Lines ~714-768)
+
+Extracted effect calculations from `render()` into 5 pure functions to eliminate code duplication and improve testability.
+
+**New Functions:**
+
+| Function | Purpose | Returns |
+|----------|---------|---------|
+| `calcPulseScale(time, amplitude)` | Calculate pulse scale multiplier | `1 + sin(time) * amplitude` |
+| `calcShakeOffset(time, amplitude)` | Calculate shake X offset | Pixel offset with pause phase |
+| `calcBuzzRotation(time, amplitude)` | Calculate buzz rotation angle | Degrees with pause phase |
+| `calcWobbleMatrix(wState, dx, dy)` | Calculate wobble matrix transform | Matrix string or `''` |
+| `resolveEffect(cursorEffect, globalWobble)` | Resolve effective effect type | Effect name or `''` |
+
+**State Objects (Lines ~782-785):**
+
+Replaced 15 wobble variables with 4 state objects (one per cursor type):
+
+```javascript
+var coreWobbleState = { velocity: 0, scale: 0, angle: 0, prevDx: -200, prevDy: -200 };
+var imgWobbleState  = { velocity: 0, scale: 0, angle: 0, prevDx: -200, prevDy: -200 };
+var textWobbleState = { velocity: 0, scale: 0, angle: 0, prevDx: -200, prevDy: -200 };
+var iconWobbleState = { velocity: 0, scale: 0, angle: 0, prevDx: -200, prevDy: -200 };
+```
+
+**Benefits:**
+- ~350 lines of duplicated effect code replaced with pure function calls
+- State objects use in-place mutation (no GC pressure at 60fps)
+- Easier to unit test effect calculations
+- Consistent effect behavior across all cursor types
+- Wobble state reset on special cursor activation (prevents stale deformation)
+
+**CODE-005 Impact:** Partially addressed - `render()` reduced from ~550 lines to ~250 lines.
+
+---
+
 ### Files Changed (v5.6 Complete)
 
 | File | Changes |
 |------|---------|
 | `assets/lib/custom-cursor/custom-cursor.css` | Z-index CSS custom properties (CSS-001 fix) |
-| `assets/lib/custom-cursor/custom-cursor.js` | Added CONSTANTS, CursorState, SpecialCursorManager |
+| `assets/lib/custom-cursor/custom-cursor.js` | Added CONSTANTS, CursorState, SpecialCursorManager, Pure Effect Functions |
 | `DOCS/02-CHANGELOG-v5_6.md` | Updated (this file) |
-| `DOCS/04-KNOWN-ISSUES.md` | Marked CSS-001 and MEM-004 resolved |
-| `DOCS/05-API-JAVASCRIPT.md` | Documented CONSTANTS, CursorState, SpecialCursorManager |
+| `DOCS/04-KNOWN-ISSUES.md` | Marked CSS-001 and MEM-004 resolved, CODE-005 partially addressed |
+| `DOCS/05-API-JAVASCRIPT.md` | Documented CONSTANTS, CursorState, SpecialCursorManager, Pure Functions |
 | `DOCS/06-API-CSS.md` | Updated z-index documentation, added new CSS variables |
-| `DOCS/09-MAP-DEPENDENCY.md` | Updated with SpecialCursorManager dependencies |
+| `DOCS/09-MAP-DEPENDENCY.md` | Updated with SpecialCursorManager and pure function dependencies |
 | `DOCS/12-REF-BODY-CLASSES.md` | Added CursorState references |
+| `DOCS/13-REF-EFFECTS.md` | Updated with pure function references |
 
 ---
 

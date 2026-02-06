@@ -355,6 +355,143 @@ Gets the currently active special cursor type.
 
 ---
 
+### Pure Effect Functions (Internal)
+
+**Location:** Lines ~714-768
+
+Pure functions for effect calculations, extracted from `render()` in v5.6 Phase 4. These functions have no side effects and are deterministic.
+
+#### calcPulseScale(time, amplitude)
+
+**Line:** ~714
+
+```javascript
+calcPulseScale(time, amplitude)  // Returns: number (1 ± amplitude)
+```
+
+Calculates the pulse scale multiplier using sine wave.
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| time | number | Animation time counter |
+| amplitude | number | Pulse amplitude (0.08 for special, 0.15 for core) |
+
+**Returns:** `number` - Scale multiplier (e.g., 0.85-1.15 for core)
+
+**Formula:** `1 + Math.sin(time) * amplitude`
+
+---
+
+#### calcShakeOffset(time, amplitude)
+
+**Line:** ~718
+
+```javascript
+calcShakeOffset(time, amplitude)  // Returns: number (pixels)
+```
+
+Calculates X-axis offset for shake effect with wave + pause phases.
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| time | number | Animation time counter |
+| amplitude | number | Shake amplitude (4px for core, 5px for special) |
+
+**Returns:** `number` - Pixel offset
+
+**Algorithm:** Wave phase for ~63% of cycle, then linear fade to 0.
+
+---
+
+#### calcBuzzRotation(time, amplitude)
+
+**Line:** ~728
+
+```javascript
+calcBuzzRotation(time, amplitude)  // Returns: number (degrees)
+```
+
+Calculates rotation angle for buzz effect with wave + pause phases.
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| time | number | Animation time counter |
+| amplitude | number | Buzz amplitude (15° for core, 12° for special) |
+
+**Returns:** `number` - Rotation in degrees
+
+**Algorithm:** Same as shake but applied to rotation instead of position.
+
+---
+
+#### calcWobbleMatrix(wState, dx, dy)
+
+**Line:** ~738
+
+```javascript
+calcWobbleMatrix(wState, dx, dy)  // Returns: string (CSS matrix or '')
+```
+
+Calculates wobble matrix transform using spring physics. Mutates state object in-place for 60fps performance.
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| wState | object | Wobble state object (mutated in-place) |
+| dx | number | Current smoothed X position |
+| dy | number | Current smoothed Y position |
+
+**State Object Shape:**
+
+```javascript
+{
+    velocity: number,  // Spring velocity
+    scale: number,     // Current wobble scale (0-1.2)
+    angle: number,     // Movement direction angle (radians)
+    prevDx: number,    // Previous X for velocity calculation
+    prevDy: number     // Previous Y for velocity calculation
+}
+```
+
+**Returns:** `string` - CSS matrix transform or empty string if scale < 0.001
+
+---
+
+#### resolveEffect(cursorEffect, globalWobble)
+
+**Line:** ~764
+
+```javascript
+resolveEffect('default', true)   // Returns: 'wobble'
+resolveEffect('pulse', true)     // Returns: 'pulse'
+resolveEffect('none', false)     // Returns: ''
+```
+
+Resolves the effective effect type based on cursor and global settings.
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| cursorEffect | string\|null | Effect from data attribute |
+| globalWobble | boolean | Whether global wobble is enabled |
+
+**Returns:** `string` - Resolved effect name (`'wobble'`, `'pulse'`, `'shake'`, `'buzz'`, or `''`)
+
+**Logic:**
+- `'none'` → `''` (explicitly disabled)
+- `null`/`undefined`/`'default'` → `'wobble'` if global enabled, else `''`
+- Other values → returned as-is
+
+---
+
 ### Public API
 
 #### pauseCursor()

@@ -195,51 +195,75 @@ detectCursorMode(x, y) [line 645]
 ### Render Loop
 
 ```
-render() [line 1250]
+render() [line ~1781-2036]
 │
-├─▶ Position interpolation [line 1252-1257]
+├─▶ Position interpolation [line ~1783-1790]
 │   ├─ dx += (mx - dx) * dotL
 │   ├─ dy += (my - dy) * dotL
 │   ├─ rx += (mx - rx) * L
 │   └─ ry += (my - ry) * L
 │
-├─▶ IMAGE CURSOR rendering [line 1263-1397]
-│   ├─ Spring physics for size/rotate [line 1274-1283]
-│   ├─ Effect: pulse [line 1296-1299]
-│   ├─ Effect: shake [line 1300-1311]
-│   ├─ Effect: buzz [line 1312-1326]
-│   ├─ Effect: wobble [line 1338-1371]
-│   │   ├─ Calculate velocity
-│   │   ├─ Spring physics for bounce
-│   │   └─ Matrix transform
-│   └─ Apply transform [line 1377-1396]
+├─▶ IMAGE CURSOR rendering [line ~1796-1873]
+│   ├─ resolveEffect() → determines active effect
+│   ├─ Spring physics for size/rotate
+│   ├─ Effect switch:
+│   │   ├─ 'pulse' → calcPulseScale()
+│   │   ├─ 'shake' → calcShakeOffset()
+│   │   ├─ 'buzz'  → calcBuzzRotation()
+│   │   └─ 'wobble'→ calcWobbleMatrix(imgWobbleState)
+│   └─ Apply transform
 │
-├─▶ TEXT CURSOR rendering [line 1399-1515]
-│   ├─ Effect: pulse [line 1413-1416]
-│   ├─ Effect: shake [line 1417-1428]
-│   ├─ Effect: buzz [line 1429-1441]
-│   ├─ Effect: wobble [line 1453-1486]
-│   │   └─ Inverse matrix for inner
-│   └─ Apply transform [line 1488-1514]
+├─▶ TEXT CURSOR rendering [line ~1875-1936]
+│   ├─ resolveEffect() → determines active effect
+│   ├─ Effect switch (same as IMAGE)
+│   │   └─ 'wobble'→ calcWobbleMatrix(textWobbleState)
+│   │       └─ Inverse matrix for inner (keeps text readable)
+│   └─ Apply transform
 │
-├─▶ ICON CURSOR rendering [line 1517-1659]
-│   ├─ Spring physics for size/rotate [line 1528-1541]
-│   ├─ Effect: pulse [line 1562-1564]
-│   ├─ Effect: shake [line 1565-1573]
-│   ├─ Effect: buzz [line 1574-1585]
-│   ├─ Effect: wobble [line 1597-1630]
-│   └─ Apply transform [line 1632-1658]
+├─▶ ICON CURSOR rendering [line ~1938-2000]
+│   ├─ resolveEffect() → determines active effect
+│   ├─ Spring physics for size/rotate
+│   ├─ Effect switch (same as IMAGE)
+│   │   └─ 'wobble'→ calcWobbleMatrix(iconWobbleState)
+│   │       └─ Inverse matrix for inner (keeps icon readable)
+│   └─ Apply transform
 │
-├─▶ CORE cursor effects [line 1662-1741]
-│   ├─ Effect: wobble [line 1679-1713]
-│   ├─ Effect: pulse [line 1714-1718]
-│   ├─ Effect: shake [line 1719-1728]
-│   └─ Effect: buzz [line 1729-1741]
+├─▶ CORE cursor effects [line ~2002-2028]
+│   ├─ Effect switch:
+│   │   ├─ 'wobble'→ calcWobbleMatrix(coreWobbleState)
+│   │   ├─ 'pulse' → calcPulseScale()
+│   │   ├─ 'shake' → calcShakeOffset()
+│   │   └─ 'buzz'  → calcBuzzRotation()
+│   └─ Apply transforms to dot/ring
 │
-├─▶ Apply transforms to dot/ring [line 1743-1745]
-│
-└─▶ Request next frame [line 1748-1750]
+└─▶ Request next frame [line ~2033-2035]
     └─▶ requestAnimationFrame(render)
+```
+
+#### Pure Effect Functions (v5.6 Phase 4)
+
+```
+calcPulseScale(time, amplitude) [line ~714]
+└─▶ Returns: 1 + sin(time) * amplitude
+
+calcShakeOffset(time, amplitude) [line ~718]
+├─▶ Wave phase: sin(cycle * 2) * amplitude
+└─▶ Pause phase: linear fade to 0
+
+calcBuzzRotation(time, amplitude) [line ~728]
+├─▶ Wave phase: sin(cycle * 2) * amplitude
+└─▶ Pause phase: linear fade to 0
+
+calcWobbleMatrix(wState, dx, dy) [line ~738]
+├─▶ Calculate velocity from position delta
+├─▶ Apply spring physics (stiffness, damping)
+├─▶ Update angle on significant movement
+└─▶ Returns: matrix(a,b,c,d,0,0) or ''
+
+resolveEffect(cursorEffect, globalWobble) [line ~764]
+├─▶ 'none' → ''
+├─▶ null/'default' → globalWobble ? 'wobble' : ''
+└─▶ Other → as-is
 ```
 
 ---

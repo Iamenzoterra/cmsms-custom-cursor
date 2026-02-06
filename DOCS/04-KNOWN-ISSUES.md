@@ -589,10 +589,13 @@ Mix of error handling patterns across files.
 |-------|-------|
 | **Location** | `custom-cursor.js:render()` |
 | **Type** | Maintainability |
-| **Status** | Open |
+| **Status** | Partially Addressed (v5.6 Phase 4) |
 
 **Description:**
 Some functions exceed 100 lines, reducing readability.
+
+**v5.6 Update:**
+Phase 4 extracted effect calculations into 5 pure functions (`calcPulseScale`, `calcShakeOffset`, `calcBuzzRotation`, `calcWobbleMatrix`, `resolveEffect`). The `render()` function was reduced from ~550 lines to ~250 lines. Still above 100-line threshold but significantly improved.
 
 ---
 
