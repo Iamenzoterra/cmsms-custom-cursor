@@ -189,6 +189,19 @@
     var STICKY_MODE_DURATION = 500;     // Lock mode for 500ms after change (prevents flicker)
 
     /**
+     * sRGB Luminance — WCAG 2.0 / ITU-R BT.709 color space constants
+     * Used for adaptive mode background detection
+     */
+    var SRGB_LINEAR_THRESHOLD = 0.03928;  // sRGB linearization threshold
+    var SRGB_LINEAR_SCALE = 12.92;        // sRGB linear scale factor
+    var SRGB_GAMMA_OFFSET = 0.055;        // sRGB gamma offset
+    var SRGB_GAMMA_SCALE = 1.055;         // sRGB gamma scale
+    var SRGB_GAMMA_EXPONENT = 2.4;        // sRGB gamma exponent
+    var LUMINANCE_R = 0.2126;             // ITU-R BT.709 red weight
+    var LUMINANCE_G = 0.7152;             // ITU-R BT.709 green weight
+    var LUMINANCE_B = 0.0722;             // ITU-R BT.709 blue weight
+
+    /**
      * Spring physics — size/rotate transitions
      * Used for smooth image/icon cursor size changes on hover
      */
@@ -209,6 +222,7 @@
     var WOBBLE_STRETCH_FACTOR = 0.5;    // Stretch factor for matrix
     var WOBBLE_ANGLE_MULTIPLIER = 2;    // Double angle for symmetric stretch
     var WOBBLE_MIN_SCALE = 0.001;       // Threshold for applying matrix
+    var WOBBLE_SCALE_CLAMP = 1.0;       // Max velocity-to-scale ratio before deformation mult
 
     /**
      * Pulse effect — breathing scale oscillation
@@ -1008,9 +1022,11 @@
     function getLuminance(r, g, b) {
         var a = [r, g, b].map(function(v) {
             v /= 255;
-            return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+            return v <= SRGB_LINEAR_THRESHOLD
+                ? v / SRGB_LINEAR_SCALE
+                : Math.pow((v + SRGB_GAMMA_OFFSET) / SRGB_GAMMA_SCALE, SRGB_GAMMA_EXPONENT);
         });
-        return a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722;
+        return a[0] * LUMINANCE_R + a[1] * LUMINANCE_G + a[2] * LUMINANCE_B;
     }
 
     function applyMode(mode) {
@@ -1652,7 +1668,7 @@
             var imgTargetRotate = isImageCursorHover ? imageCursorRotateHover : imageCursorRotate;
 
             // Initialize smooth values on first frame - start from dot size (8px) for smooth transition
-            if (imgCurrentSize === 0) imgCurrentSize = 8;
+            if (imgCurrentSize === 0) imgCurrentSize = INITIAL_CURSOR_SIZE_PX;
             // Rotate starts at target to avoid spinning on entry
             if (imgCurrentRotate === 0 && imgTargetRotate !== 0) imgCurrentRotate = imgTargetRotate;
 
@@ -1731,7 +1747,7 @@
                 var velocity = Math.sqrt(deltaDx * deltaDx + deltaDy * deltaDy);
 
                 // Scale calculation (deformation multiplier for visibility)
-                var targetScale = Math.min(velocity * WOBBLE_VELOCITY_SCALE, 1.0) * WOBBLE_DEFORMATION_MULT;
+                var targetScale = Math.min(velocity * WOBBLE_VELOCITY_SCALE, WOBBLE_SCALE_CLAMP) * WOBBLE_DEFORMATION_MULT;
 
                 // Spring physics for bouncy overshoot
                 var force = (targetScale - imgWobbleScale) * WOBBLE_STIFFNESS;
@@ -1846,7 +1862,7 @@
                 var velocity = Math.sqrt(deltaDx * deltaDx + deltaDy * deltaDy);
 
                 // Scale calculation (deformation multiplier for visibility)
-                var targetScale = Math.min(velocity * WOBBLE_VELOCITY_SCALE, 1.0) * WOBBLE_DEFORMATION_MULT;
+                var targetScale = Math.min(velocity * WOBBLE_VELOCITY_SCALE, WOBBLE_SCALE_CLAMP) * WOBBLE_DEFORMATION_MULT;
 
                 // Spring physics for bouncy overshoot
                 var force = (targetScale - textWobbleScale) * WOBBLE_STIFFNESS;
@@ -1907,7 +1923,7 @@
             var iconTargetRotate = isIconCursorHover ? iconCursorStyles.rotateHover : iconCursorStyles.rotate;
 
             // Initialize smooth values on first frame - start from dot size (8px) for smooth transition
-            if (iconCurrentSize === 0) iconCurrentSize = 8;
+            if (iconCurrentSize === 0) iconCurrentSize = INITIAL_CURSOR_SIZE_PX;
             // Rotate starts at target to avoid spinning on entry
             if (iconCurrentRotate === 0 && iconTargetRotate !== 0) iconCurrentRotate = iconTargetRotate;
 
@@ -1990,7 +2006,7 @@
                 var velocity = Math.sqrt(deltaDx * deltaDx + deltaDy * deltaDy);
 
                 // Scale calculation (deformation multiplier for visibility)
-                var targetScale = Math.min(velocity * WOBBLE_VELOCITY_SCALE, 1.0) * WOBBLE_DEFORMATION_MULT;
+                var targetScale = Math.min(velocity * WOBBLE_VELOCITY_SCALE, WOBBLE_SCALE_CLAMP) * WOBBLE_DEFORMATION_MULT;
 
                 // Spring physics for bouncy overshoot
                 var force = (targetScale - iconWobbleScale) * WOBBLE_STIFFNESS;
@@ -2071,7 +2087,7 @@
 
             // Velocity calculation
             var velocity = Math.sqrt(deltaDx * deltaDx + deltaDy * deltaDy);
-            var targetScale = Math.min(velocity * WOBBLE_VELOCITY_SCALE, 1.0) * WOBBLE_DEFORMATION_MULT;
+            var targetScale = Math.min(velocity * WOBBLE_VELOCITY_SCALE, WOBBLE_SCALE_CLAMP) * WOBBLE_DEFORMATION_MULT;
 
             // Spring physics for overshoot bounce
             var force = (targetScale - wobbleScale) * WOBBLE_STIFFNESS;
