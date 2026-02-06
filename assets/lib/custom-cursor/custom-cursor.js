@@ -556,6 +556,138 @@
         globalBlendIntensity = 'soft';
     }
     var currentBlendIntensity = globalBlendIntensity;
+
+    // === SPECIAL CURSOR LIFECYCLE MANAGER (Phase 3 — MEM-004 fix) ===
+    // Coordinates create/remove of image/text/icon cursors.
+    // Prevents accumulation by deduplication and atomic cleanup.
+    // render() continues reading closure-level vars directly.
+    var SpecialCursorManager = {
+        _type: null,
+        _key: null,
+
+        activate: function(type, config) {
+            var key = this._makeKey(type, config);
+            if (this._type === type && this._key === key) {
+                // Same cursor identity — just update mutable props without DOM recreation
+                this._updateProps(type, config);
+                return;
+            }
+            if (this._type) {
+                this._removeCurrentType();
+            }
+            switch (type) {
+                case 'image':
+                    createImageCursor(config.src);
+                    imageCursorSrc = config.src;
+                    imageCursorSize = config.size;
+                    imageCursorSizeHover = config.sizeHover;
+                    imageCursorRotate = config.rotate;
+                    imageCursorRotateHover = config.rotateHover;
+                    imageCursorEffect = config.effect;
+                    imageEffectTime = 0;
+                    isImageCursorHover = false;
+                    // Reset spring state for smooth transition
+                    imgCurrentSize = config.size;
+                    imgCurrentRotate = config.rotate;
+                    imgSizeVelocity = 0;
+                    imgRotateVelocity = 0;
+                    // Apply effect class
+                    var imgEffectClass = (config.effect === '' || config.effect === 'default') ? (isWobbleEnabled() ? 'wobble' : '') : (config.effect === 'none' ? '' : config.effect);
+                    if (imgEffectClass) {
+                        imageCursorEl.classList.add('cmsm-cursor-image-' + imgEffectClass);
+                    }
+                    break;
+                case 'text':
+                    createTextCursor(config.content, config.styles);
+                    textCursorContent = config.content;
+                    textCursorStyles = config.styles;
+                    textCursorEffect = config.styles.effect || '';
+                    textEffectTime = 0;
+                    // Apply effect class
+                    var txtEffectClass = (textCursorEffect === '' || textCursorEffect === 'default') ? (isWobbleEnabled() ? 'wobble' : '') : (textCursorEffect === 'none' ? '' : textCursorEffect);
+                    if (txtEffectClass) {
+                        textCursorEl.classList.add('cmsm-cursor-text-' + txtEffectClass);
+                    }
+                    break;
+                case 'icon':
+                    createIconCursor(config.content, config.styles);
+                    iconCursorContent = config.content;
+                    iconCursorStyles = config.styles;
+                    iconCursorEffect = config.styles.effect || '';
+                    iconEffectTime = 0;
+                    isIconCursorHover = false;
+                    // Reset spring state for smooth transition
+                    iconCurrentSize = config.styles.size;
+                    iconCurrentRotate = config.styles.rotate;
+                    iconSizeVelocity = 0;
+                    iconRotateVelocity = 0;
+                    // Apply effect class
+                    var icoEffectClass = (iconCursorEffect === '' || iconCursorEffect === 'default') ? (isWobbleEnabled() ? 'wobble' : '') : (iconCursorEffect === 'none' ? '' : iconCursorEffect);
+                    if (icoEffectClass) {
+                        iconCursorEl.classList.add('cmsm-cursor-icon-' + icoEffectClass);
+                    }
+                    break;
+            }
+            hideDefaultCursor();
+            this._type = type;
+            this._key = key;
+        },
+
+        deactivate: function() {
+            if (!this._type) {
+                return;
+            }
+            this._removeCurrentType();
+            showDefaultCursor();
+            this._type = null;
+            this._key = null;
+        },
+
+        getActive: function() {
+            return this._type;
+        },
+
+        isActive: function() {
+            return this._type !== null;
+        },
+
+        _removeCurrentType: function() {
+            switch (this._type) {
+                case 'image': removeImageCursor(); break;
+                case 'text': removeTextCursor(); break;
+                case 'icon': removeIconCursor(); break;
+            }
+        },
+
+        _makeKey: function(type, config) {
+            switch (type) {
+                case 'image': return config.src;
+                case 'text': return config.content;
+                case 'icon': return config.content;
+                default: return '';
+            }
+        },
+
+        _updateProps: function(type, config) {
+            switch (type) {
+                case 'image':
+                    imageCursorSize = config.size;
+                    imageCursorSizeHover = config.sizeHover;
+                    imageCursorRotate = config.rotate;
+                    imageCursorRotateHover = config.rotateHover;
+                    imageCursorEffect = config.effect;
+                    break;
+                case 'text':
+                    textCursorEffect = config.styles.effect || '';
+                    break;
+                case 'icon':
+                    iconCursorStyles = config.styles;
+                    iconCursorEffect = config.styles.effect || '';
+                    break;
+            }
+        }
+    };
+
     // Wobble effect (spring physics with overshoot) - see CONSTANTS section
     // Enabled via window.cmsmCursorWobble or body class .cmsm-cursor-wobble
     function isWobbleEnabled() { return window.cmsmCursorWobble || body.classList.contains('cmsm-cursor-wobble'); }
@@ -1214,50 +1346,28 @@
         // If core cursor is CLOSER than special, skip special cursor handling
         if (closestCoreEl && closestCoreDepth < specialDepth) {
             // Clean up any active special cursors
-            if (imageCursorEl) { removeImageCursor(); showDefaultCursor(); }
-            if (textCursorEl) { removeTextCursor(); showDefaultCursor(); }
-            if (iconCursorEl) { removeIconCursor(); showDefaultCursor(); }
+            SpecialCursorManager.deactivate();
             specialEl = null;
             specialType = null;
         }
 
         // IMAGE CURSOR
         if (specialType === 'image') {
-            // Clean up other special cursors first
-            if (textCursorEl) removeTextCursor();
-            if (iconCursorEl) removeIconCursor();
+            var imgSrc = imageEl.getAttribute('data-cursor-image');
+            var imgSize = parseInt(imageEl.getAttribute('data-cursor-image-size')) || 32;
+            var imgSizeHover = parseInt(imageEl.getAttribute('data-cursor-image-size-hover')) || imgSize;
+            var imgRotate = parseInt(imageEl.getAttribute('data-cursor-image-rotate')) || 0;
+            var imgRotateHover = parseInt(imageEl.getAttribute('data-cursor-image-rotate-hover')) || imgRotate;
+            var imgEffect = imageEl.getAttribute('data-cursor-image-effect') || '';
 
-            var newSrc = imageEl.getAttribute('data-cursor-image');
-            var newSize = parseInt(imageEl.getAttribute('data-cursor-image-size')) || 32;
-            var newSizeHover = parseInt(imageEl.getAttribute('data-cursor-image-size-hover')) || newSize;
-            var newRotate = parseInt(imageEl.getAttribute('data-cursor-image-rotate')) || 0;
-            var newRotateHover = parseInt(imageEl.getAttribute('data-cursor-image-rotate-hover')) || newRotate;
-            var newEffect = imageEl.getAttribute('data-cursor-image-effect') || '';
-
-            // Check if source or styles changed
-            var imageStylesChanged = newSrc !== imageCursorSrc ||
-                newSize !== imageCursorSize ||
-                newSizeHover !== imageCursorSizeHover ||
-                newRotate !== imageCursorRotate ||
-                newRotateHover !== imageCursorRotateHover ||
-                newEffect !== imageCursorEffect;
-
-            if (imageStylesChanged) {
-                imageCursorSrc = newSrc;
-                imageCursorSize = newSize;
-                imageCursorSizeHover = newSizeHover;
-                imageCursorRotate = newRotate;
-                imageCursorRotateHover = newRotateHover;
-                imageCursorEffect = newEffect;
-                imageEffectTime = 0;
-                createImageCursor(newSrc);
-                // CSS class: '' = Default (Global), 'none' = None, others as-is
-                var effectiveEffect = (newEffect === '' || newEffect === 'default') ? (isWobbleEnabled() ? 'wobble' : '') : (newEffect === 'none' ? '' : newEffect);
-                if (effectiveEffect) {
-                    imageCursorEl.classList.add('cmsm-cursor-image-' + effectiveEffect);
-                }
-                hideDefaultCursor();
-            }
+            SpecialCursorManager.activate('image', {
+                src: imgSrc,
+                size: imgSize,
+                sizeHover: imgSizeHover,
+                rotate: imgRotate,
+                rotateHover: imgRotateHover,
+                effect: imgEffect
+            });
 
             // Check hover state: if current element matches hover selectors, set hover
             var isClickable = el && el.closest ? el.closest(hoverSel) : null;
@@ -1287,13 +1397,9 @@
 
         // TEXT CURSOR
         } else if (specialType === 'text') {
-            // Clean up other special cursors first
-            if (imageCursorEl) removeImageCursor();
-            if (iconCursorEl) removeIconCursor();
+            var txtContent = textEl.getAttribute('data-cursor-text');
 
-            var newContent = textEl.getAttribute('data-cursor-text');
-
-            // Always read styles (they may change without content changing)
+            // Parse typography JSON
             var typographyJson = textEl.getAttribute('data-cursor-text-typography') || '{}';
             var typography = {};
             try {
@@ -1302,7 +1408,7 @@
                 if (window.CMSM_DEBUG) console.warn('[Cursor] Invalid typography JSON:', typographyJson);
             }
 
-            var newStyles = {
+            var txtStyles = {
                 typography: typography,
                 typographyJson: typographyJson,
                 color: textEl.getAttribute('data-cursor-text-color') || '#000000',
@@ -1314,35 +1420,10 @@
                 effect: textEl.getAttribute('data-cursor-text-effect') || ''
             };
 
-            // Check if content or styles changed
-            var textStylesChanged = !textCursorStyles ||
-                newContent !== textCursorContent ||
-                newStyles.typographyJson !== (textCursorStyles.typographyJson || '{}') ||
-                newStyles.color !== textCursorStyles.color ||
-                newStyles.bgColor !== textCursorStyles.bgColor ||
-                newStyles.fitCircle !== textCursorStyles.fitCircle ||
-                newStyles.circleSpacing !== textCursorStyles.circleSpacing ||
-                newStyles.borderRadius !== textCursorStyles.borderRadius ||
-                newStyles.padding !== textCursorStyles.padding;
-
-            if (textStylesChanged) {
-                textCursorContent = newContent;
-                textCursorStyles = newStyles;
-
-                // Store effect and reset animation time
-                textCursorEffect = textCursorStyles.effect || '';
-                textEffectTime = 0;
-
-                createTextCursor(newContent, textCursorStyles);
-
-                // CSS class: '' = Default (Global), 'none' = None, others as-is
-                var effectiveEffect = (textCursorEffect === '' || textCursorEffect === 'default') ? (isWobbleEnabled() ? 'wobble' : '') : (textCursorEffect === 'none' ? '' : textCursorEffect);
-                if (effectiveEffect) {
-                    textCursorEl.classList.add('cmsm-cursor-text-' + effectiveEffect);
-                }
-
-                hideDefaultCursor();
-            }
+            SpecialCursorManager.activate('text', {
+                content: txtContent,
+                styles: txtStyles
+            });
 
             // Handle blend mode for text cursor (widget boundary logic)
             var txtSelfBlend = textEl.getAttribute ? textEl.getAttribute('data-cursor-blend') : null;
@@ -1368,14 +1449,8 @@
 
         // ICON CURSOR
         } else if (specialType === 'icon') {
-            // Clean up other special cursors
-            if (imageCursorEl) removeImageCursor();
-            if (textCursorEl) removeTextCursor();
-
-            var newContent = iconElSpecial.getAttribute('data-cursor-icon');
-
-            // Always read styles (they may change without content changing)
-            var newStyles = {
+            var icoContent = iconElSpecial.getAttribute('data-cursor-icon');
+            var icoStyles = {
                 color: iconElSpecial.getAttribute('data-cursor-icon-color') || '#000000',
                 bgColor: iconElSpecial.getAttribute('data-cursor-icon-bg') || '#ffffff',
                 preserveColors: iconElSpecial.getAttribute('data-cursor-icon-preserve') === 'yes',
@@ -1390,38 +1465,10 @@
                 effect: iconElSpecial.getAttribute('data-cursor-icon-effect') || ''
             };
 
-            // Check if content or styles changed (ALL fields must be compared)
-            var stylesChanged = !iconCursorStyles ||
-                iconCursorStyles.size !== newStyles.size ||
-                iconCursorStyles.sizeHover !== newStyles.sizeHover ||
-                iconCursorStyles.rotate !== newStyles.rotate ||
-                iconCursorStyles.rotateHover !== newStyles.rotateHover ||
-                iconCursorStyles.fitCircle !== newStyles.fitCircle ||
-                iconCursorStyles.circleSpacing !== newStyles.circleSpacing ||
-                iconCursorStyles.color !== newStyles.color ||
-                iconCursorStyles.bgColor !== newStyles.bgColor ||
-                iconCursorStyles.preserveColors !== newStyles.preserveColors ||
-                iconCursorStyles.borderRadius !== newStyles.borderRadius ||
-                iconCursorStyles.padding !== newStyles.padding ||
-                iconCursorStyles.effect !== newStyles.effect;
-
-            if (newContent !== iconCursorContent || stylesChanged) {
-                iconCursorContent = newContent;
-                iconCursorStyles = newStyles;
-
-                iconCursorEffect = iconCursorStyles.effect;
-                iconEffectTime = 0;
-
-                createIconCursor(newContent, iconCursorStyles);
-
-                // CSS class: '' = Default (Global), 'none' = None, others as-is
-                var effectiveEffect = (iconCursorEffect === '' || iconCursorEffect === 'default') ? (isWobbleEnabled() ? 'wobble' : '') : (iconCursorEffect === 'none' ? '' : iconCursorEffect);
-                if (effectiveEffect) {
-                    iconCursorEl.classList.add('cmsm-cursor-icon-' + effectiveEffect);
-                }
-
-                hideDefaultCursor();
-            }
+            SpecialCursorManager.activate('icon', {
+                content: icoContent,
+                styles: icoStyles
+            });
 
             // Check hover state: if current element matches hover selectors, set hover
             var isClickable = el && el.closest ? el.closest(hoverSel) : null;
@@ -1448,12 +1495,9 @@
 
             return; // Skip other detections
 
-        } else if (imageCursorEl || textCursorEl || iconCursorEl) {
+        } else if (SpecialCursorManager.isActive()) {
             // Left special cursor zone - restore default cursor
-            if (imageCursorEl) removeImageCursor();
-            if (textCursorEl) removeTextCursor();
-            if (iconCursorEl) removeIconCursor();
-            showDefaultCursor();
+            SpecialCursorManager.deactivate();
         }
 
         // Check for forced color (per-element color picker, widget boundary logic)
@@ -2336,21 +2380,8 @@
         container.style.visibility = 'hidden';
         mx = my = dx = dy = rx = ry = OFFSCREEN_POSITION;
         hasValidPosition = false;
-        // Reset image cursor state
-        if (imageCursorEl) {
-            removeImageCursor();
-            showDefaultCursor();
-        }
-        // Reset text cursor state
-        if (textCursorEl) {
-            removeTextCursor();
-            showDefaultCursor();
-        }
-        // Reset icon cursor state
-        if (iconCursorEl) {
-            removeIconCursor();
-            showDefaultCursor();
-        }
+        // Reset any active special cursor via Manager (keeps state in sync)
+        SpecialCursorManager.deactivate();
     }
     function handleTouchChange(e) {
         if (e.matches) {
