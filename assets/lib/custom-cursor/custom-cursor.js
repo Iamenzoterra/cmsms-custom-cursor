@@ -661,6 +661,7 @@
         if (currentPopup === el) return;
         currentPopup = el;
         el.appendChild(container);
+        console.log('[CURSOR DEBUG] moveCursorToPopup fired, parent:', el.className, 'container z-index:', getComputedStyle(container).zIndex);
     }
 
     function moveCursorToBody() {
