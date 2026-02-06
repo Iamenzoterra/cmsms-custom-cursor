@@ -601,7 +601,7 @@ class Settings_Page extends ElementorSettingsPage {
 							),
 						),
 						'custom_cursor_editor_preview' => array(
-							'label' => __( 'Show custom cursor preview in Elementor editor preview area. System cursor remains on panels (Settings, Structure, etc.).', 'cmsmasters-elementor' ),
+							'label' => __( 'Show in Editor Preview', 'cmsmasters-elementor' ),
 							'field_args' => array(
 								'type' => 'select',
 								'options' => array(
