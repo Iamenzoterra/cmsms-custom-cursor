@@ -591,6 +591,12 @@
                     imgCurrentRotate = config.rotate;
                     imgSizeVelocity = 0;
                     imgRotateVelocity = 0;
+                    // Reset wobble state for clean start
+                    imgWobbleState.velocity = 0;
+                    imgWobbleState.scale = 0;
+                    imgWobbleState.angle = 0;
+                    imgWobbleState.prevDx = OFFSCREEN_POSITION;
+                    imgWobbleState.prevDy = OFFSCREEN_POSITION;
                     // Apply effect class
                     var imgEffectClass = (config.effect === '' || config.effect === 'default') ? (isWobbleEnabled() ? 'wobble' : '') : (config.effect === 'none' ? '' : config.effect);
                     if (imgEffectClass) {
@@ -603,6 +609,12 @@
                     textCursorStyles = config.styles;
                     textCursorEffect = config.styles.effect || '';
                     textEffectTime = 0;
+                    // Reset wobble state for clean start
+                    textWobbleState.velocity = 0;
+                    textWobbleState.scale = 0;
+                    textWobbleState.angle = 0;
+                    textWobbleState.prevDx = OFFSCREEN_POSITION;
+                    textWobbleState.prevDy = OFFSCREEN_POSITION;
                     // Apply effect class
                     var txtEffectClass = (textCursorEffect === '' || textCursorEffect === 'default') ? (isWobbleEnabled() ? 'wobble' : '') : (textCursorEffect === 'none' ? '' : textCursorEffect);
                     if (txtEffectClass) {
@@ -621,6 +633,12 @@
                     iconCurrentRotate = config.styles.rotate;
                     iconSizeVelocity = 0;
                     iconRotateVelocity = 0;
+                    // Reset wobble state for clean start
+                    iconWobbleState.velocity = 0;
+                    iconWobbleState.scale = 0;
+                    iconWobbleState.angle = 0;
+                    iconWobbleState.prevDx = OFFSCREEN_POSITION;
+                    iconWobbleState.prevDy = OFFSCREEN_POSITION;
                     // Apply effect class
                     var icoEffectClass = (iconCursorEffect === '' || iconCursorEffect === 'default') ? (isWobbleEnabled() ? 'wobble' : '') : (iconCursorEffect === 'none' ? '' : iconCursorEffect);
                     if (icoEffectClass) {
@@ -688,20 +706,85 @@
         }
     };
 
+    // === EFFECT PURE FUNCTIONS (Phase 4) ===
+    // Extracted from render() to eliminate 4x code duplication.
+    // Each function is pure math — no DOM access, no side effects.
+    // Wobble mutates state object in-place to avoid GC pressure.
+
+    function calcPulseScale(time, amplitude) {
+        return 1 + Math.sin(time) * amplitude;
+    }
+
+    function calcShakeOffset(time, amplitude) {
+        var cycle = time % SHAKE_CYCLE_DURATION;
+        if (cycle < SHAKE_WAVE_PHASE) {
+            return Math.sin(cycle * SHAKE_WAVE_MULTIPLIER) * amplitude;
+        }
+        var pauseProgress = (cycle - SHAKE_WAVE_PHASE) / (SHAKE_CYCLE_DURATION - SHAKE_WAVE_PHASE);
+        return Math.sin(SHAKE_WAVE_PHASE * SHAKE_WAVE_MULTIPLIER) * amplitude * (1 - pauseProgress);
+    }
+
+    function calcBuzzRotation(time, amplitude) {
+        var cycle = time % BUZZ_CYCLE_DURATION;
+        if (cycle < BUZZ_WAVE_PHASE) {
+            return Math.sin(cycle * BUZZ_WAVE_MULTIPLIER) * amplitude;
+        }
+        var pauseProgress = (cycle - BUZZ_WAVE_PHASE) / (BUZZ_CYCLE_DURATION - BUZZ_WAVE_PHASE);
+        return Math.sin(BUZZ_WAVE_PHASE * BUZZ_WAVE_MULTIPLIER) * amplitude * (1 - pauseProgress);
+    }
+
+    // Wobble mutates wState in-place. Returns matrix string or '' if below threshold.
+    // wState shape: { velocity, scale, angle, prevDx, prevDy }
+    function calcWobbleMatrix(wState, dx, dy) {
+        var deltaDx = dx - wState.prevDx;
+        var deltaDy = dy - wState.prevDy;
+        wState.prevDx = dx;
+        wState.prevDy = dy;
+
+        var velocity = Math.sqrt(deltaDx * deltaDx + deltaDy * deltaDy);
+        var targetScale = Math.min(velocity * WOBBLE_VELOCITY_SCALE, WOBBLE_SCALE_CLAMP) * WOBBLE_DEFORMATION_MULT;
+
+        var force = (targetScale - wState.scale) * WOBBLE_STIFFNESS;
+        wState.velocity += force;
+        wState.velocity *= WOBBLE_DAMPING;
+        wState.scale += wState.velocity;
+        wState.scale = Math.max(0, Math.min(wState.scale, WOBBLE_SCALE_MAX));
+
+        if (velocity > WOBBLE_THRESHOLD) {
+            wState.angle = Math.atan2(deltaDy, deltaDx);
+        }
+
+        if (wState.scale > WOBBLE_MIN_SCALE) {
+            var s = wState.scale * WOBBLE_STRETCH_FACTOR;
+            var angle2 = wState.angle * WOBBLE_ANGLE_MULTIPLIER;
+            var cos2 = Math.cos(angle2);
+            var sin2 = Math.sin(angle2);
+            return 'matrix(' + (1 + s * cos2) + ',' + (s * sin2) + ',' + (s * sin2) + ',' + (1 - s * cos2) + ',0,0)';
+        }
+        return '';
+    }
+
+    // Resolves effective effect considering 'none', 'default', and global wobble
+    function resolveEffect(cursorEffect, globalWobble) {
+        if (cursorEffect === 'none') {
+            return '';
+        }
+        if (!cursorEffect || cursorEffect === 'default') {
+            return globalWobble ? 'wobble' : '';
+        }
+        return cursorEffect;
+    }
+
     // Wobble effect (spring physics with overshoot) - see CONSTANTS section
     // Enabled via window.cmsmCursorWobble or body class .cmsm-cursor-wobble
     function isWobbleEnabled() { return window.cmsmCursorWobble || body.classList.contains('cmsm-cursor-wobble'); }
-    var prevDx = OFFSCREEN_POSITION, prevDy = OFFSCREEN_POSITION; // Previous position for velocity calc
-    var wobbleVelocity = 0;                // Spring velocity for overshoot
-    var wobbleScale = 0;                   // Current scale
-    var wobbleAngle = 0;                   // Current angle (radians for matrix, degrees for simple)
+    // Wobble state objects — mutated in-place by calcWobbleMatrix() to avoid per-frame allocation
+    var coreWobbleState = { velocity: 0, scale: 0, angle: 0, prevDx: OFFSCREEN_POSITION, prevDy: OFFSCREEN_POSITION };
+    var imgWobbleState = { velocity: 0, scale: 0, angle: 0, prevDx: OFFSCREEN_POSITION, prevDy: OFFSCREEN_POSITION };
+    var textWobbleState = { velocity: 0, scale: 0, angle: 0, prevDx: OFFSCREEN_POSITION, prevDy: OFFSCREEN_POSITION };
+    var iconWobbleState = { velocity: 0, scale: 0, angle: 0, prevDx: OFFSCREEN_POSITION, prevDy: OFFSCREEN_POSITION };
     var perElementWobble = null;           // Per-element wobble override
     var coreEffect = '';                   // Effect: '', 'none', 'wobble', 'pulse', 'shake', 'buzz'
-
-    // Separate wobble state per cursor type to prevent conflicts
-    var imgWobbleVelocity = 0, imgWobbleScale = 0, imgWobbleAngle = 0, imgPrevDx = OFFSCREEN_POSITION, imgPrevDy = OFFSCREEN_POSITION;
-    var textWobbleVelocity = 0, textWobbleScale = 0, textWobbleAngle = 0, textPrevDx = OFFSCREEN_POSITION, textPrevDy = OFFSCREEN_POSITION;
-    var iconWobbleVelocity = 0, iconWobbleScale = 0, iconWobbleAngle = 0, iconPrevDx = OFFSCREEN_POSITION, iconPrevDy = OFFSCREEN_POSITION;
 
     // === PAUSE/RESUME API (for editor processing mask) ===
     var rafId = null;                      // Track RAF ID for cancellation
@@ -738,13 +821,15 @@
         dy = my;
         rx = mx;
         ry = my;
-        prevDx = mx;
-        prevDy = my;
+
+        // Reset core wobble state
+        coreWobbleState.prevDx = mx;
+        coreWobbleState.prevDy = my;
+        coreWobbleState.velocity = 0;
+        coreWobbleState.scale = 0;
+        coreWobbleState.angle = 0;
 
         // Reset all velocities to prevent spring momentum
-        wobbleVelocity = 0;
-        wobbleScale = 0;
-        wobbleAngle = 0;
         imgSizeVelocity = 0;
         imgRotateVelocity = 0;
         iconSizeVelocity = 0;
@@ -1731,111 +1816,39 @@
             var imgSize = imgCurrentSize;
             var imgRotate = imgCurrentRotate;
 
-            // Effect calculations
+            // Effect calculations via pure functions
             var effectScale = 1;
-            var effectScaleX = 1;
-            var effectScaleY = 1;
-            var effectAngle = 0;
             var effectOffsetX = 0;
-            var effectOffsetY = 0;
+            var imgWobbleMatrix = '';
+            var effectiveImageEffect = resolveEffect(imageCursorEffect, isWobbleEnabled());
 
-            if (imageCursorEffect === 'pulse') {
-                // Pulse: smooth breathing (scale oscillation)
+            if (effectiveImageEffect === 'pulse') {
                 imageEffectTime += PULSE_TIME_INCREMENT;
-                effectScale = 1 + Math.sin(imageEffectTime) * PULSE_SPECIAL_AMPLITUDE;
-            } else if (imageCursorEffect === 'shake') {
-                // Shake: hand wave pattern (left-right, left-right, pause, repeat)
+                effectScale = calcPulseScale(imageEffectTime, PULSE_SPECIAL_AMPLITUDE);
+            } else if (effectiveImageEffect === 'shake') {
                 imageEffectTime += SHAKE_TIME_INCREMENT;
-                var cycle = imageEffectTime % SHAKE_CYCLE_DURATION;
-                if (cycle < SHAKE_WAVE_PHASE) {
-                    // Wave phase: smooth left-right oscillation (2 full waves)
-                    effectOffsetX = Math.sin(cycle * SHAKE_WAVE_MULTIPLIER) * SHAKE_SPECIAL_AMPLITUDE;
-                } else {
-                    // Pause phase: ease out to center
-                    var pauseProgress = (cycle - SHAKE_WAVE_PHASE) / (SHAKE_CYCLE_DURATION - SHAKE_WAVE_PHASE);
-                    effectOffsetX = Math.sin(SHAKE_WAVE_PHASE * SHAKE_WAVE_MULTIPLIER) * SHAKE_SPECIAL_AMPLITUDE * (1 - pauseProgress);
-                }
-            } else if (imageCursorEffect === 'buzz') {
-                // Buzz: rotate left-right, left-right, pause, repeat
+                effectOffsetX = calcShakeOffset(imageEffectTime, SHAKE_SPECIAL_AMPLITUDE);
+            } else if (effectiveImageEffect === 'buzz') {
                 imageEffectTime += BUZZ_TIME_INCREMENT;
-                var cycle = imageEffectTime % BUZZ_CYCLE_DURATION;
-                var effectRotateOffset = 0;
-                if (cycle < BUZZ_WAVE_PHASE) {
-                    // Rotate phase: smooth rotation oscillation (2 full rotations)
-                    effectRotateOffset = Math.sin(cycle * BUZZ_WAVE_MULTIPLIER) * BUZZ_SPECIAL_AMPLITUDE;
-                } else {
-                    // Pause phase: ease out to center
-                    var pauseProgress = (cycle - BUZZ_WAVE_PHASE) / (BUZZ_CYCLE_DURATION - BUZZ_WAVE_PHASE);
-                    effectRotateOffset = Math.sin(BUZZ_WAVE_PHASE * BUZZ_WAVE_MULTIPLIER) * BUZZ_SPECIAL_AMPLITUDE * (1 - pauseProgress);
-                }
-                imgRotate += effectRotateOffset;
-            }
-
-            // Check for wobble effect
-            // Logic: '' = Default (Global), 'none' = None, others as-is
-            var effectiveImageEffect;
-            if (imageCursorEffect === '' || imageCursorEffect === 'default') {
-                effectiveImageEffect = isWobbleEnabled() ? 'wobble' : '';
-            } else if (imageCursorEffect === 'none') {
-                effectiveImageEffect = '';
-            } else {
-                effectiveImageEffect = imageCursorEffect;
-            }
-            if (effectiveImageEffect === 'wobble') {
-                // Wobble: spring physics with MATRIX-based directional stretch
-                // Uses SEPARATE state to prevent conflicts with other cursor types
-                var deltaDx = dx - imgPrevDx;
-                var deltaDy = dy - imgPrevDy;
-                imgPrevDx = dx;
-                imgPrevDy = dy;
-                var velocity = Math.sqrt(deltaDx * deltaDx + deltaDy * deltaDy);
-
-                // Scale calculation (deformation multiplier for visibility)
-                var targetScale = Math.min(velocity * WOBBLE_VELOCITY_SCALE, WOBBLE_SCALE_CLAMP) * WOBBLE_DEFORMATION_MULT;
-
-                // Spring physics for bouncy overshoot
-                var force = (targetScale - imgWobbleScale) * WOBBLE_STIFFNESS;
-                imgWobbleVelocity += force;
-                imgWobbleVelocity *= WOBBLE_DAMPING;
-                imgWobbleScale += imgWobbleVelocity;
-                imgWobbleScale = Math.max(0, Math.min(imgWobbleScale, WOBBLE_SCALE_MAX));
-
-                // Update angle only on significant movement (reduces jitter)
-                if (velocity > WOBBLE_THRESHOLD) {
-                    imgWobbleAngle = Math.atan2(deltaDy, deltaDx);
-                }
-
-                // Matrix transform for symmetric directional stretch
-                var s = imgWobbleScale * WOBBLE_STRETCH_FACTOR;
-                var angle2 = imgWobbleAngle * WOBBLE_ANGLE_MULTIPLIER;
-                var cos2 = Math.cos(angle2);
-                var sin2 = Math.sin(angle2);
-                var imgMatrixA = 1 + s * cos2;
-                var imgMatrixB = s * sin2;
-                var imgMatrixC = s * sin2;
-                var imgMatrixD = 1 - s * cos2;
+                imgRotate += calcBuzzRotation(imageEffectTime, BUZZ_SPECIAL_AMPLITUDE);
+            } else if (effectiveImageEffect === 'wobble') {
+                imgWobbleMatrix = calcWobbleMatrix(imgWobbleState, dx, dy);
             }
 
             imageCursorEl.style.width = imgSize + 'px';
             imageCursorEl.style.marginLeft = (-imgSize / 2) + 'px';
             imageCursorEl.style.marginTop = (-imgSize / 2) + 'px';
 
-            // Apply transform
-            var scaleTransform = (effectScaleX !== 1 || effectScaleY !== 1)
-                ? 'scale(' + effectScaleX + ',' + effectScaleY + ')'
-                : 'scale(' + effectScale + ')';
-
-            // For wobble: use matrix for symmetric directional stretch
-            if (effectiveImageEffect === 'wobble' && typeof imgMatrixA !== 'undefined') {
+            // Apply transform - wobble uses matrix, others use scale
+            if (imgWobbleMatrix) {
                 // Outer: translate + base rotate + matrix stretch
-                imageCursorEl.style.transform = 'translate3d(' + (dx + effectOffsetX) + 'px,' + (dy + effectOffsetY) + 'px,0) rotate(' + imgRotate + 'deg) matrix(' + imgMatrixA + ',' + imgMatrixB + ',' + imgMatrixC + ',' + imgMatrixD + ',0,0)';
+                imageCursorEl.style.transform = 'translate3d(' + (dx + effectOffsetX) + 'px,' + dy + 'px,0) rotate(' + imgRotate + 'deg) ' + imgWobbleMatrix;
                 // For IMAGE: NO inverse matrix - we WANT the image to stretch visually
-                // (unlike text which needs to stay readable)
                 if (imageCursorInner) {
                     imageCursorInner.style.transform = '';
                 }
             } else {
-                imageCursorEl.style.transform = 'translate3d(' + (dx + effectOffsetX) + 'px,' + (dy + effectOffsetY) + 'px,0) rotate(' + imgRotate + 'deg) ' + scaleTransform;
+                imageCursorEl.style.transform = 'translate3d(' + (dx + effectOffsetX) + 'px,' + dy + 'px,0) rotate(' + imgRotate + 'deg) scale(' + effectScale + ')';
                 if (imageCursorInner) {
                     imageCursorInner.style.transform = '';
                 }
@@ -1848,100 +1861,40 @@
             var textWidth = textCachedWidth;
             var textHeight = textCachedHeight;
 
-            // Calculate effect values
+            // Effect calculations via pure functions
             var textEffectScale = 1;
-            var textEffectScaleX = 1;
-            var textEffectScaleY = 1;
             var textEffectOffsetX = 0;
             var textEffectRotate = 0;
-            var textEffectAngle = 0;
+            var textWobbleMatrix = '';
+            var effectiveTextEffect = resolveEffect(textCursorEffect, isWobbleEnabled());
 
-            if (textCursorEffect === 'pulse') {
-                // Pulse: smooth breathing (scale oscillation)
+            if (effectiveTextEffect === 'pulse') {
                 textEffectTime += PULSE_TIME_INCREMENT;
-                textEffectScale = 1 + Math.sin(textEffectTime) * PULSE_SPECIAL_AMPLITUDE;
-            } else if (textCursorEffect === 'shake') {
-                // Shake: hand wave pattern (left-right, left-right, pause, repeat)
+                textEffectScale = calcPulseScale(textEffectTime, PULSE_SPECIAL_AMPLITUDE);
+            } else if (effectiveTextEffect === 'shake') {
                 textEffectTime += SHAKE_TIME_INCREMENT;
-                var cycle = textEffectTime % SHAKE_CYCLE_DURATION;
-                if (cycle < SHAKE_WAVE_PHASE) {
-                    // Wave phase: smooth left-right oscillation (2 full waves)
-                    textEffectOffsetX = Math.sin(cycle * SHAKE_WAVE_MULTIPLIER) * SHAKE_SPECIAL_AMPLITUDE;
-                } else {
-                    // Pause phase: ease out to center
-                    var pauseProgress = (cycle - SHAKE_WAVE_PHASE) / (SHAKE_CYCLE_DURATION - SHAKE_WAVE_PHASE);
-                    textEffectOffsetX = Math.sin(SHAKE_WAVE_PHASE * SHAKE_WAVE_MULTIPLIER) * SHAKE_SPECIAL_AMPLITUDE * (1 - pauseProgress);
-                }
-            } else if (textCursorEffect === 'buzz') {
-                // Buzz: rotate left-right, left-right, pause, repeat
+                textEffectOffsetX = calcShakeOffset(textEffectTime, SHAKE_SPECIAL_AMPLITUDE);
+            } else if (effectiveTextEffect === 'buzz') {
                 textEffectTime += BUZZ_TIME_INCREMENT;
-                var cycle = textEffectTime % BUZZ_CYCLE_DURATION;
-                if (cycle < BUZZ_WAVE_PHASE) {
-                    // Rotate phase: smooth rotation oscillation (2 full rotations)
-                    textEffectRotate = Math.sin(cycle * BUZZ_WAVE_MULTIPLIER) * BUZZ_SPECIAL_AMPLITUDE;
-                } else {
-                    // Pause phase: ease out to center
-                    var pauseProgress = (cycle - BUZZ_WAVE_PHASE) / (BUZZ_CYCLE_DURATION - BUZZ_WAVE_PHASE);
-                    textEffectRotate = Math.sin(BUZZ_WAVE_PHASE * BUZZ_WAVE_MULTIPLIER) * BUZZ_SPECIAL_AMPLITUDE * (1 - pauseProgress);
-                }
+                textEffectRotate = calcBuzzRotation(textEffectTime, BUZZ_SPECIAL_AMPLITUDE);
+            } else if (effectiveTextEffect === 'wobble') {
+                textWobbleMatrix = calcWobbleMatrix(textWobbleState, dx, dy);
             }
 
-            // Check for wobble effect
-            // Logic: '' = Default (Global), 'none' = None, others as-is
-            var effectiveTextEffect;
-            if (textCursorEffect === '' || textCursorEffect === 'default') {
-                effectiveTextEffect = isWobbleEnabled() ? 'wobble' : '';
-            } else if (textCursorEffect === 'none') {
-                effectiveTextEffect = '';
-            } else {
-                effectiveTextEffect = textCursorEffect;
-            }
-            if (effectiveTextEffect === 'wobble') {
-                // Wobble: spring physics with MATRIX-based directional stretch
-                // Uses SEPARATE state to prevent conflicts with other cursor types
-                var deltaDx = dx - textPrevDx;
-                var deltaDy = dy - textPrevDy;
-                textPrevDx = dx;
-                textPrevDy = dy;
-                var velocity = Math.sqrt(deltaDx * deltaDx + deltaDy * deltaDy);
-
-                // Scale calculation (deformation multiplier for visibility)
-                var targetScale = Math.min(velocity * WOBBLE_VELOCITY_SCALE, WOBBLE_SCALE_CLAMP) * WOBBLE_DEFORMATION_MULT;
-
-                // Spring physics for bouncy overshoot
-                var force = (targetScale - textWobbleScale) * WOBBLE_STIFFNESS;
-                textWobbleVelocity += force;
-                textWobbleVelocity *= WOBBLE_DAMPING;
-                textWobbleScale += textWobbleVelocity;
-                textWobbleScale = Math.max(0, Math.min(textWobbleScale, WOBBLE_SCALE_MAX));
-
-                // Update angle only on significant movement (reduces jitter)
-                if (velocity > WOBBLE_THRESHOLD) {
-                    textWobbleAngle = Math.atan2(deltaDy, deltaDx);
-                }
-
-                // Matrix transform for symmetric directional stretch
-                var s = textWobbleScale * WOBBLE_STRETCH_FACTOR;
-                var angle2 = textWobbleAngle * WOBBLE_ANGLE_MULTIPLIER;
-                var cos2 = Math.cos(angle2);
-                var sin2 = Math.sin(angle2);
-                var textMatrixA = 1 + s * cos2;
-                var textMatrixB = s * sin2;
-                var textMatrixC = s * sin2;
-                var textMatrixD = 1 - s * cos2;
-            }
-
-            // Apply transform to outer: position, rotation (for buzz only), scale, matrix
-            var textScaleTransform = (textEffectScaleX !== 1 || textEffectScaleY !== 1)
-                ? 'scale(' + textEffectScaleX + ',' + textEffectScaleY + ')'
-                : 'scale(' + textEffectScale + ')';
-
-            // For wobble: use matrix for symmetric directional stretch
-            if (effectiveTextEffect === 'wobble' && typeof textMatrixA !== 'undefined') {
+            // Apply transform - wobble uses matrix with counter-rotation for readability
+            if (textWobbleMatrix) {
                 // Outer: translate + matrix stretch (text cursor has no base rotate setting)
-                textCursorEl.style.transform = 'translate3d(' + (dx - textWidth / 2 + textEffectOffsetX) + 'px,' + (dy - textHeight / 2) + 'px,0) matrix(' + textMatrixA + ',' + textMatrixB + ',' + textMatrixC + ',' + textMatrixD + ',0,0)';
-                // Inner: inverse matrix to keep text upright
+                textCursorEl.style.transform = 'translate3d(' + (dx - textWidth / 2 + textEffectOffsetX) + 'px,' + (dy - textHeight / 2) + 'px,0) ' + textWobbleMatrix;
+                // Inner: inverse matrix to keep text upright (computed from state)
                 if (textCursorInner) {
+                    var s = textWobbleState.scale * WOBBLE_STRETCH_FACTOR;
+                    var angle2 = textWobbleState.angle * WOBBLE_ANGLE_MULTIPLIER;
+                    var cos2 = Math.cos(angle2);
+                    var sin2 = Math.sin(angle2);
+                    var textMatrixA = 1 + s * cos2;
+                    var textMatrixB = s * sin2;
+                    var textMatrixC = s * sin2;
+                    var textMatrixD = 1 - s * cos2;
                     var det = textMatrixA * textMatrixD - textMatrixB * textMatrixC;
                     // Guard against division by zero
                     if (Math.abs(det) > 0.0001) {
@@ -1953,7 +1906,7 @@
                     }
                 }
             } else {
-                textCursorEl.style.transform = 'translate3d(' + (dx - textWidth / 2 + textEffectOffsetX) + 'px,' + (dy - textHeight / 2) + 'px,0) rotate(' + textEffectRotate + 'deg) ' + textScaleTransform;
+                textCursorEl.style.transform = 'translate3d(' + (dx - textWidth / 2 + textEffectOffsetX) + 'px,' + (dy - textHeight / 2) + 'px,0) rotate(' + textEffectRotate + 'deg) scale(' + textEffectScale + ')';
                 if (textCursorInner) {
                     textCursorInner.style.transform = '';
                 }
@@ -1998,94 +1951,40 @@
             var iconWidth = iconCachedWidth;
             var iconHeight = iconCachedHeight;
 
+            // Effect calculations via pure functions
             var iconEffectScale = 1;
-            var iconEffectScaleX = 1;
-            var iconEffectScaleY = 1;
             var iconEffectOffsetX = 0;
             var iconEffectRotate = iconRotate;
-            var iconEffectAngle = 0;
+            var iconWobbleMatrix = '';
+            var effectiveIconEffect = resolveEffect(iconCursorEffect, isWobbleEnabled());
 
-            if (iconCursorEffect === 'pulse') {
+            if (effectiveIconEffect === 'pulse') {
                 iconEffectTime += PULSE_TIME_INCREMENT;
-                iconEffectScale = 1 + Math.sin(iconEffectTime) * PULSE_SPECIAL_AMPLITUDE;
-            } else if (iconCursorEffect === 'shake') {
+                iconEffectScale = calcPulseScale(iconEffectTime, PULSE_SPECIAL_AMPLITUDE);
+            } else if (effectiveIconEffect === 'shake') {
                 iconEffectTime += SHAKE_TIME_INCREMENT;
-                var cycle = iconEffectTime % SHAKE_CYCLE_DURATION;
-                if (cycle < SHAKE_WAVE_PHASE) {
-                    iconEffectOffsetX = Math.sin(cycle * SHAKE_WAVE_MULTIPLIER) * SHAKE_SPECIAL_AMPLITUDE;
-                } else {
-                    var pauseProgress = (cycle - SHAKE_WAVE_PHASE) / (SHAKE_CYCLE_DURATION - SHAKE_WAVE_PHASE);
-                    iconEffectOffsetX = Math.sin(SHAKE_WAVE_PHASE * SHAKE_WAVE_MULTIPLIER) * SHAKE_SPECIAL_AMPLITUDE * (1 - pauseProgress);
-                }
-            } else if (iconCursorEffect === 'buzz') {
+                iconEffectOffsetX = calcShakeOffset(iconEffectTime, SHAKE_SPECIAL_AMPLITUDE);
+            } else if (effectiveIconEffect === 'buzz') {
                 iconEffectTime += BUZZ_TIME_INCREMENT;
-                var cycle = iconEffectTime % BUZZ_CYCLE_DURATION;
-                var effectRotateOffset = 0;
-                if (cycle < BUZZ_WAVE_PHASE) {
-                    effectRotateOffset = Math.sin(cycle * BUZZ_WAVE_MULTIPLIER) * BUZZ_SPECIAL_AMPLITUDE;
-                } else {
-                    var pauseProgress = (cycle - BUZZ_WAVE_PHASE) / (BUZZ_CYCLE_DURATION - BUZZ_WAVE_PHASE);
-                    effectRotateOffset = Math.sin(BUZZ_WAVE_PHASE * BUZZ_WAVE_MULTIPLIER) * BUZZ_SPECIAL_AMPLITUDE * (1 - pauseProgress);
-                }
-                iconEffectRotate += effectRotateOffset;
+                iconEffectRotate += calcBuzzRotation(iconEffectTime, BUZZ_SPECIAL_AMPLITUDE);
+            } else if (effectiveIconEffect === 'wobble') {
+                iconWobbleMatrix = calcWobbleMatrix(iconWobbleState, dx, dy);
             }
 
-            // Check for wobble effect
-            // Logic: '' = Default (Global), 'none' = None, others as-is
-            var effectiveIconEffect;
-            if (iconCursorEffect === '' || iconCursorEffect === 'default') {
-                effectiveIconEffect = isWobbleEnabled() ? 'wobble' : '';
-            } else if (iconCursorEffect === 'none') {
-                effectiveIconEffect = '';
-            } else {
-                effectiveIconEffect = iconCursorEffect;
-            }
-            if (effectiveIconEffect === 'wobble') {
-                // Wobble: spring physics with MATRIX-based directional stretch
-                // Uses SEPARATE state to prevent conflicts with other cursor types
-                var deltaDx = dx - iconPrevDx;
-                var deltaDy = dy - iconPrevDy;
-                iconPrevDx = dx;
-                iconPrevDy = dy;
-                var velocity = Math.sqrt(deltaDx * deltaDx + deltaDy * deltaDy);
-
-                // Scale calculation (deformation multiplier for visibility)
-                var targetScale = Math.min(velocity * WOBBLE_VELOCITY_SCALE, WOBBLE_SCALE_CLAMP) * WOBBLE_DEFORMATION_MULT;
-
-                // Spring physics for bouncy overshoot
-                var force = (targetScale - iconWobbleScale) * WOBBLE_STIFFNESS;
-                iconWobbleVelocity += force;
-                iconWobbleVelocity *= WOBBLE_DAMPING;
-                iconWobbleScale += iconWobbleVelocity;
-                iconWobbleScale = Math.max(0, Math.min(iconWobbleScale, WOBBLE_SCALE_MAX));
-
-                // Update angle only on significant movement (reduces jitter)
-                if (velocity > WOBBLE_THRESHOLD) {
-                    iconWobbleAngle = Math.atan2(deltaDy, deltaDx);
-                }
-
-                // Matrix transform for symmetric directional stretch
-                var s = iconWobbleScale * WOBBLE_STRETCH_FACTOR;
-                var angle2 = iconWobbleAngle * WOBBLE_ANGLE_MULTIPLIER;
-                var cos2 = Math.cos(angle2);
-                var sin2 = Math.sin(angle2);
-                var iconMatrixA = 1 + s * cos2;
-                var iconMatrixB = s * sin2;
-                var iconMatrixC = s * sin2;
-                var iconMatrixD = 1 - s * cos2;
-            }
-
-            // Apply transform
-            var iconScaleTransform = (iconEffectScaleX !== 1 || iconEffectScaleY !== 1)
-                ? 'scale(' + iconEffectScaleX + ',' + iconEffectScaleY + ')'
-                : 'scale(' + iconEffectScale + ')';
-
-            // For wobble: use matrix for symmetric directional stretch
-            if (effectiveIconEffect === 'wobble' && typeof iconMatrixA !== 'undefined') {
+            // Apply transform - wobble uses matrix with counter-rotation for readability
+            if (iconWobbleMatrix) {
                 // Outer: translate + base rotate + matrix stretch
-                iconCursorEl.style.transform = 'translate3d(' + (dx - iconWidth / 2 + iconEffectOffsetX) + 'px,' + (dy - iconHeight / 2) + 'px,0) rotate(' + iconRotate + 'deg) matrix(' + iconMatrixA + ',' + iconMatrixB + ',' + iconMatrixC + ',' + iconMatrixD + ',0,0)';
-                // Inner: inverse matrix to keep icon upright
+                iconCursorEl.style.transform = 'translate3d(' + (dx - iconWidth / 2 + iconEffectOffsetX) + 'px,' + (dy - iconHeight / 2) + 'px,0) rotate(' + iconRotate + 'deg) ' + iconWobbleMatrix;
+                // Inner: inverse matrix to keep icon upright (computed from state)
                 if (iconCursorInner) {
+                    var s = iconWobbleState.scale * WOBBLE_STRETCH_FACTOR;
+                    var angle2 = iconWobbleState.angle * WOBBLE_ANGLE_MULTIPLIER;
+                    var cos2 = Math.cos(angle2);
+                    var sin2 = Math.sin(angle2);
+                    var iconMatrixA = 1 + s * cos2;
+                    var iconMatrixB = s * sin2;
+                    var iconMatrixC = s * sin2;
+                    var iconMatrixD = 1 - s * cos2;
                     var det = iconMatrixA * iconMatrixD - iconMatrixB * iconMatrixC;
                     // Guard against division by zero
                     if (Math.abs(det) > 0.0001) {
@@ -2097,7 +1996,7 @@
                     }
                 }
             } else {
-                iconCursorEl.style.transform = 'translate3d(' + (dx - iconWidth / 2 + iconEffectOffsetX) + 'px,' + (dy - iconHeight / 2) + 'px,0) rotate(' + iconEffectRotate + 'deg) ' + iconScaleTransform;
+                iconCursorEl.style.transform = 'translate3d(' + (dx - iconWidth / 2 + iconEffectOffsetX) + 'px,' + (dy - iconHeight / 2) + 'px,0) rotate(' + iconEffectRotate + 'deg) scale(' + iconEffectScale + ')';
                 if (iconCursorInner) {
                     iconCursorInner.style.transform = '';
                 }
@@ -2105,85 +2004,25 @@
         }
 
 
-        // Core cursor effects (wobble/pulse/shake/buzz)
+        // Core cursor effects via pure functions (wobble/pulse/shake/buzz)
         var coreTransform = '';
         var coreOffsetX = 0;
-        // Check for wobble effect
-        // Logic: '' = Default (Global), 'none' = None, others as-is
-        var effectiveCoreEffect;
-        if (coreEffect === '' || coreEffect === 'default') {
-            // Default (Global) - inherit global wobble setting
-            effectiveCoreEffect = isWobbleEnabled() ? 'wobble' : '';
-        } else if (coreEffect === 'none') {
-            // None - explicitly no effect
-            effectiveCoreEffect = '';
-        } else {
-            // wobble/pulse/shake/buzz - use as-is
-            effectiveCoreEffect = coreEffect;
-        }
+        var effectiveCoreEffect = resolveEffect(coreEffect, isWobbleEnabled());
 
         if (effectiveCoreEffect === 'wobble') {
-            // Wobble: spring physics with MATRIX-based directional stretch
-            var deltaDx = dx - prevDx;
-            var deltaDy = dy - prevDy;
-            prevDx = dx;
-            prevDy = dy;
-
-            // Velocity calculation
-            var velocity = Math.sqrt(deltaDx * deltaDx + deltaDy * deltaDy);
-            var targetScale = Math.min(velocity * WOBBLE_VELOCITY_SCALE, WOBBLE_SCALE_CLAMP) * WOBBLE_DEFORMATION_MULT;
-
-            // Spring physics for overshoot bounce
-            var force = (targetScale - wobbleScale) * WOBBLE_STIFFNESS;
-            wobbleVelocity += force;
-            wobbleVelocity *= WOBBLE_DAMPING;
-            wobbleScale += wobbleVelocity;
-            wobbleScale = Math.max(0, Math.min(wobbleScale, WOBBLE_SCALE_MAX));
-
-            // Update angle only on significant movement
-            if (velocity > WOBBLE_THRESHOLD) {
-                wobbleAngle = Math.atan2(deltaDy, deltaDx);
-            }
-
-            // Matrix transform for symmetric directional stretch
-            if (wobbleScale > WOBBLE_MIN_SCALE) {
-                var s = wobbleScale * WOBBLE_STRETCH_FACTOR;
-                var angle2 = wobbleAngle * WOBBLE_ANGLE_MULTIPLIER;
-                var cos2 = Math.cos(angle2);
-                var sin2 = Math.sin(angle2);
-                var matrixA = 1 + s * cos2;
-                var matrixB = s * sin2;
-                var matrixC = s * sin2;
-                var matrixD = 1 - s * cos2;
-                coreTransform = ' matrix(' + matrixA + ',' + matrixB + ',' + matrixC + ',' + matrixD + ',0,0)';
+            var coreWobbleMatrix = calcWobbleMatrix(coreWobbleState, dx, dy);
+            if (coreWobbleMatrix) {
+                coreTransform = ' ' + coreWobbleMatrix;
             }
         } else if (effectiveCoreEffect === 'pulse') {
-            // Pulse: breathing scale oscillation
             coreEffectTime += PULSE_TIME_INCREMENT;
-            var pulseScale = 1 + Math.sin(coreEffectTime) * PULSE_CORE_AMPLITUDE;
-            coreTransform = ' scale(' + pulseScale + ')';
+            coreTransform = ' scale(' + calcPulseScale(coreEffectTime, PULSE_CORE_AMPLITUDE) + ')';
         } else if (effectiveCoreEffect === 'shake') {
-            // Shake: left-right wave
             coreEffectTime += SHAKE_TIME_INCREMENT;
-            var cycle = coreEffectTime % SHAKE_CYCLE_DURATION;
-            if (cycle < SHAKE_WAVE_PHASE) {
-                coreOffsetX = Math.sin(cycle * SHAKE_WAVE_MULTIPLIER) * SHAKE_CORE_AMPLITUDE;
-            } else {
-                var pauseProgress = (cycle - SHAKE_WAVE_PHASE) / (SHAKE_CYCLE_DURATION - SHAKE_WAVE_PHASE);
-                coreOffsetX = Math.sin(SHAKE_WAVE_PHASE * SHAKE_WAVE_MULTIPLIER) * SHAKE_CORE_AMPLITUDE * (1 - pauseProgress);
-            }
+            coreOffsetX = calcShakeOffset(coreEffectTime, SHAKE_CORE_AMPLITUDE);
         } else if (effectiveCoreEffect === 'buzz') {
-            // Buzz: rotation oscillation
             coreEffectTime += BUZZ_TIME_INCREMENT;
-            var cycle = coreEffectTime % BUZZ_CYCLE_DURATION;
-            var buzzRotate = 0;
-            if (cycle < BUZZ_WAVE_PHASE) {
-                buzzRotate = Math.sin(cycle * BUZZ_WAVE_MULTIPLIER) * BUZZ_CORE_AMPLITUDE;
-            } else {
-                var pauseProgress = (cycle - BUZZ_WAVE_PHASE) / (BUZZ_CYCLE_DURATION - BUZZ_WAVE_PHASE);
-                buzzRotate = Math.sin(BUZZ_WAVE_PHASE * BUZZ_WAVE_MULTIPLIER) * BUZZ_CORE_AMPLITUDE * (1 - pauseProgress);
-            }
-            coreTransform = ' rotate(' + buzzRotate + 'deg)';
+            coreTransform = ' rotate(' + calcBuzzRotation(coreEffectTime, BUZZ_CORE_AMPLITUDE) + 'deg)';
         }
 
         // Default cursor (always update even if hidden, for smooth transition back)
