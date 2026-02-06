@@ -661,11 +661,14 @@
         if (currentPopup === el) return;
         currentPopup = el;
         el.appendChild(container);
-        console.log('[CURSOR DEBUG] moveCursorToPopup fired, parent:', el.className, 'container z-index:', getComputedStyle(container).zIndex);
+        console.log('[CURSOR DEBUG] MOVE TO POPUP:', el.className.substring(0,60));
+        console.trace();
     }
 
     function moveCursorToBody() {
         if (!currentPopup) return;
+        console.log('[CURSOR DEBUG] MOVE TO BODY');
+        console.trace();
         currentPopup = null;
         document.body.appendChild(container);
         if (forcedColor) {
