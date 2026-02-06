@@ -288,17 +288,56 @@ window.CMSM_DEBUG = true;                      // Legacy flag
 
 ---
 
+#### 7. Form Cursor Detection Fix (P4 v2 Enhancement)
+
+Enhanced P4 v2 form zone detection to fix cursor restoration issues and improve reliability.
+
+**Changes:**
+
+1. **Added `isFormZone()` helper function (line ~902):**
+   - Centralizes form zone detection logic
+   - Detects: SELECT, TEXTAREA, INPUT (except submit/button)
+   - Detects elements inside `<form>` container
+   - Detects ARIA role widgets: `[role="listbox"]`, `[role="combobox"]`, `[role="menu"]`, `[role="dialog"]`, `[aria-modal="true"]`
+   - Detects datepicker widgets: `.air-datepicker`, `.flatpickr-calendar`, `.daterangepicker`, `.ui-datepicker`
+
+2. **Added `formZoneActive` tracking variable (line ~953):**
+   - Enables cursor restore when leaving form zones via continuous mouse movement
+   - Works in addition to mouseout events
+
+3. **Refactored P4 v2 detection in 3 places:**
+   - `detectCursorMode()` (line ~1473) — now has else branch for restore
+   - `mouseover` handler (line ~2280) — uses `isFormZone()`
+   - `mouseout` handler (line ~2311) — symmetric with mouseover, checks `relatedTarget`
+
+**Bugs Fixed:**
+
+| Bug | Before | After |
+|-----|--------|-------|
+| Cursor not restoring when moving UP from form | `mouseout` only triggered when leaving downward | Checks `relatedTarget` in `mouseout` handler |
+| Cursor flickering between form fields | Individual INPUT elements detected separately | Detects `<form>` container, stable for all children |
+| TEXTAREA not hiding cursor | Missing from detection | Now explicitly detected |
+
+**Why These Changes:**
+
+- **Container detection** prevents flickering when moving between form fields (one form = one zone)
+- **formZoneActive flag** enables restore when cursor moves continuously from form to non-form (not just on mouseout events)
+- **Symmetric mouseout check** fixes asymmetry where cursor would hide on enter but not restore on exit in certain mouse movement patterns
+
+---
+
 ### Files Changed (v5.6 Complete)
 
 | File | Changes |
 |------|---------|
 | `assets/lib/custom-cursor/custom-cursor.css` | Z-index CSS custom properties (CSS-001 fix) |
-| `assets/lib/custom-cursor/custom-cursor.js` | Added CONSTANTS, CursorState, SpecialCursorManager, Pure Effect Functions, Debug Mode |
+| `assets/lib/custom-cursor/custom-cursor.js` | Added CONSTANTS, CursorState, SpecialCursorManager, Pure Effect Functions, Debug Mode, Form Detection Fix |
 | `assets/js/cursor-editor-sync.js` | Console cleanup (CMSM_DEBUG guard) |
 | `assets/js/navigator-indicator.js` | Empty catch blocks now log errors |
 | `DOCS/02-CHANGELOG-v5_6.md` | Updated (this file) |
-| `DOCS/04-KNOWN-ISSUES.md` | Marked CSS-001, MEM-004, CODE-002, CODE-003 resolved |
-| `DOCS/05-API-JAVASCRIPT.md` | Documented CONSTANTS, CursorState, SpecialCursorManager, Pure Functions, debug() API |
+| `DOCS/03-BACKLOG.md` | Marked P4-004, P4-005, P4-006 resolved |
+| `DOCS/04-KNOWN-ISSUES.md` | Marked CSS-001, MEM-004, CODE-002, CODE-003, P4-004, P4-005, P4-006 resolved |
+| `DOCS/05-API-JAVASCRIPT.md` | Documented CONSTANTS, CursorState, SpecialCursorManager, Pure Functions, debug() API, isFormZone() |
 | `DOCS/06-API-CSS.md` | Updated z-index documentation, added new CSS variables |
 | `DOCS/09-MAP-DEPENDENCY.md` | Updated with SpecialCursorManager and pure function dependencies |
 | `DOCS/12-REF-BODY-CLASSES.md` | Added CursorState references |

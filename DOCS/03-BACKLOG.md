@@ -43,21 +43,29 @@
 
 ## P4 v2: Forms & Popups Detection - IMPLEMENTED
 
-**Status:** ✅ IMPLEMENTED
+**Status:** ✅ IMPLEMENTED (Enhanced with v5.6 bug fixes)
 **Documentation:** `P4-FORMS-POPUPS.md`
 
 ### Solution (Graceful Degradation)
 Detect forms/popups via ARIA roles and disable custom cursor. System cursor works fine.
 
 ### Detection:
-- `<select>`, `<input>` (not submit/button)
+- `<select>`, `<textarea>`, `<input>` (not submit/button)
+- Elements inside `<form>` container
 - `[role="listbox"]`, `[role="combobox"]`, `[role="menu"]`
 - `[role="dialog"]`, `[aria-modal="true"]`
+- Datepicker widgets: `.air-datepicker`, `.flatpickr-calendar`, `.daterangepicker`, `.ui-datepicker`
 
 ### Code Locations:
-- `detectCursorMode()` line ~678
-- `mouseover` handler line ~1808
-- `mouseout` handler line ~1858
+- `isFormZone()` helper function line ~902
+- `detectCursorMode()` line ~1473 (uses isFormZone)
+- `mouseover` handler line ~2280 (uses isFormZone)
+- `mouseout` handler line ~2311 (uses isFormZone)
+
+### v5.6 Enhancements:
+- ✅ P4-004: Fixed cursor not restoring when moving UP from form (mouseout asymmetry)
+- ✅ P4-005: Fixed cursor flickering between form fields (container detection)
+- ✅ P4-006: Fixed TEXTAREA not hiding cursor (was missing from detection)
 
 ---
 

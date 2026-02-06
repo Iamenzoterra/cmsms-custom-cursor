@@ -901,7 +901,6 @@
      */
     function isFormZone(el) {
         if (!el || !el.tagName) return false;
-        console.log('[FormZone]', el.tagName, el.className && el.className.substring ? el.className.substring(0, 60) : '', 'closest form:', !!(el.closest && el.closest('form')));
 
         var tag = el.tagName;
         var reason = '';
@@ -1471,7 +1470,6 @@
         }
 
         // P4 v2: Auto-hide cursor on forms/popups (graceful degradation)
-        console.log('[detectMode] el:', el.tagName, el.className && el.className.substring ? el.className.substring(0, 60) : '');
         if (isFormZone(el)) {
             formZoneActive = true;
             CursorState.transition({ hidden: true }, 'detectCursorMode:forms');
@@ -2310,15 +2308,11 @@
 
         // P4 v2: Restore cursor when leaving form zone
         // Only restore if moving to a non-form element
-        console.log('[mouseout:RAW]', 't:', t.tagName, t.className && t.className.substring ? t.className.substring(0, 50) : '', 'related:', e.relatedTarget && e.relatedTarget.tagName, e.relatedTarget && e.relatedTarget.className && e.relatedTarget.className.substring ? e.relatedTarget.className.substring(0, 50) : '', 'isFormT:', isFormZone(t), 'isFormR:', e.relatedTarget ? isFormZone(e.relatedTarget) : 'null');
         if (isFormZone(t)) {
             var related = e.relatedTarget;
             if (!related || !isFormZone(related)) {
                 formZoneActive = false;
                 CursorState.transition({ hidden: false }, 'mouseout:forms');
-                console.log('[mouseout:forms] RESTORED. relatedTarget:', e.relatedTarget && e.relatedTarget.tagName, e.relatedTarget && e.relatedTarget.className && e.relatedTarget.className.substring ? e.relatedTarget.className.substring(0, 60) : '');
-            } else {
-                console.log('[mouseout:forms] SKIPPED restore - related is still in form zone');
             }
         }
 

@@ -22,10 +22,11 @@ This document consolidates all known issues, bugs, and technical debt across the
 │   ─────────────────────                                                     │
 │   Total:    24 active issues                                                │
 │                                                                             │
-│   Resolved: 38 issues (tracked for reference)                               │
+│   Resolved: 41 issues (tracked for reference)                               │
 │   ❌ False Positives: BUG-001, UX-001, UX-002 (not bugs after review)      │
 │   ✅ v5.5-SEC: SEC-001/002/003, BUG-002, BUG-003, MEM-001/002/003          │
 │   ✅ v5.6: CSS-001, CSS-002, MEM-004, CODE-002, CODE-003                    │
+│   ✅ v5.6 P4 v2 enhancements: P4-004, P4-005, P4-006 (form bugs)           │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -695,6 +696,9 @@ Latest v5.5-SEC fixes: SEC-001/002/003 (security), BUG-002/003, MEM-001/002/003 
 | P4-001 | Cursor over form dropdowns | P4 v2 auto-hide | v5.5 |
 | P4-002 | Cursor over modal popups | P4 v2 ARIA detection | v5.5 |
 | P4-003 | Cursor over select elements | P4 v2 graceful degradation | v5.5 |
+| P4-004 | Cursor not restoring when moving UP from form | isFormZone() mouseout fix | v5.6 |
+| P4-005 | Cursor flickering between form fields | Container detection | v5.6 |
+| P4-006 | TEXTAREA not hiding cursor | Added to isFormZone() | v5.6 |
 | P5-001 | Cursor over video elements | P5 auto-hide | v5.5 |
 | P5-002 | Cursor over iframes | P5 auto-hide | v5.5 |
 | BUG-100 | Widget boundary not respected | v5.3 grandparent fix | v5.3 |

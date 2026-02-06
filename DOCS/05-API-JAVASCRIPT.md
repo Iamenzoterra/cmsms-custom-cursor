@@ -936,6 +936,71 @@ Checks if wobble effect is globally enabled.
 
 ---
 
+#### isFormZone(el)
+
+**Line:** 902
+
+```javascript
+isFormZone(element) // Returns true if custom cursor should hide
+```
+
+Checks if element is inside a "form zone" where custom cursor should hide for usability.
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| el | Element\|null | DOM element to check |
+
+**Returns:** `boolean` - True if cursor should hide
+
+**Detection Logic:**
+
+1. **Direct form elements:**
+   - `<select>` (always)
+   - `<textarea>` (always)
+   - `<input>` (except `type="submit"` and `type="button"`)
+
+2. **Form container:**
+   - Any element inside a `<form>` element
+
+3. **ARIA role widgets:**
+   - `[role="listbox"]`
+   - `[role="combobox"]`
+   - `[role="menu"]`
+   - `[role="dialog"]`
+   - `[aria-modal="true"]`
+
+4. **Datepicker widgets:**
+   - `.air-datepicker`
+   - `.flatpickr-calendar`
+   - `.daterangepicker`
+   - `.ui-datepicker`
+
+**Exclusions (cursor NOT hidden):**
+
+- `<button>` elements (users expect custom cursor on buttons)
+- `<input type="submit">` (treated as button)
+- `<input type="button">` (treated as button)
+
+**Usage:**
+
+Used internally by P4 v2 auto-hide feature in three locations:
+1. `detectCursorMode()` (line ~1473)
+2. `mouseover` handler (line ~2280)
+3. `mouseout` handler (line ~2311)
+
+**Debug Output:**
+
+When `debugMode` is enabled, logs detected form zones with reason:
+- `"Form zone hit: SELECT"`
+- `"Form zone hit: TEXTAREA"`
+- `"Form zone hit: INPUT[text]"`
+- `"Form zone hit: inside <form>"`
+- `"Form zone hit: role/datepicker"`
+
+---
+
 #### detectCursorMode(x, y)
 
 **Line:** 645
