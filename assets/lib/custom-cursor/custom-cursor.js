@@ -951,6 +951,7 @@
     var isPaused = false;                  // Pause state
     var popupObserver = null;              // Track MutationObserver for cleanup
     var popupCheckInterval = null;         // Track setInterval for cleanup
+    var formZoneActive = false;            // Track if cursor is hidden due to form zone
 
     /**
      * Pause cursor render loop
@@ -1472,8 +1473,12 @@
         // P4 v2: Auto-hide cursor on forms/popups (graceful degradation)
         console.log('[detectMode] el:', el.tagName, el.className && el.className.substring ? el.className.substring(0, 60) : '');
         if (isFormZone(el)) {
+            formZoneActive = true;
             CursorState.transition({ hidden: true }, 'detectCursorMode:forms');
             return;
+        } else if (formZoneActive) {
+            formZoneActive = false;
+            CursorState.transition({ hidden: false }, 'detectCursorMode:forms-restore');
         }
 
         // P5: Auto-hide cursor on video/iframe
@@ -2309,6 +2314,7 @@
         if (isFormZone(t)) {
             var related = e.relatedTarget;
             if (!related || !isFormZone(related)) {
+                formZoneActive = false;
                 CursorState.transition({ hidden: false }, 'mouseout:forms');
                 console.log('[mouseout:forms] RESTORED. relatedTarget:', e.relatedTarget && e.relatedTarget.tagName, e.relatedTarget && e.relatedTarget.className && e.relatedTarget.className.substring ? e.relatedTarget.className.substring(0, 60) : '');
             } else {
@@ -2321,6 +2327,7 @@
             var related = e.relatedTarget;
             if (!related || (related.tagName !== 'VIDEO' && related.tagName !== 'IFRAME' &&
                 (!related.closest || !related.closest('video, iframe')))) {
+                formZoneActive = false;
                 CursorState.transition({ hidden: false }, 'mouseout:video');
             }
         }
@@ -2376,6 +2383,7 @@
         container.style.visibility = 'hidden';
         mx = my = dx = dy = rx = ry = OFFSCREEN_POSITION;
         hasValidPosition = false;
+        formZoneActive = false;
         // Reset any active special cursor via Manager (keeps state in sync)
         SpecialCursorManager.deactivate();
     }
