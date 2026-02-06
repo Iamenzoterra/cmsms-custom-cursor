@@ -576,7 +576,6 @@
     var isPaused = false;                  // Pause state
     var popupObserver = null;              // Track MutationObserver for cleanup
     var popupCheckInterval = null;         // Track setInterval for cleanup
-    var popupMoveTime = 0;                 // Grace period for popup entrance animation
 
     /**
      * Pause cursor render loop
@@ -661,7 +660,6 @@
     function moveCursorToPopup(el) {
         if (currentPopup === el) return;
         currentPopup = el;
-        popupMoveTime = Date.now();
         el.appendChild(container);
     }
 
@@ -989,31 +987,16 @@
         }
     }).observe(document.body, { childList: true, subtree: true });
 
-    // Periodic check - popup hidden/shown via CSS
+    // Periodic check - popup hidden via CSS
     popupCheckInterval = setInterval(function() {
-        // Grace period for popup entrance animation (500ms)
-        if (Date.now() - popupMoveTime < 500) return;
-
-        // Check if current popup was closed
-        if (currentPopup) {
-            if (!document.body.contains(currentPopup)) {
-                moveCursorToBody();
-                return;
-            }
-            var style = window.getComputedStyle(currentPopup);
-            if (style.display === 'none' || style.visibility === 'hidden') {
-                moveCursorToBody();
-            }
+        if (!currentPopup) return;
+        if (!document.body.contains(currentPopup)) {
+            moveCursorToBody();
             return;
         }
-
-        // Detect popup re-open (was closed, now visible again)
-        var visiblePopup = document.querySelector('.elementor-popup-modal');
-        if (visiblePopup) {
-            var style = window.getComputedStyle(visiblePopup);
-            if (style.display !== 'none' && style.visibility !== 'hidden') {
-                moveCursorToPopup(visiblePopup);
-            }
+        var style = window.getComputedStyle(currentPopup);
+        if (style.display === 'none' || style.visibility === 'hidden') {
+            moveCursorToBody();
         }
     }, POPUP_CHECK_INTERVAL_MS);
 
@@ -1094,16 +1077,14 @@
         // P4 v2: Auto-hide cursor on forms/popups (graceful degradation)
         // Forms and popups create stacking contexts that break cursor z-index.
         // Instead of fighting CSS, we hide custom cursor and let system cursor work.
-        // P3 fix: Skip dialog/modal check when cursor container is already inside popup
-        // (moveCursorToPopup() handles stacking, so we don't need to hide)
-        var isInsidePopup = container.parentNode !== document.body;
         if (el.tagName === 'SELECT' ||
             (el.tagName === 'INPUT' && el.type !== 'submit' && el.type !== 'button') ||
             (el.closest && (
                 el.closest('[role="listbox"]') ||
                 el.closest('[role="combobox"]') ||
                 el.closest('[role="menu"]') ||
-                (!isInsidePopup && (el.closest('[role="dialog"]') || el.closest('[aria-modal="true"]')))
+                el.closest('[role="dialog"]') ||
+                el.closest('[aria-modal="true"]')
             ))) {
             CursorState.transition({ hidden: true }, 'detectCursorMode:forms');
             return;
@@ -2242,15 +2223,14 @@
 
         // P4 v2: Auto-hide cursor on forms/popups (immediate response)
         // This provides instant feedback when entering form elements
-        // P3 fix: Skip dialog/modal check when cursor container is already inside popup
-        var isInsidePopup = container.parentNode !== document.body;
         if (t.tagName === 'SELECT' ||
             (t.tagName === 'INPUT' && t.type !== 'submit' && t.type !== 'button') ||
             (t.closest && (
                 t.closest('[role="listbox"]') ||
                 t.closest('[role="combobox"]') ||
                 t.closest('[role="menu"]') ||
-                (!isInsidePopup && (t.closest('[role="dialog"]') || t.closest('[aria-modal="true"]')))
+                t.closest('[role="dialog"]') ||
+                t.closest('[aria-modal="true"]')
             ))) {
             CursorState.transition({ hidden: true }, 'mouseover:forms');
             return;
@@ -2282,16 +2262,15 @@
 
         // P4 v2: Restore cursor when leaving form elements
         // Only restore if moving to non-form element
-        // P3 fix: Skip dialog/modal check when cursor container is already inside popup
         if (t.tagName === 'SELECT' || t.tagName === 'INPUT') {
             var related = e.relatedTarget;
-            var isInsidePopup = container.parentNode !== document.body;
             if (!related || (related.tagName !== 'SELECT' && related.tagName !== 'INPUT' &&
                 (!related.closest || (
                     !related.closest('[role="listbox"]') &&
                     !related.closest('[role="combobox"]') &&
                     !related.closest('[role="menu"]') &&
-                    (isInsidePopup || (!related.closest('[role="dialog"]') && !related.closest('[aria-modal="true"]')))
+                    !related.closest('[role="dialog"]') &&
+                    !related.closest('[aria-modal="true"]')
                 )))) {
                 CursorState.transition({ hidden: false }, 'mouseout:forms');
             }
