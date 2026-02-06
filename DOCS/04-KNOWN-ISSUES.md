@@ -17,15 +17,15 @@ This document consolidates all known issues, bugs, and technical debt across the
 │   Critical:  3 issues    (Architecture, Compatibility)                     │
 │   High:      4 issues    (Memory Leaks)                                    │
 │   Medium:   12 issues    (Performance, UX)                                  │
-│   Low:       6 issues    (Code Quality)                                     │
+│   Low:       4 issues    (Code Quality) — 2 resolved in v5.6               │
 │   Deferred:  1 issue     (PERF-001 - too risky)                            │
 │   ─────────────────────                                                     │
-│   Total:    26 active issues                                                │
+│   Total:    24 active issues                                                │
 │                                                                             │
-│   Resolved: 36 issues (tracked for reference)                               │
+│   Resolved: 38 issues (tracked for reference)                               │
 │   ❌ False Positives: BUG-001, UX-001, UX-002 (not bugs after review)      │
 │   ✅ v5.5-SEC: SEC-001/002/003, BUG-002, BUG-003, MEM-001/002/003          │
-│   ✅ v5.6: CSS-001, CSS-002, MEM-004 (SpecialCursorManager)                 │
+│   ✅ v5.6: CSS-001, CSS-002, MEM-004, CODE-002, CODE-003                    │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -539,31 +539,39 @@ Many hardcoded values without named constants:
 
 ---
 
-### CODE-002: Console.log in Production
+### ~~CODE-002: Console.log in Production~~ ✅ RESOLVED
 
 | Field | Value |
 |-------|-------|
 | **Location** | Multiple files |
 | **Type** | Code Quality |
-| **Status** | Open |
+| **Status** | ✅ **Resolved in v5.6** |
 | **Since** | v5.0 |
+| **Fixed** | February 6, 2026 |
 
-**Description:**
-Debug logging statements remain in production code.
+**Resolution:**
+Added debug mode infrastructure with `debugLog()`, `debugWarn()`, `debugError()` functions.
+- All console.* calls now behind `debugMode` flag or `window.CMSM_DEBUG` guard
+- Debug mode activatable via: `window.cmsmastersCursor.debug(true)`, `data-cursor-debug="true"`, or `window.CMSM_DEBUG = true`
+- Debug overlay shows live cursor state (updates at 200ms, not in render loop)
 
 ---
 
-### CODE-003: Empty Catch Blocks
+### ~~CODE-003: Empty Catch Blocks~~ ✅ RESOLVED
 
 | Field | Value |
 |-------|-------|
 | **Location** | Multiple files |
 | **Type** | Code Quality |
-| **Status** | Open |
+| **Status** | ✅ **Resolved in v5.6** |
 | **Since** | v4.0 |
+| **Fixed** | February 6, 2026 |
 
-**Description:**
-Several try-catch blocks silently swallow errors.
+**Resolution:**
+- Added `debugError()` function that ALWAYS logs (errors should never be silent)
+- custom-cursor.js: 1 catch block now uses `debugWarn()`
+- navigator-indicator.js: 9 empty catch blocks now log via `if (window.CMSM_DEBUG) console.warn()`
+- cursor-editor-sync.js: 1 stray console.log wrapped with `CMSM_DEBUG` guard
 
 ---
 
@@ -674,6 +682,8 @@ Latest v5.5-SEC fixes: SEC-001/002/003 (security), BUG-002/003, MEM-001/002/003 
 | CSS-001 | z-index 2147483647 conflicts | CSS custom properties (999999) | v5.6 |
 | CSS-002 | color-mix() no fallback | @supports rgba fallback | v5.6 |
 | MEM-004 | Special cursor DOM accumulation | SpecialCursorManager | v5.6 |
+| CODE-002 | Console.log in production | Debug mode infrastructure | v5.6 |
+| CODE-003 | Empty catch blocks | debugError + CMSM_DEBUG guards | v5.6 |
 | SEC-001 | XSS via innerHTML | SVG sanitizer with whitelist | v5.5-SEC |
 | SEC-002 | postMessage no origin check (editor) | TRUSTED_ORIGIN validation | v5.5-SEC |
 | SEC-003 | postMessage no origin check (preview) | TRUSTED_ORIGIN validation | v5.5-SEC |
@@ -765,4 +775,4 @@ If applicable.
 
 ---
 
-*Last Updated: February 5, 2026 | Version: 5.6*
+*Last Updated: February 6, 2026 | Version: 5.6*

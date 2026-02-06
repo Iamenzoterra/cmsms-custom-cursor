@@ -180,11 +180,16 @@ if (Date.now() - lastModeChangeTime < STICKY_MODE_DURATION) return;
 
 | ID | Priority | Description |
 |---|---|---|
-| CSS-001 | HIGH | z-index 2147483647 conflicts |
-| MEM-004 | MEDIUM | Special cursor elements accumulate |
 | MEM-005 | LOW | Typography cache unbounded |
 | PERF-001 | DEFERRED | RAF always running (3-5% CPU) |
-| CODE-001–010 | Various | Code quality debt |
+| CODE-005 | PARTIAL | Long functions (render() still ~250 lines) |
+| CODE-001,004,006-010 | Various | Code quality debt |
+
+**Recently Resolved (v5.6):**
+- ✅ CSS-001: z-index conflicts → CSS custom properties
+- ✅ MEM-004: Special cursor accumulation → SpecialCursorManager
+- ✅ CODE-002: Console.log in production → Debug mode
+- ✅ CODE-003: Empty catch blocks → debugError + CMSM_DEBUG
 
 ---
 

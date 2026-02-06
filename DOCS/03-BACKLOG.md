@@ -1,15 +1,24 @@
 # Custom Cursor v5.6 - Backlog
 
 **Created:** February 5, 2026
-**Updated:** February 5, 2026
+**Updated:** February 6, 2026
 **Based on:** v5.5-SEC (all security/stability fixes included)
 
 ---
 
 ## Current State
 
+**v5.6 Refactoring Phases (Complete):**
+- ✅ Phase 1-2: CSS-001 z-index fix, CSS-002 color-mix fallback, CONSTANTS section, CursorState
+- ✅ Phase 3: SpecialCursorManager (MEM-004 fix)
+- ✅ Phase 4: Pure Effect Functions (CODE-005 partially addressed)
+- ✅ Phase 5: Debug Mode + Console Cleanup (CODE-002, CODE-003 fix)
+
 **v5.6 New Fixes:**
 - ✅ CSS-002: color-mix() Fallback for older browsers (custom-cursor.css)
+- ✅ MEM-004: SpecialCursorManager for special cursor lifecycle
+- ✅ CODE-002: Debug mode infrastructure (no console.log in production)
+- ✅ CODE-003: Empty catch blocks now log errors
 
 **v5.6 contains (inherited from v5.5-SEC):**
 - ✅ P2: Editor DOM Re-rendering fix (navigator-indicator.js)
@@ -140,6 +149,28 @@ Graceful degradation - detect forms/popups and hide custom cursor.
 Enhanced postMessage broadcast for child elements.
 - File: `navigator-indicator.js`
 - Function: `broadcastChildrenCursorSettings()`
+
+### v5.6: Refactoring Phases ✅
+
+#### Phase 3: SpecialCursorManager (MEM-004)
+- File: `custom-cursor.js` lines ~564-689
+- Centralized special cursor lifecycle management
+- Prevents DOM element accumulation from rapid hover changes
+- API: `activate(type, config)`, `deactivate()`, `getActive()`, `isActive()`
+
+#### Phase 4: Pure Effect Functions (CODE-005 partial)
+- File: `custom-cursor.js` lines ~714-768
+- Extracted effect calculations into pure functions
+- `calcPulseScale()`, `calcShakeOffset()`, `calcBuzzRotation()`, `calcWobbleMatrix()`
+- `render()` reduced from ~550 lines to ~250 lines
+
+#### Phase 5: Debug Mode + Console Cleanup (CODE-002, CODE-003)
+- Files: `custom-cursor.js`, `cursor-editor-sync.js`, `navigator-indicator.js`
+- Added `debugLog()`, `debugWarn()`, `debugError()` functions
+- Debug overlay with 200ms update interval
+- Public API: `window.cmsmastersCursor.debug(true/false)`
+- All console.* calls behind debug mode or CMSM_DEBUG guard
+- 9 empty catch blocks in navigator-indicator.js now log errors
 
 ---
 

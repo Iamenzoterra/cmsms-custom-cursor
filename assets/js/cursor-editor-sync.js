@@ -314,8 +314,8 @@
                 synced++;
             }
         });
-        if (synced > 0) {
-            console.log('[P2-fix] Re-synced ' + synced + ' elements after DOM re-render');
+        if (synced > 0 && window.CMSM_DEBUG) {
+            console.log('[CursorEditorSync] Re-synced ' + synced + ' elements after DOM re-render');
         }
     }
 

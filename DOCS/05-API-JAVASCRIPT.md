@@ -545,6 +545,94 @@ Returns current pause state.
 
 ---
 
+#### debug(enable)
+
+**Line:** ~978
+
+```javascript
+window.cmsmastersCursor.debug(true)   // Enable debug mode
+window.cmsmastersCursor.debug(false)  // Disable debug mode
+```
+
+Enables or disables debug mode. When enabled:
+- Creates debug overlay in bottom-left corner
+- Logs state dump to console
+- Enables all `debugLog()` and `debugWarn()` output
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| enable | boolean | true to enable, false to disable |
+
+**Returns:** `boolean` - Current debug mode state
+
+**Alternative Activation Methods:**
+- `window.CMSM_DEBUG = true` (legacy, auto-detected on init)
+- `<body data-cursor-debug="true">` (auto-detected on init)
+
+**Debug Overlay Shows:**
+- Mode: on-light/on-dark (adaptive/fixed)
+- Blend: off/soft/medium/strong
+- Hover: YES/no
+- Special: none/image/text/icon
+- Effect: none/wobble/pulse/shake/buzz
+- Wobble: ON/OFF
+- Paused: YES/NO
+
+---
+
+### Debug Functions (Internal)
+
+**Location:** Lines ~287-379
+
+These functions are used internally for debug logging. Only `debugError` always logs; others require `debugMode = true`.
+
+#### debugLog(category, message, data)
+
+**Line:** ~287
+
+```javascript
+debugLog('mode', 'Mode changed to on-dark');
+debugLog('special', 'Activated', { type: 'image', src: '...' });
+```
+
+Logs debug info when debugMode is active.
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| category | string | Log category (init, mode, special, effect, event, sync) |
+| message | string | Log message |
+| data | any | (optional) Additional data to log |
+
+**Returns:** `void`
+
+---
+
+#### debugWarn(category, message, data)
+
+**Line:** ~303
+
+Same as `debugLog` but uses `console.warn`.
+
+---
+
+#### debugError(category, message, data)
+
+**Line:** ~319
+
+```javascript
+debugError('special', 'Failed to parse typography JSON', error);
+```
+
+Logs errors. **ALWAYS logs regardless of debugMode** — errors should never be silent.
+
+**Returns:** `void`
+
+---
+
 ### Internal Functions
 
 #### setBlendIntensity(intensity)

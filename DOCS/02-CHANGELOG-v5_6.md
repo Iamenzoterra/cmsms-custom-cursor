@@ -248,15 +248,57 @@ var iconWobbleState = { velocity: 0, scale: 0, angle: 0, prevDx: -200, prevDy: -
 
 ---
 
+#### 6. Debug Mode + Console Cleanup (Phase 5)
+
+Added structured debug tooling and removed stray console statements.
+
+**New Debug Infrastructure:**
+
+```javascript
+// Enable via any of these methods:
+window.cmsmastersCursor.debug(true);           // Public API
+document.body.setAttribute('data-cursor-debug', 'true');  // Data attribute
+window.CMSM_DEBUG = true;                      // Legacy flag
+```
+
+**Debug Functions:**
+
+| Function | Always Logs | Purpose |
+|----------|-------------|---------|
+| `debugLog(category, message, data)` | No | General debug info |
+| `debugWarn(category, message, data)` | No | Warnings |
+| `debugError(category, message, data)` | Yes | Errors (never silent) |
+
+**Categories:** `init`, `mode`, `special`, `effect`, `event`, `sync`, `error`
+
+**Debug Overlay:**
+- Fixed-position panel (bottom-left) showing live cursor state
+- Updates at 200ms interval (not in 60fps render loop)
+- Shows: mode, blend, hover, special cursor, effect, wobble, paused state
+- Automatically removed on cleanup
+
+**Console Cleanup:**
+- Replaced 1 stray `console.log` in cursor-editor-sync.js with `CMSM_DEBUG` guard
+- Added error logging to 9 empty catch blocks in navigator-indicator.js
+- All console.* calls now either use debug functions or are guarded with `window.CMSM_DEBUG`
+
+**Fixes:**
+- CODE-002: Console.log in production — now all behind debug mode
+- CODE-003: Empty catch blocks — now all log errors via debugError or CMSM_DEBUG guard
+
+---
+
 ### Files Changed (v5.6 Complete)
 
 | File | Changes |
 |------|---------|
 | `assets/lib/custom-cursor/custom-cursor.css` | Z-index CSS custom properties (CSS-001 fix) |
-| `assets/lib/custom-cursor/custom-cursor.js` | Added CONSTANTS, CursorState, SpecialCursorManager, Pure Effect Functions |
+| `assets/lib/custom-cursor/custom-cursor.js` | Added CONSTANTS, CursorState, SpecialCursorManager, Pure Effect Functions, Debug Mode |
+| `assets/js/cursor-editor-sync.js` | Console cleanup (CMSM_DEBUG guard) |
+| `assets/js/navigator-indicator.js` | Empty catch blocks now log errors |
 | `DOCS/02-CHANGELOG-v5_6.md` | Updated (this file) |
-| `DOCS/04-KNOWN-ISSUES.md` | Marked CSS-001 and MEM-004 resolved, CODE-005 partially addressed |
-| `DOCS/05-API-JAVASCRIPT.md` | Documented CONSTANTS, CursorState, SpecialCursorManager, Pure Functions |
+| `DOCS/04-KNOWN-ISSUES.md` | Marked CSS-001, MEM-004, CODE-002, CODE-003 resolved |
+| `DOCS/05-API-JAVASCRIPT.md` | Documented CONSTANTS, CursorState, SpecialCursorManager, Pure Functions, debug() API |
 | `DOCS/06-API-CSS.md` | Updated z-index documentation, added new CSS variables |
 | `DOCS/09-MAP-DEPENDENCY.md` | Updated with SpecialCursorManager and pure function dependencies |
 | `DOCS/12-REF-BODY-CLASSES.md` | Added CursorState references |

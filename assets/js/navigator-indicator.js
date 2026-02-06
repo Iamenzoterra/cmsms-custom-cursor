@@ -166,8 +166,8 @@
 
 			}
 
-		} catch (e) {}
-		
+		} catch (e) { if (window.CMSM_DEBUG) console.warn('[NavigatorIndicator] Color resolution method 1 (kit doc) failed', e); }
+
 		// Method 2 (CACHE): $e.data cache - may have updated values
 		try {
 			if (typeof $e !== 'undefined' && $e.data && $e.data.cache && $e.data.cache.storage) {
@@ -185,8 +185,8 @@
 
 			}
 
-		} catch (e) {}
-		
+		} catch (e) { if (window.CMSM_DEBUG) console.warn('[NavigatorIndicator] Color resolution method 2 ($e cache) failed', e); }
+
 		// Method 3 (STATIC): elementor.config.kit_config - initial load values
 		try {
 			var kitConfig = elementor.config.kit_config || {};
@@ -198,8 +198,8 @@
 
 			}
 
-		} catch (e) {}
-		
+		} catch (e) { if (window.CMSM_DEBUG) console.warn('[NavigatorIndicator] Color resolution method 3 (kit_config) failed', e); }
+
 		// Method 4 (FALLBACK): CSS variable from preview iframe
 		try {
 
@@ -213,8 +213,8 @@
 
 			}
 
-		} catch (e) {}
-		
+		} catch (e) { if (window.CMSM_DEBUG) console.warn('[NavigatorIndicator] Color resolution method 4 (CSS var) failed', e); }
+
 		if (window.CMSM_DEBUG) console.warn('[NavigatorIndicator] Could not resolve global color:', colorId);
 		return null;
 	}
@@ -261,7 +261,7 @@
 					}
 				}
 			}
-		} catch (e) {}
+		} catch (e) { if (window.CMSM_DEBUG) console.warn('[NavigatorIndicator] Typography resolution method 1 (kit doc) failed', e); }
 
 		// Method 2 (STATIC): elementor.config.kit_config
 		try {
@@ -272,7 +272,7 @@
 					return typos[i];
 				}
 			}
-		} catch (e) {}
+		} catch (e) { if (window.CMSM_DEBUG) console.warn('[NavigatorIndicator] Typography resolution method 2 (kit_config) failed', e); }
 
 		if (window.CMSM_DEBUG) console.warn('[NavigatorIndicator] Could not resolve typography:', typoId);
 		return null;
@@ -531,9 +531,7 @@
 
 
 			traverse(doc.container);
-		} catch (e) {
-			// Silently fail if traversal encounters issues
-		}
+		} catch (e) { if (window.CMSM_DEBUG) console.warn('[NavigatorIndicator] Container cache traversal failed', e); }
 
 
 		return cidToContainerCache;
@@ -565,7 +563,7 @@
 				return { model: view.model };
 			}
 
-		} catch (e) {}
+		} catch (e) { if (window.CMSM_DEBUG) console.warn('[NavigatorIndicator] jQuery data fallback failed', e); }
 
 		return null;
 	}
@@ -1036,7 +1034,7 @@
 				// Listen to ALL changes on settings model (including __globals__)
 				settings.on('change', onSettingsModelChange);
 			}
-		} catch(e) {}
+		} catch(e) { if (window.CMSM_DEBUG) console.warn('[NavigatorIndicator] Settings model watcher failed', e); }
 	}
 
 	function onSettingsModelChange(model, options) {

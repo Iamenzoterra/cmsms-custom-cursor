@@ -270,6 +270,119 @@
     var INITIAL_CURSOR_SIZE_PX = 8;     // Default cursor dot size
 
     // ═══════════════════════════════════════════════════════════════════════
+    // DEBUG MODE
+    // ═══════════════════════════════════════════════════════════════════════
+    // Enable via: window.cmsmastersCursor.debug(true)
+    // Or via: <body data-cursor-debug="true">
+    // Or via: window.CMSM_DEBUG = true (legacy)
+
+    var debugMode = false;
+
+    /**
+     * Debug log — only outputs when debugMode is active
+     * @param {string} category — init, mode, special, effect, event, sync
+     * @param {string} message — log message
+     * @param {*} [data] — optional data to log
+     */
+    function debugLog(category, message, data) {
+        if (!debugMode) return;
+        var prefix = '[Cursor:' + category + ']';
+        if (data !== undefined) {
+            console.log(prefix, message, data);
+        } else {
+            console.log(prefix, message);
+        }
+    }
+
+    /**
+     * Debug warn — only outputs when debugMode is active
+     * @param {string} category — init, mode, special, effect, event, sync, error
+     * @param {string} message — warning message
+     * @param {*} [data] — optional data to log
+     */
+    function debugWarn(category, message, data) {
+        if (!debugMode) return;
+        var prefix = '[Cursor:' + category + ']';
+        if (data !== undefined) {
+            console.warn(prefix, message, data);
+        } else {
+            console.warn(prefix, message);
+        }
+    }
+
+    /**
+     * Debug error — ALWAYS outputs (errors should never be silent)
+     * @param {string} category — init, mode, special, effect, event, sync, error
+     * @param {string} message — error message
+     * @param {*} [data] — optional error object or data
+     */
+    function debugError(category, message, data) {
+        var prefix = '[Cursor:' + category + ']';
+        if (data !== undefined) {
+            console.error(prefix, message, data);
+        } else {
+            console.error(prefix, message);
+        }
+    }
+
+    // === DEBUG OVERLAY ===
+    var debugOverlayEl = null;
+    var debugOverlayInterval = null;
+
+    function createDebugOverlay() {
+        if (debugOverlayEl) return;
+
+        debugOverlayEl = document.createElement('div');
+        debugOverlayEl.id = 'cmsm-cursor-debug';
+        debugOverlayEl.style.cssText = 'position:fixed;bottom:10px;left:10px;z-index:2147483647;' +
+            'background:rgba(0,0,0,0.85);color:#0f0;font:11px/1.4 monospace;' +
+            'padding:8px 12px;border-radius:4px;pointer-events:none;' +
+            'max-width:320px;white-space:pre;';
+        document.body.appendChild(debugOverlayEl);
+
+        debugOverlayInterval = setInterval(updateDebugOverlay, 200);
+    }
+
+    function removeDebugOverlay() {
+        if (debugOverlayInterval) {
+            clearInterval(debugOverlayInterval);
+            debugOverlayInterval = null;
+        }
+        if (debugOverlayEl) {
+            debugOverlayEl.remove();
+            debugOverlayEl = null;
+        }
+    }
+
+    function updateDebugOverlay() {
+        if (!debugOverlayEl) return;
+
+        var lines = [];
+        lines.push('=== CURSOR DEBUG ===');
+        lines.push('Mode: ' + (CursorState.get('mode') || 'none') + (adaptive ? ' (adaptive)' : ' (fixed)'));
+        lines.push('Blend: ' + (CursorState.get('blend') || 'off'));
+        lines.push('Hover: ' + (CursorState.get('hover') ? 'YES' : 'no'));
+
+        var active = SpecialCursorManager.getActive();
+        if (active) {
+            lines.push('Special: ' + active);
+            switch (active) {
+                case 'image': lines.push('Effect: ' + (imageCursorEffect || 'none')); break;
+                case 'text': lines.push('Effect: ' + (textCursorEffect || 'none')); break;
+                case 'icon': lines.push('Effect: ' + (iconCursorEffect || 'none')); break;
+            }
+        } else {
+            lines.push('Special: none');
+            lines.push('Effect: ' + (coreEffect || 'none'));
+        }
+
+        lines.push('Wobble: ' + (isWobbleEnabled() ? 'ON' : 'OFF'));
+        lines.push('Paused: ' + (isPaused ? 'YES' : 'NO'));
+
+        debugOverlayEl.textContent = lines.join('\n');
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
     // STATE MACHINE
     // ═══════════════════════════════════════════════════════════════════════
 
@@ -861,7 +974,25 @@
     window.cmsmastersCursor = {
         pause: pauseCursor,
         resume: resumeCursor,
-        isPaused: function() { return isPaused; }
+        isPaused: function() { return isPaused; },
+        debug: function(enable) {
+            debugMode = !!enable;
+            if (debugMode) {
+                createDebugOverlay();
+                console.log('[Cursor:init] Debug mode ENABLED');
+                console.log('[Cursor:init] State:', {
+                    mode: CursorState.get('mode'),
+                    adaptive: adaptive,
+                    blend: CursorState.get('blend'),
+                    specialCursor: SpecialCursorManager.getActive(),
+                    paused: isPaused,
+                    wobbleEnabled: isWobbleEnabled()
+                });
+            } else {
+                removeDebugOverlay();
+            }
+            return debugMode;
+        }
     };
 
 
@@ -1490,7 +1621,7 @@
             try {
                 typography = JSON.parse(typographyJson);
             } catch (e) {
-                if (window.CMSM_DEBUG) console.warn('[Cursor] Invalid typography JSON:', typographyJson);
+                debugWarn('special', 'Invalid typography JSON', typographyJson);
             }
 
             var txtStyles = {
@@ -2274,6 +2405,13 @@
     // Start render loop (track rafId for pause/resume)
     rafId = requestAnimationFrame(render);
 
+    // Check for debug mode activation (auto-enable)
+    if (window.CMSM_DEBUG || document.body.getAttribute('data-cursor-debug') === 'true') {
+        debugMode = true;
+        createDebugOverlay();
+        console.log('[Cursor:init] Debug mode auto-enabled');
+    }
+
     // === CLEANUP ON PAGE UNLOAD ===
     window.addEventListener('beforeunload', function() {
         // Reset singleton guard to allow reinit after real page reload
@@ -2293,6 +2431,8 @@
             popupObserver.disconnect();
             popupObserver = null;
         }
+        // Remove debug overlay
+        removeDebugOverlay();
     });
 
 
