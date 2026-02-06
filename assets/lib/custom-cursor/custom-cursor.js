@@ -660,7 +660,6 @@
 
     function moveCursorToPopup(el) {
         if (currentPopup === el) return;
-        console.log('[DEBUG] MOVE TO POPUP', el.className.substring(0,40));
         currentPopup = el;
         popupMoveTime = Date.now();
         el.appendChild(container);
@@ -668,7 +667,6 @@
 
     function moveCursorToBody() {
         if (!currentPopup) return;
-        console.log('[DEBUG] MOVE TO BODY');
         currentPopup = null;
         document.body.appendChild(container);
         if (forcedColor) {
@@ -991,18 +989,31 @@
         }
     }).observe(document.body, { childList: true, subtree: true });
 
-    // Periodic check - popup hidden via CSS
+    // Periodic check - popup hidden/shown via CSS
     popupCheckInterval = setInterval(function() {
-        if (!currentPopup) return;
         // Grace period for popup entrance animation (500ms)
         if (Date.now() - popupMoveTime < 500) return;
-        if (!document.body.contains(currentPopup)) {
-            moveCursorToBody();
+
+        // Check if current popup was closed
+        if (currentPopup) {
+            if (!document.body.contains(currentPopup)) {
+                moveCursorToBody();
+                return;
+            }
+            var style = window.getComputedStyle(currentPopup);
+            if (style.display === 'none' || style.visibility === 'hidden') {
+                moveCursorToBody();
+            }
             return;
         }
-        var style = window.getComputedStyle(currentPopup);
-        if (style.display === 'none' || style.visibility === 'hidden') {
-            moveCursorToBody();
+
+        // Detect popup re-open (was closed, now visible again)
+        var visiblePopup = document.querySelector('.elementor-popup-modal');
+        if (visiblePopup) {
+            var style = window.getComputedStyle(visiblePopup);
+            if (style.display !== 'none' && style.visibility !== 'hidden') {
+                moveCursorToPopup(visiblePopup);
+            }
         }
     }, POPUP_CHECK_INTERVAL_MS);
 
