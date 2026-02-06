@@ -1,0 +1,29 @@
+name: Deploy to Hetzner
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy via rsync
+        uses: burnett01/rsync-deployments@7.0.1
+        with:
+          # БЕЗ --delete! Інакше видалить файли основного аддона
+          switches: -avz --exclude='.git' --exclude='.github' --exclude='node_modules' --exclude='.gitignore' --exclude='README.md' --exclude='SETUP-DEPLOY.md' --exclude='docs/'
+          path: ./
+          remote_path: ${{ secrets.REMOTE_PATH }}
+          remote_host: ${{ secrets.REMOTE_HOST }}
+          remote_port: ${{ secrets.REMOTE_PORT }}
+          remote_user: ${{ secrets.REMOTE_USER }}
+          remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Notify success
+        if: success()
+        run: echo "✅ Deployed to ${{ secrets.REMOTE_HOST }}"
