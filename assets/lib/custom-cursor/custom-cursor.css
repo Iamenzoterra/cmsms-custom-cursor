@@ -20,7 +20,9 @@ body.cmsm-cursor-on-light {
 }
 
 #cmsm-cursor-container {
-    z-index:2147483647
+    --cmsm-cursor-z-default: 999999;
+    --cmsm-cursor-z-blend: 9999;
+    z-index: var(--cmsm-cursor-z-default)
 }
 
 .cmsm-cursor {
@@ -120,7 +122,7 @@ body.cmsm-cursor-blend-strong {
 body.cmsm-cursor-blend-medium #cmsm-cursor-container,
 body.cmsm-cursor-blend-soft #cmsm-cursor-container,
 body.cmsm-cursor-blend-strong #cmsm-cursor-container {
-    z-index:9999
+    z-index: var(--cmsm-cursor-z-blend)
 }
 
 body.cmsm-cursor-blend-soft #cmsm-cursor-container {
@@ -336,7 +338,7 @@ body.cmsm-cursor-blend-strong .cmsm-cursor-icon-el {
 .elementor-popup-modal #cmsm-cursor-container,
 .flatpickr-calendar #cmsm-cursor-container,
 .ui-datepicker #cmsm-cursor-container {
-    z-index:999999!important
+    z-index: var(--cmsm-cursor-z-default)
 }
 
 /**

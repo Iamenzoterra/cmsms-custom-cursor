@@ -8,7 +8,7 @@
 
 | Version | Date | Type | Summary |
 |---------|------|------|---------|
-| v5.6 | 2026-02-06 | Refactor | Constants + CursorState state machine |
+| v5.6 | 2026-02-06 | Refactor + Fix | Constants, CursorState, z-index consolidation |
 | v5.5 | 2026-02-05 | Feature | P4 v2 Forms/popups + P5 Video/iframe auto-hide |
 | v5.5-SEC | 2026-02-05 | Security | SVG sanitization for XSS prevention |
 
@@ -16,15 +16,45 @@
 
 ## v5.6 - February 6, 2026
 
-### Type: Refactor (Zero Behavioral Change)
+### Type: Refactor + Bug Fix
 
-This release extracts magic numbers into named constants and introduces a centralized state machine for body class management. No user-facing behavior has changed.
+This release extracts magic numbers into named constants, introduces a centralized state machine for body class management, and consolidates z-index values with CSS custom properties.
 
 ---
 
 ### Changes
 
-#### 1. CONSTANTS Section (Lines ~160-256)
+#### 1. Z-Index Consolidation (CSS-001 Fix)
+
+Resolved long-standing z-index conflict issue by replacing hardcoded maximum integer with CSS custom properties.
+
+**Before:**
+```css
+#cmsm-cursor-container {
+    z-index: 2147483647; /* max-int - conflicts with browser extensions */
+}
+```
+
+**After:**
+```css
+#cmsm-cursor-container {
+    --cmsm-cursor-z-default: 999999;
+    --cmsm-cursor-z-blend: 9999;
+    z-index: var(--cmsm-cursor-z-default);
+}
+```
+
+**Changes:**
+- Default z-index reduced from `2147483647` to `999999`
+- Blend mode z-index now uses `var(--cmsm-cursor-z-blend)` instead of hardcoded `9999`
+- Popup/datepicker overrides now use `var(--cmsm-cursor-z-default)` (removed `!important`)
+- Users can now override z-index via CSS custom properties if conflicts occur
+
+**Why 999999?** High enough to be above normal page content, low enough to not conflict with browser extensions that use max-int.
+
+---
+
+#### 2. CONSTANTS Section (Lines ~160-256)
 
 Extracted 35 magic numbers into named constants for improved maintainability and documentation.
 
@@ -49,7 +79,7 @@ Extracted 35 magic numbers into named constants for improved maintainability and
 
 ---
 
-#### 2. CursorState State Machine (Lines ~278-399)
+#### 3. CursorState State Machine (Lines ~278-399)
 
 Introduced `CursorState` object to centralize all body class manipulation.
 
@@ -124,11 +154,14 @@ Due to the CONSTANTS (~96 lines) and CursorState (~122 lines) additions, all sub
 
 | File | Changes |
 |------|---------|
+| `assets/lib/custom-cursor/custom-cursor.css` | Z-index CSS custom properties (CSS-001 fix) |
 | `assets/lib/custom-cursor/custom-cursor.js` | Added CONSTANTS section, CursorState object |
+| `DOCS/02-CHANGELOG-v5_6.md` | Updated (this file) |
+| `DOCS/04-KNOWN-ISSUES.md` | Marked CSS-001 resolved |
 | `DOCS/05-API-JAVASCRIPT.md` | Documented CONSTANTS and CursorState API |
+| `DOCS/06-API-CSS.md` | Updated z-index documentation, added new CSS variables |
 | `DOCS/09-MAP-DEPENDENCY.md` | Updated line number references |
 | `DOCS/12-REF-BODY-CLASSES.md` | Added CursorState references |
-| `DOCS/02-CHANGELOG-v5_6.md` | Created (this file) |
 
 ---
 

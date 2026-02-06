@@ -1,6 +1,6 @@
-# Custom Cursor v5.5 - CSS API Reference
+# Custom Cursor v5.6 - CSS API Reference
 
-**Last Updated:** February 5, 2026
+**Last Updated:** February 6, 2026
 
 ---
 
@@ -24,6 +24,8 @@
 | `--cmsm-cursor-color-dark` | #222 | Dark mode color (adaptive) |
 | `--cmsm-cursor-dot-size` | 8px | Dot diameter |
 | `--cmsm-cursor-dot-hover-size` | 8px | Dot hover diameter (default, theme-dot uses 20px) |
+| `--cmsm-cursor-z-default` | 999999 | Default z-index (high but not max-int) |
+| `--cmsm-cursor-z-blend` | 9999 | Z-index when blend modes active |
 
 ### Editor Navigator Variables (editor-navigator.css)
 
@@ -60,21 +62,31 @@
 
 ### #cmsm-cursor-container
 
-Main container element. Z-index is maximum possible integer value.
+Main container element. Z-index uses CSS custom properties for easy override.
 
 ```css
 #cmsm-cursor-container {
-    z-index: 2147483647;
+    --cmsm-cursor-z-default: 999999;
+    --cmsm-cursor-z-blend: 9999;
+    z-index: var(--cmsm-cursor-z-default);
 }
 ```
 
-**Note:** When blend modes are active, z-index drops to 9999:
+**Note:** When blend modes are active, z-index drops to blend value:
 
 ```css
 body.cmsm-cursor-blend-soft #cmsm-cursor-container,
 body.cmsm-cursor-blend-medium #cmsm-cursor-container,
 body.cmsm-cursor-blend-strong #cmsm-cursor-container {
-    z-index: 9999;
+    z-index: var(--cmsm-cursor-z-blend);
+}
+```
+
+**User Override:** If z-index conflicts occur with other UI elements, users can lower the value:
+
+```css
+#cmsm-cursor-container {
+    --cmsm-cursor-z-default: 99999; /* lower if conflicts */
 }
 ```
 
@@ -771,11 +783,12 @@ Dark mode colors (applied via `.elementor-editor-dark` or auto dark mode):
 
 | Element | Z-Index | Condition |
 |---------|---------|-----------|
-| #cmsm-cursor-container | 2147483647 | Default (max int) |
-| #cmsm-cursor-container | 9999 | Blend modes active |
-| #cmsm-cursor-container | 999999 | Inside popups/date pickers |
+| #cmsm-cursor-container | 999999 | Default (via `--cmsm-cursor-z-default`) |
+| #cmsm-cursor-container | 9999 | Blend modes active (via `--cmsm-cursor-z-blend`) |
 | .cmsm-nav-cursor-legend-wrapper | 10 | Navigator legend |
 | .elementor-navigator__element__indicators | 1 | Navigator indicators |
+
+**Why 999999?** High enough to be above normal page content, low enough to not conflict with browser extensions that use max-int (`2147483647`).
 
 **Popup/Date Picker Override:**
 
@@ -785,7 +798,7 @@ Dark mode colors (applied via `.elementor-editor-dark` or auto dark mode):
 .elementor-popup-modal #cmsm-cursor-container,
 .flatpickr-calendar #cmsm-cursor-container,
 .ui-datepicker #cmsm-cursor-container {
-    z-index: 999999 !important;
+    z-index: var(--cmsm-cursor-z-default);
 }
 ```
 
@@ -885,4 +898,4 @@ body.cmsm-cursor-enabled.cmsm-cursor-hidden
 
 ---
 
-*Last Updated: February 5, 2026 | Version: 5.5*
+*Last Updated: February 6, 2026 | Version: 5.6*

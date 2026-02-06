@@ -1,6 +1,6 @@
 # Custom Cursor v5.6 - Known Issues
 
-**Last Updated:** February 5, 2026
+**Last Updated:** February 6, 2026
 **Version:** 5.6
 
 ---
@@ -25,7 +25,7 @@ This document consolidates all known issues, bugs, and technical debt across the
 │   Resolved: 36 issues (tracked for reference)                               │
 │   ❌ False Positives: BUG-001, UX-001, UX-002 (not bugs after review)      │
 │   ✅ v5.5-SEC: SEC-001/002/003, BUG-002, BUG-003, MEM-001/002/003          │
-│   ✅ v5.6: CSS-002 (color-mix fallback)                                     │
+│   ✅ v5.6: CSS-001 (z-index), CSS-002 (color-mix fallback)                  │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -117,32 +117,34 @@ window.cmsmCursorInstanceActive = true;
 
 ---
 
-### CSS-001: Z-Index Conflicts
+### ~~CSS-001: Z-Index Conflicts~~ ✅ RESOLVED
 
 | Field | Value |
 |-------|-------|
 | **Location** | `custom-cursor.css:1-10` |
 | **Type** | Compatibility |
-| **Status** | Open |
+| **Status** | ✅ **Resolved in v5.6** |
 | **Since** | v1.0 |
+| **Fixed** | February 6, 2026 |
 
-**Description:**
-Cursor uses maximum z-index (`2147483647`) which conflicts with some modals and overlays.
-
-**Code:**
+**Resolution:**
+Consolidated z-index to 999999 with CSS custom properties for user override:
 ```css
 #cmsm-cursor-container {
-    z-index: 2147483647;
+    --cmsm-cursor-z-default: 999999;
+    --cmsm-cursor-z-blend: 9999;
+    z-index: var(--cmsm-cursor-z-default);
 }
 ```
 
-**Symptoms:**
-- Cursor appears over modal close buttons
-- Interferes with sticky navigation
+**Why 999999?** High enough to be above page content, low enough to not conflict with browser extensions using max-int.
 
-**Mitigation:**
-- P4 v2 hides cursor over modals/popups
-- Consider dynamic z-index management
+**User Override:**
+```css
+#cmsm-cursor-container {
+    --cmsm-cursor-z-default: 99999; /* lower if conflicts */
+}
+```
 
 ---
 
@@ -628,6 +630,7 @@ Latest v5.5-SEC fixes: SEC-001/002/003 (security), BUG-002/003, MEM-001/002/003 
 
 | ID | Description | Resolution | Version |
 |----|-------------|------------|---------|
+| CSS-001 | z-index 2147483647 conflicts | CSS custom properties (999999) | v5.6 |
 | CSS-002 | color-mix() no fallback | @supports rgba fallback | v5.6 |
 | SEC-001 | XSS via innerHTML | SVG sanitizer with whitelist | v5.5-SEC |
 | SEC-002 | postMessage no origin check (editor) | TRUSTED_ORIGIN validation | v5.5-SEC |
