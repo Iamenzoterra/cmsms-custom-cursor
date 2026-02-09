@@ -1,6 +1,6 @@
-# Custom Cursor v5.5 - File Reference
+# Custom Cursor v5.6 - File Reference
 
-**Last Updated:** February 5, 2026
+**Last Updated:** February 9, 2026
 
 ---
 
@@ -9,9 +9,9 @@
 | Category | Files | Total Lines |
 |----------|-------|-------------|
 | JavaScript | 3 | 4,002 |
-| PHP | 5 | ~4,900 |
-| CSS | 2 | 587 |
-| **Total** | **10** | **~9,500** |
+| PHP | 5 | ~4,250 |
+| CSS | 2 | 586 |
+| **Total** | **10** | **~8,840** |
 
 > **Note:** `includes/managers/modules.php` is part of the full addon plugin but
 > is required for cursor module registration. See [01-ARCHITECTURE.md](01-ARCHITECTURE.md#module-loading-chain).
@@ -22,7 +22,7 @@
 
 ### custom-cursor.js
 
-**Location:** `version-5.5/assets/lib/custom-cursor/custom-cursor.js`
+**Location:** `assets/lib/custom-cursor/custom-cursor.js`
 **Lines:** 2,026
 **Minified:** `custom-cursor.min.js`
 
@@ -61,7 +61,7 @@
 
 ### cursor-editor-sync.js
 
-**Location:** `version-5.5/assets/js/cursor-editor-sync.js`
+**Location:** `assets/js/cursor-editor-sync.js`
 **Lines:** 680
 
 **Purpose:** Sync cursor settings between Elementor editor and preview iframe
@@ -93,7 +93,7 @@
 
 ### navigator-indicator.js
 
-**Location:** `version-5.5/assets/js/navigator-indicator.js`
+**Location:** `assets/js/navigator-indicator.js`
 **Lines:** 1,296
 
 **Purpose:** Show cursor indicator icons in Elementor Navigator panel
@@ -129,40 +129,41 @@
 
 ### frontend.php
 
-**Location:** `version-5.5/includes/frontend.php`
-**Lines:** 2,131
+**Location:** `includes/frontend.php`
+**Lines:** 1,467 (1,126 original addon + 341 cursor code)
 
-**Purpose:** Frontend initialization and output
+**Purpose:** Frontend initialization and output (extends CMSMasters addon Frontend class)
 
-**Key Responsibilities:**
+**Architecture:** This file is the original addon's `Frontend` class with ONLY cursor methods added at the end. Original addon code (script registration, widget styles, template rendering) is untouched. See DEPLOY-001 in [04-KNOWN-ISSUES.md](04-KNOWN-ISSUES.md) for why this approach is critical.
+
+**Key Responsibilities (cursor-only additions):**
 - Check if cursor should be enabled
-- Enqueue scripts and styles
-- Add body classes
-- Print inline CSS/JS
-- Output cursor HTML structure
+- Enqueue cursor scripts and styles
+- Add cursor body classes
+- Print cursor HTML structure + critical inline JS
 
-**Major Functions:**
+**Cursor Methods (added to original class):**
 
 | Function | Line | Purpose |
 |----------|------|---------|
-| `should_enable_custom_cursor()` | ~100 | Check if cursor enabled |
-| `enqueue_custom_cursor()` | ~150 | Enqueue assets |
-| `add_cursor_body_class()` | ~200 | Add body classes |
-| `print_custom_cursor_html()` | ~300 | Output HTML structure |
-| `print_cursor_critical_js()` | ~400 | Output critical inline JS |
-| `validate_hex_color()` | ~500 | Validate color format |
-| `get_cursor_color()` | ~550 | Get color with fallback |
+| `should_enable_custom_cursor()` | ~1142 | Check if cursor enabled |
+| `enqueue_custom_cursor()` | ~1190 | Enqueue cursor assets |
+| `add_cursor_body_class()` | ~1274 | Add cursor body classes |
+| `print_custom_cursor_html()` | ~1318 | Output HTML structure |
+| `print_cursor_critical_js()` | ~1347 | Output critical inline JS |
+| `validate_hex_color()` | ~1407 | Validate color format |
+| `get_cursor_color()` | ~1425 | Get color with fallback |
 
-**WordPress Hooks:**
-- `wp_enqueue_scripts` - Enqueue assets
-- `body_class` - Add classes
-- `wp_footer` - Print HTML/JS
+**Cursor Hooks (in init_actions, lines 118-121):**
+- `wp_enqueue_scripts` - Enqueue cursor assets
+- `body_class` - Add cursor classes
+- `wp_footer` - Print cursor HTML/JS
 
 ---
 
 ### editor.php
 
-**Location:** `version-5.5/includes/editor.php`
+**Location:** `includes/editor.php`
 **Lines:** 365
 
 **Purpose:** Elementor editor script enqueuing
@@ -187,7 +188,7 @@
 
 ### module.php
 
-**Location:** `version-5.5/modules/cursor-controls/module.php`
+**Location:** `modules/cursor-controls/module.php`
 **Lines:** 1,190
 
 **Purpose:** Register Elementor widget controls and apply data attributes
@@ -221,14 +222,14 @@
 
 ### settings-page.php
 
-**Location:** `version-5.5/modules/settings/settings-page.php`
-**Lines:** 1,072
+**Location:** `modules/settings/settings-page.php`
+**Lines:** ~830
 
 **Purpose:** Admin settings page for global cursor configuration
 
 **Key Responsibilities:**
 - Create admin menu page
-- Register settings fields
+- Register cursor settings fields
 - Validate and sanitize input
 - Save settings to database
 
@@ -238,7 +239,6 @@
 |----------|------|---------|
 | `register_admin_menu()` | ~544 | Add admin menu item |
 | `create_tabs()` | ~570 | Create settings tabs |
-| `render_font_preload_section()` | ~831 | Render performance section |
 | `enqueue_admin_scripts()` | ~68 | Enqueue admin assets |
 
 **WordPress Options:**
@@ -254,7 +254,7 @@
 
 ### custom-cursor.css
 
-**Location:** `version-5.5/assets/lib/custom-cursor/custom-cursor.css`
+**Location:** `assets/lib/custom-cursor/custom-cursor.css`
 **Lines:** 341
 
 **Purpose:** Frontend cursor styles
@@ -284,8 +284,8 @@
 
 ### editor-navigator.css
 
-**Location:** `version-5.5/assets/css/editor-navigator.css`
-**Lines:** 246
+**Location:** `assets/css/editor-navigator.css`
+**Lines:** 245
 
 **Purpose:** Editor Navigator indicator styles
 
@@ -377,4 +377,4 @@ During development, backup files are created:
 
 ---
 
-*Last Updated: February 5, 2026 | Version: 5.5*
+*Last Updated: February 9, 2026 | Version: 5.6*

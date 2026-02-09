@@ -1,6 +1,6 @@
-# Custom Cursor v5.5 - PHP API Reference
+# Custom Cursor v5.6 - PHP API Reference
 
-**Last Updated:** February 5, 2026
+**Last Updated:** February 9, 2026
 
 ---
 
@@ -20,10 +20,12 @@
 Located at: `includes/frontend.php`
 Class: `CmsmastersElementor\Frontend`
 
+> **Architecture Note:** This file is the original addon's `Frontend` class (1,126 lines) with cursor methods appended at the end (lines 1131-1466). Original addon code is untouched — never modify script dependencies, widget registrations, or other original methods. See DEPLOY-001 in [04-KNOWN-ISSUES.md](04-KNOWN-ISSUES.md).
+
 ### Hook Registration (init_actions)
 
 ```php
-// Lines 124-127 in init_actions()
+// Lines 118-121 in init_actions()
 add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_custom_cursor' ), 20 );
 add_filter( 'body_class', array( $this, 'add_cursor_body_class' ) );
 add_action( 'wp_footer', array( $this, 'print_custom_cursor_html' ), 5 );
@@ -33,7 +35,7 @@ add_action( 'wp_footer', array( $this, 'print_custom_cursor_html' ), 5 );
 
 ### should_enable_custom_cursor()
 
-**Line:** 1815-1856 (private method)
+**Line:** 1142-1183 (private method)
 
 ```php
 private function should_enable_custom_cursor() { ... }
@@ -53,7 +55,7 @@ Determines if custom cursor should be enabled on current page.
 
 ### enqueue_custom_cursor()
 
-**Line:** 1863-1936
+**Line:** 1190-1264
 
 ```php
 public function enqueue_custom_cursor() { ... }
@@ -82,7 +84,7 @@ Enqueues cursor CSS and JS assets.
 
 ### add_cursor_body_class($classes)
 
-**Line:** 1947-1984
+**Line:** 1274-1311
 
 ```php
 public function add_cursor_body_class( $classes ) { ... }
@@ -112,7 +114,7 @@ Adds cursor-related classes to body element.
 
 ### print_custom_cursor_html()
 
-**Line:** 1991-2009
+**Line:** 1318-1336
 
 ```php
 public function print_custom_cursor_html() { ... }
@@ -136,7 +138,7 @@ Also calls `print_cursor_critical_js()` for instant response.
 
 ### print_cursor_critical_js()
 
-**Line:** 2020-2069 (private method)
+**Line:** 1347-1397 (private method)
 
 ```php
 private function print_cursor_critical_js() { ... }
@@ -155,7 +157,7 @@ Outputs critical inline JavaScript for instant cursor following.
 
 ### validate_hex_color($color)
 
-**Line:** 2079-2088 (private method)
+**Line:** 1407-1416 (private method)
 
 ```php
 private function validate_hex_color( $color ) { ... }
@@ -179,7 +181,7 @@ Validates and sanitizes hex color format.
 
 ### get_cursor_color()
 
-**Line:** 2090-2129 (private method)
+**Line:** 1425-1464 (private method)
 
 ```php
 private function get_cursor_color() { ... }
@@ -585,7 +587,6 @@ Enqueues Pickr color picker and custom UI for settings page.
 
 **Enqueued:**
 - Pickr CSS/JS (CDN)
-- `cmsmasters-font-converter` (JS)
 - Custom inline styles for color swatches UI
 
 ---
@@ -649,4 +650,4 @@ version-5.5/
 
 ---
 
-*Last Updated: February 5, 2026 | Version: 5.5*
+*Last Updated: February 9, 2026 | Version: 5.6*

@@ -1,6 +1,6 @@
 # Custom Cursor v5.6 - Changelog
 
-**Last Updated:** February 6, 2026
+**Last Updated:** February 9, 2026
 
 ---
 
@@ -326,6 +326,30 @@ Enhanced P4 v2 form zone detection to fix cursor restoration issues and improve 
 
 ---
 
+#### 8. frontend.php Clean Rewrite (DEPLOY-001 Fix)
+
+Rewrote `frontend.php` from scratch using the clean original addon file, adding ONLY cursor-related code.
+
+**Problem:**
+Our previous `frontend.php` (2,131 lines) broke the Swap Button widget and potentially other widgets when deployed. Three issues:
+1. PERF-001 removed `anime`, `vanilla-tilt`, `basicScroll`, `hc-sticky`, `headroom` from `cmsmasters-frontend` dependencies
+2. Missing widget style registrations (`widget-cmsmasters-swap-button`, `widget-cmsmasters-image-accordion`)
+3. `wp_strip_all_tags()` added to `print_styles()` stripped CSS `>` child selectors
+4. ~1,000 lines of font preload/resource hints modified original addon behavior
+
+**Solution:**
+- Started from clean original (1,126 lines)
+- Added 3 cursor hooks in `init_actions()` (lines 118-121)
+- Added 7 cursor methods at class end (lines 1131-1466)
+- Result: 1,467 lines (reduced from 2,131)
+
+**Critical Rules Established:**
+- NEVER modify original addon methods, script dependencies, or widget registrations
+- ONLY add cursor-related code
+- Always diff against the clean original (not our repo's reference copy which already has our changes)
+
+---
+
 ### Files Changed (v5.6 Complete)
 
 | File | Changes |
@@ -334,6 +358,8 @@ Enhanced P4 v2 form zone detection to fix cursor restoration issues and improve 
 | `assets/lib/custom-cursor/custom-cursor.js` | Added CONSTANTS, CursorState, SpecialCursorManager, Pure Effect Functions, Debug Mode, Form Detection Fix |
 | `assets/js/cursor-editor-sync.js` | Console cleanup (CMSM_DEBUG guard) |
 | `assets/js/navigator-indicator.js` | Empty catch blocks now log errors |
+| `includes/frontend.php` | Clean rewrite from original + cursor methods only (DEPLOY-001 fix) |
+| `modules/settings/settings-page.php` | Removed performance tab (font preload not part of cursor) |
 | `DOCS/02-CHANGELOG-v5_6.md` | Updated (this file) |
 | `DOCS/03-BACKLOG.md` | Marked P4-004, P4-005, P4-006 resolved |
 | `DOCS/04-KNOWN-ISSUES.md` | Marked CSS-001, MEM-004, CODE-002, CODE-003, P4-004, P4-005, P4-006 resolved |
@@ -352,4 +378,4 @@ Enhanced P4 v2 form zone detection to fix cursor restoration issues and improve 
 
 ---
 
-*Last Updated: February 6, 2026 | Version: 5.6*
+*Last Updated: February 9, 2026 | Version: 5.6*

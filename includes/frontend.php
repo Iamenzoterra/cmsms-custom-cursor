@@ -109,26 +109,16 @@ class Frontend extends Base_App {
 		add_action( 'elementor/frontend/before_register_scripts', array( $this, 'register_frontend_scripts' ) );
 		add_action( 'elementor/frontend/before_enqueue_scripts', array( $this, 'enqueue_frontend_scripts' ) );
 
-		// PERF-001: Conditional script loading (after main enqueue)
-		add_action( 'elementor/frontend/after_enqueue_scripts', array( $this, 'enqueue_conditional_scripts' ) );
-
 		add_action( 'elementor/frontend/after_register_styles', array( $this, 'register_frontend_styles' ) );
 		add_action( 'elementor/frontend/after_enqueue_styles', array( $this, 'enqueue_frontend_styles' ) );
-
-		// PERF: Add preconnect hints for faster font loading
-		add_filter( 'wp_resource_hints', array( $this, 'add_font_resource_hints' ), 10, 2 );
 
 		// add_action( 'elementor/preview/enqueue_scripts', array( $this, 'enqueue_motion_effect_preview_scripts' ) );
 		// add_action( 'elementor/widget/before_render_content', array( $this, 'enqueue_motion_effect_frontend_scripts' ) );
 
-		// Custom cursor feature
+		// Custom Cursor
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_custom_cursor' ), 20 );
 		add_filter( 'body_class', array( $this, 'add_cursor_body_class' ) );
 		add_action( 'wp_footer', array( $this, 'print_custom_cursor_html' ), 5 );
-
-		// PERF: Font preload from Global Fonts
-		add_action( 'wp_head', array( $this, 'print_font_preload_links' ), 1 );
-		add_action( 'elementor/document/after_save', array( $this, 'clear_font_preload_cache' ), 10, 2 );
 	}
 
 	/**
@@ -150,9 +140,6 @@ class Frontend extends Base_App {
 		// Hack to avoid enqueue post CSS while it's a `the_excerpt` call.
 		add_filter( 'get_the_excerpt', array( $this, 'start_excerpt_flag' ), 1 );
 		add_filter( 'get_the_excerpt', array( $this, 'end_excerpt_flag' ), 20 );
-
-		// PERF-001a: Force display=swap on Google Fonts stylesheets.
-		add_filter( 'style_loader_src', array( $this, 'force_google_fonts_display_swap' ), 10, 1 );
 	}
 
 	/**
@@ -352,8 +339,11 @@ class Frontend extends Base_App {
 				'cmsmasters-webpack-runtime',
 				'jquery',
 				'elementor-frontend-modules',
-				// PERF-001: Removed hardcoded deps - now loaded conditionally via enqueue_conditional_scripts()
-				// 'basicScroll', 'vanilla-tilt', 'anime', 'hc-sticky', 'headroom'
+				'basicScroll',
+				'vanilla-tilt',
+				'anime',
+				'hc-sticky',
+				'headroom',
 			),
 			CMSMASTERS_ELEMENTOR_VERSION,
 			true
@@ -435,6 +425,7 @@ class Frontend extends Base_App {
 			'widget-cmsmasters-gallery',
 			'widget-cmsmasters-google-maps',
 			'widget-cmsmasters-hotspot',
+			'widget-cmsmasters-image-accordion',
 			'widget-cmsmasters-image-scroll',
 			'widget-cmsmasters-marquee',
 			'widget-cmsmasters-media-carousel',
@@ -483,6 +474,7 @@ class Frontend extends Base_App {
 			'widget-cmsmasters-share-buttons',
 			'widget-cmsmasters-site-logo',
 			'widget-cmsmasters-sitemap',
+			'widget-cmsmasters-swap-button',
 			'widget-cmsmasters-tabs',
 			'widget-cmsmasters-timetable',
 			'widget-cmsmasters-toggles',
@@ -515,674 +507,6 @@ class Frontend extends Base_App {
 			array(),
 			CMSMASTERS_ELEMENTOR_VERSION
 		);
-	}
-
-	/**
-	 * Conditionally enqueue effect scripts based on page content.
-	 * Uses dependency injection to ensure correct load order.
-	 *
-	 * PERF-001: Conditional loading for Effects/Sticky module scripts.
-	 *
-	 * @since 1.21.0
-	 */
-	public function enqueue_conditional_scripts() {
-		// All optional scripts that can be conditionally loaded
-		$all_optional_scripts = array( 'basicScroll', 'vanilla-tilt', 'anime', 'hc-sticky', 'headroom' );
-
-		// Always load all in editor/preview mode
-		if ( Plugin::elementor()->editor->is_edit_mode() || Plugin::elementor()->preview->is_preview_mode() ) {
-			$this->inject_script_dependencies( $all_optional_scripts );
-			return;
-		}
-
-		// Collect needed scripts from all sources
-		$needed_scripts = array();
-
-		// 1. Scan current page (use get_queried_object_id for reliability)
-		$post_id = get_queried_object_id();
-		if ( $post_id ) {
-			$document = Plugin::elementor()->documents->get( $post_id );
-			if ( $document && $document->is_built_with_elementor() ) {
-				$data = $document->get_elements_data();
-				if ( ! empty( $data ) ) {
-					$needed_scripts = array_merge( $needed_scripts, $this->scan_elements_for_scripts( $data ) );
-				}
-			}
-		}
-
-		// 2. Scan theme-builder header/footer templates
-		$needed_scripts = array_merge( $needed_scripts, $this->scan_theme_builder_templates() );
-
-		// Remove duplicates
-		$needed_scripts = array_unique( $needed_scripts );
-
-		// Inject as dependencies (or fallback to simple enqueue)
-		if ( ! empty( $needed_scripts ) ) {
-			$this->inject_script_dependencies( $needed_scripts );
-
-			// Debug logging (only in WP_DEBUG mode)
-			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'PERF-001: Conditional scripts loaded: ' . implode( ', ', $needed_scripts ) );
-			}
-		}
-	}
-
-	/**
-	 * Inject scripts as dependencies of cmsmasters-frontend.
-	 * This guarantees they load BEFORE the main frontend script.
-	 *
-	 * Falls back to simple wp_enqueue_script if cmsmasters-frontend is not registered yet.
-	 *
-	 * @since 1.21.0
-	 *
-	 * @param array $handles Script handles to inject.
-	 */
-	private function inject_script_dependencies( $handles ) {
-		global $wp_scripts;
-
-		// Fallback: if cmsmasters-frontend not registered, just enqueue scripts directly
-		if ( ! isset( $wp_scripts->registered['cmsmasters-frontend'] ) ) {
-			foreach ( $handles as $handle ) {
-				wp_enqueue_script( $handle );
-			}
-			return;
-		}
-
-		foreach ( $handles as $handle ) {
-			// Enqueue the script
-			wp_enqueue_script( $handle );
-
-			// Add as dependency to cmsmasters-frontend (guarantees load order)
-			if ( ! in_array( $handle, $wp_scripts->registered['cmsmasters-frontend']->deps, true ) ) {
-				$wp_scripts->registered['cmsmasters-frontend']->deps[] = $handle;
-			}
-		}
-	}
-
-	/**
-	 * Add resource hints for faster font loading.
-	 *
-	 * Adds preconnect and dns-prefetch hints for Google Fonts domains
-	 * to reduce connection latency and improve CLS.
-	 *
-	 * @since 1.21.0
-	 *
-	 * @param array  $hints URLs to print for resource hints.
-	 * @param string $relation_type The relation type: dns-prefetch, preconnect, etc.
-	 * @return array Modified hints array.
-	 */
-	public function add_font_resource_hints( $hints, $relation_type ) {
-		if ( 'preconnect' === $relation_type ) {
-			// fonts.googleapis.com - NO crossorigin (serves CSS)
-			$googleapis_url = 'https://fonts.googleapis.com';
-			$exists = false;
-			foreach ( $hints as $existing_hint ) {
-				$existing_href = is_array( $existing_hint ) ? ( $existing_hint['href'] ?? '' ) : $existing_hint;
-				if ( strpos( $existing_href, 'fonts.googleapis.com' ) !== false ) {
-					$exists = true;
-					break;
-				}
-			}
-			if ( ! $exists ) {
-				$hints[] = $googleapis_url;
-			}
-
-			// fonts.gstatic.com - WITH crossorigin (serves font files)
-			$gstatic_hint = array(
-				'href'        => 'https://fonts.gstatic.com',
-				'crossorigin' => 'anonymous',
-			);
-			$exists = false;
-			foreach ( $hints as $existing_hint ) {
-				$existing_href = is_array( $existing_hint ) ? ( $existing_hint['href'] ?? '' ) : $existing_hint;
-				if ( strpos( $existing_href, 'fonts.gstatic.com' ) !== false ) {
-					$exists = true;
-					break;
-				}
-			}
-			if ( ! $exists ) {
-				$hints[] = $gstatic_hint;
-			}
-		}
-
-		// DNS-prefetch as fallback for older browsers
-		if ( 'dns-prefetch' === $relation_type ) {
-			$dns_domains = array(
-				'//fonts.googleapis.com',
-				'//fonts.gstatic.com',
-			);
-
-			foreach ( $dns_domains as $domain ) {
-				if ( ! in_array( $domain, $hints, true ) ) {
-					$hints[] = $domain;
-				}
-			}
-		}
-
-		return $hints;
-	}
-
-	/**
-	 * Force display=swap on Google Fonts stylesheets.
-	 *
-	 * Ensures all Google Fonts load with display=swap to prevent FOIT
-	 * (Flash of Invisible Text) and reduce CLS from font loading.
-	 *
-	 * @since 1.21.0
-	 *
-	 * @param string $src The source URL of the stylesheet.
-	 * @return string Modified URL with display=swap.
-	 */
-	public function force_google_fonts_display_swap( $src ) {
-		// Only modify Google Fonts URLs (catches /css, /css2, etc.)
-		if ( strpos( $src, 'fonts.googleapis.com' ) === false ) {
-			return $src;
-		}
-
-		// Skip if already has display parameter
-		if ( strpos( $src, 'display=' ) !== false ) {
-			return $src;
-		}
-
-		// Add display=swap
-		$src = add_query_arg( 'display', 'swap', $src );
-
-		return $src;
-	}
-
-	/**
-	 * Cache key for font preload data.
-	 *
-	 * @since 1.21.0
-	 */
-	const FONT_PRELOAD_CACHE_KEY = 'cmsmasters_font_preload_data';
-
-	/**
-	 * Critical typography IDs to preload (above-the-fold).
-	 *
-	 * Includes all typography commonly visible before user scrolls.
-	 *
-	 * @since 1.21.0
-	 */
-	const CRITICAL_TYPOGRAPHY_IDS = array(
-		'primary',
-		'secondary',
-		'text',
-		'accent',
-		'h1',
-		'h2',
-		'h3',
-		'h4',
-	);
-
-	/**
-	 * Print font preload links in head.
-	 *
-	 * Outputs inline @font-face CSS and <link rel="preload"> for critical fonts.
-	 * The inline @font-face CSS ensures the browser can use preloaded fonts immediately.
-	 *
-	 * @since 1.21.0
-	 */
-	public function print_font_preload_links() {
-		// Skip in admin or if Elementor not active
-		if ( is_admin() || ! did_action( 'elementor/loaded' ) ) {
-			return;
-		}
-
-		$preload_data = $this->get_font_preload_data();
-
-		if ( empty( $preload_data['fonts'] ) ) {
-			return;
-		}
-
-		echo "\n<!-- PERF: Font Preload (CMSMasters Addon) -->\n";
-
-		// First, output inline @font-face CSS for Local Fonts
-		// This allows the browser to use preloaded fonts immediately
-		$local_font_ids = array();
-		foreach ( $preload_data['fonts'] as $font ) {
-			if ( 'local' === $font['source'] && ! empty( $font['font_id'] ) ) {
-				$local_font_ids[ $font['font_id'] ] = true;
-			}
-		}
-
-		if ( ! empty( $local_font_ids ) && class_exists( '\CmsmastersElementor\Modules\WebFonts\Types\Local' ) ) {
-			$local_class = \CmsmastersElementor\Modules\WebFonts\Types\Local::class;
-			$inline_css = '';
-
-			foreach ( array_keys( $local_font_ids ) as $font_id ) {
-				$font_styles = $local_class::get_local_font_styles( $font_id );
-				if ( $font_styles ) {
-					$inline_css .= $font_styles;
-				}
-			}
-
-			if ( ! empty( $inline_css ) ) {
-				echo "<style id=\"cmsmasters-critical-fonts\">\n";
-				echo "/* Critical Local Fonts - inline for zero CLS */\n";
-				echo $inline_css;
-				echo "</style>\n";
-			}
-		}
-
-		// Then output preload links
-		foreach ( $preload_data['fonts'] as $font ) {
-			if ( empty( $font['url'] ) ) {
-				continue;
-			}
-
-			printf(
-				'<link rel="preload" href="%s" as="font" type="%s" crossorigin>%s',
-				esc_url( $font['url'] ),
-				esc_attr( $font['type'] === 'woff2' ? 'font/woff2' : 'font/woff' ),
-				"\n"
-			);
-		}
-
-		echo "<!-- /Font Preload -->\n";
-	}
-
-	/**
-	 * Get font preload data from cache or generate.
-	 *
-	 * @since 1.21.0
-	 *
-	 * @return array Preload data with fonts array.
-	 */
-	public function get_font_preload_data() {
-		$cached = get_transient( self::FONT_PRELOAD_CACHE_KEY );
-
-		if ( false !== $cached ) {
-			return $cached;
-		}
-
-		$data = $this->generate_font_preload_data();
-
-		// Cache for 1 week (cleared on kit save)
-		set_transient( self::FONT_PRELOAD_CACHE_KEY, $data, WEEK_IN_SECONDS );
-
-		return $data;
-	}
-
-	/**
-	 * Generate font preload data from Kit settings.
-	 *
-	 * @since 1.21.0
-	 *
-	 * @return array Preload data with fonts array.
-	 */
-	private function generate_font_preload_data() {
-		$data = array(
-			'fonts' => array(),
-			'generated' => current_time( 'mysql' ),
-		);
-
-		// Get system typography from Kit
-		$system_typography = $this->get_kit_system_typography();
-
-		if ( empty( $system_typography ) ) {
-			return $data;
-		}
-
-		$processed_fonts = array();
-
-		foreach ( $system_typography as $typography ) {
-			// Get typography identifier - Elementor uses 'title' for human-readable name
-			// _id is typically a random hash, so we check 'title' for matching
-			$typo_id = isset( $typography['_id'] ) ? strtolower( $typography['_id'] ) : '';
-			$typo_title = isset( $typography['title'] ) ? strtolower( $typography['title'] ) : '';
-
-			// Check if this is a critical typography by _id OR title
-			$is_critical = in_array( $typo_id, self::CRITICAL_TYPOGRAPHY_IDS, true ) ||
-			               in_array( $typo_title, self::CRITICAL_TYPOGRAPHY_IDS, true );
-
-			if ( ! $is_critical ) {
-				continue;
-			}
-
-			$font_family = isset( $typography['typography_font_family'] ) ? $typography['typography_font_family'] : '';
-			$font_weight = isset( $typography['typography_font_weight'] ) ? $typography['typography_font_weight'] : '400';
-
-			if ( empty( $font_family ) ) {
-				continue;
-			}
-
-			// Skip if already processed this font+weight combo
-			$font_key = $font_family . '-' . $font_weight;
-			if ( isset( $processed_fonts[ $font_key ] ) ) {
-				continue;
-			}
-			$processed_fonts[ $font_key ] = true;
-
-			// Determine font source and get URL
-			$font_info = $this->get_font_preload_info( $font_family, $font_weight );
-
-			if ( $font_info ) {
-				// Use title if available, otherwise _id
-				$font_info['typography_id'] = ! empty( $typo_title ) ? $typo_title : $typo_id;
-				$font_info['family'] = $font_family;
-				$font_info['weight'] = $font_weight;
-				$data['fonts'][] = $font_info;
-			}
-		}
-
-		return $data;
-	}
-
-	/**
-	 * Get Kit system typography settings.
-	 *
-	 * @since 1.21.0
-	 *
-	 * @return array System typography array.
-	 */
-	private function get_kit_system_typography() {
-		$kit = \Elementor\Plugin::$instance->kits_manager->get_active_kit_for_frontend();
-
-		if ( ! $kit ) {
-			return array();
-		}
-
-		$settings = $kit->get_settings();
-
-		return isset( $settings['system_typography'] ) ? $settings['system_typography'] : array();
-	}
-
-	/**
-	 * Get font preload info (URL and type).
-	 *
-	 * @since 1.21.0
-	 *
-	 * @param string $font_family Font family name.
-	 * @param string $font_weight Font weight.
-	 *
-	 * @return array|null Font info with url, type, source or null if not found.
-	 */
-	private function get_font_preload_info( $font_family, $font_weight ) {
-		// First check if it's a local font
-		$local_info = $this->get_local_font_info( $font_family, $font_weight );
-
-		if ( $local_info ) {
-			return array(
-				'url' => $local_info['url'],
-				'type' => 'woff2',
-				'source' => 'local',
-				'font_id' => $local_info['font_id'],
-			);
-		}
-
-		// Check if it's a Google Font (no direct URL, but we track it for conversion)
-		if ( $this->is_google_font( $font_family ) ) {
-			return array(
-				'url' => null, // Google Fonts don't have preloadable URLs
-				'type' => 'woff2',
-				'source' => 'google',
-			);
-		}
-
-		// System font or unknown - no preload needed
-		return array(
-			'url' => null,
-			'type' => null,
-			'source' => 'system',
-		);
-	}
-
-	/**
-	 * Get local font info (URL and font ID).
-	 *
-	 * @since 1.21.0
-	 *
-	 * @param string $font_family Font family name.
-	 * @param string $font_weight Font weight.
-	 *
-	 * @return array|null Array with 'url' and 'font_id' or null.
-	 */
-	private function get_local_font_info( $font_family, $font_weight ) {
-		// Check if Local Fonts module exists
-		if ( ! class_exists( '\CmsmastersElementor\Modules\WebFonts\Types\Local' ) ) {
-			return null;
-		}
-
-		$local = \CmsmastersElementor\Modules\WebFonts\Types\Local::class;
-
-		// Check if this font family is registered as local
-		$font_id = $local::check_font_family( $font_family, 'id' );
-
-		if ( ! $font_id ) {
-			return null;
-		}
-
-		// Get font config (JSON stored in meta)
-		$config_json = get_post_meta( $font_id, $local::FONTS_META_KEY, true );
-
-		if ( empty( $config_json ) ) {
-			return null;
-		}
-
-		$config = is_string( $config_json ) ? json_decode( $config_json, true ) : $config_json;
-
-		if ( empty( $config['font_faces'] ) || ! is_array( $config['font_faces'] ) ) {
-			return null;
-		}
-
-		// Normalize weight to numeric
-		$weight = is_numeric( $font_weight ) ? intval( $font_weight ) : 400;
-		if ( 'normal' === $font_weight || 'regular' === $font_weight ) {
-			$weight = 400;
-		} elseif ( 'bold' === $font_weight ) {
-			$weight = 700;
-		}
-
-		// Get base directory URL
-		$dir_url = ! empty( $config['dir'] ) ? rtrim( $config['dir'], '/' ) . '/' : '';
-
-		// Find matching weight (prefer normal style, latin range)
-		foreach ( $config['font_faces'] as $face ) {
-			$face_weight = isset( $face['font-weight'] ) ? intval( $face['font-weight'] ) : 400;
-			$face_style = isset( $face['font-style'] ) ? $face['font-style'] : 'normal';
-
-			if ( $face_weight === $weight && 'normal' === $face_style ) {
-				// Get woff2 URL
-				if ( ! empty( $face['src']['url']['woff2'] ) ) {
-					$filename = $face['src']['url']['woff2'];
-					return array(
-						'url' => $dir_url . $filename,
-						'font_id' => $font_id,
-					);
-				}
-			}
-		}
-
-		// Fallback: any matching weight (even italic)
-		foreach ( $config['font_faces'] as $face ) {
-			$face_weight = isset( $face['font-weight'] ) ? intval( $face['font-weight'] ) : 400;
-
-			if ( $face_weight === $weight ) {
-				if ( ! empty( $face['src']['url']['woff2'] ) ) {
-					$filename = $face['src']['url']['woff2'];
-					return array(
-						'url' => $dir_url . $filename,
-						'font_id' => $font_id,
-					);
-				}
-			}
-		}
-
-		return null;
-	}
-
-	/**
-	 * Check if font is a Google Font.
-	 *
-	 * @since 1.21.0
-	 *
-	 * @param string $font_family Font family name.
-	 *
-	 * @return bool True if Google Font.
-	 */
-	private function is_google_font( $font_family ) {
-		// Check if Elementor has this as a Google Font
-		$google_fonts = \Elementor\Fonts::get_fonts_by_groups( array( 'googlefonts' ) );
-
-		return isset( $google_fonts[ $font_family ] );
-	}
-
-	/**
-	 * Clear font preload cache when Kit is saved.
-	 *
-	 * @since 1.21.0
-	 *
-	 * @param \Elementor\Core\Base\Document $document The document instance.
-	 * @param array $data The document data.
-	 */
-	public function clear_font_preload_cache( $document, $data ) {
-		// Only clear cache for Kit documents
-		if ( ! $document || $document->get_name() !== 'kit' ) {
-			return;
-		}
-
-		delete_transient( self::FONT_PRELOAD_CACHE_KEY );
-	}
-
-	/**
-	 * Get font preload data for admin display.
-	 *
-	 * @since 1.21.0
-	 *
-	 * @return array Preload data.
-	 */
-	public static function get_font_preload_data_for_admin() {
-		$instance = Plugin::instance()->frontend;
-
-		if ( ! $instance ) {
-			return array( 'fonts' => array() );
-		}
-
-		// Force regenerate to show current state
-		delete_transient( self::FONT_PRELOAD_CACHE_KEY );
-
-		return $instance->get_font_preload_data();
-	}
-
-	/**
-	 * Scan theme-builder header/footer templates for effects/sticky usage.
-	 *
-	 * Safe-guarded against missing Elementor Pro / Theme Builder module.
-	 *
-	 * @since 1.21.0
-	 *
-	 * @return array Needed script handles.
-	 */
-	private function scan_theme_builder_templates() {
-		$scripts = array();
-
-		// Safe-guard: check if modules_manager exists
-		$elementor = Plugin::elementor();
-		if ( ! isset( $elementor->modules_manager ) || ! is_object( $elementor->modules_manager ) ) {
-			return $scripts;
-		}
-
-		// Get theme-builder module (Elementor Pro feature)
-		$theme_builder = $elementor->modules_manager->get_modules( 'theme-builder' );
-
-		// Safe-guard: check if theme-builder module exists and has required methods
-		if ( ! $theme_builder || ! is_object( $theme_builder ) ) {
-			return $scripts;
-		}
-
-		if ( ! method_exists( $theme_builder, 'get_conditions_manager' ) ) {
-			return $scripts;
-		}
-
-		$conditions_manager = $theme_builder->get_conditions_manager();
-
-		if ( ! $conditions_manager || ! method_exists( $conditions_manager, 'get_documents_for_location' ) ) {
-			return $scripts;
-		}
-
-		// Scan header and footer locations
-		$locations = array( 'header', 'footer' );
-
-		foreach ( $locations as $location ) {
-			$documents = $conditions_manager->get_documents_for_location( $location );
-
-			if ( ! is_array( $documents ) ) {
-				continue;
-			}
-
-			foreach ( $documents as $document ) {
-				if ( ! is_object( $document ) || ! method_exists( $document, 'get_elements_data' ) ) {
-					continue;
-				}
-
-				$data = $document->get_elements_data();
-				if ( ! empty( $data ) ) {
-					$scripts = array_merge( $scripts, $this->scan_elements_for_scripts( $data ) );
-				}
-			}
-		}
-
-		return $scripts;
-	}
-
-	/**
-	 * Recursively scan elements for script dependencies based on Effects/Sticky settings.
-	 *
-	 * Checks for:
-	 * - cms_effect_type: scroll, tilt, floating (transform/mouse_track don't need libs)
-	 * - cms_bg_effect_type: same as above for background effects
-	 * - cms_sticky_type: sticky (hc-sticky), fixed (headroom)
-	 *
-	 * @since 1.21.0
-	 *
-	 * @param array $elements Elements data array.
-	 * @return array Needed script handles.
-	 */
-	private function scan_elements_for_scripts( $elements ) {
-		$scripts = array();
-
-		foreach ( $elements as $element ) {
-			$settings = isset( $element['settings'] ) ? $element['settings'] : array();
-
-			// Check for Effects module usage
-			$effect_type = isset( $settings['cms_effect_type'] ) ? $settings['cms_effect_type'] : '';
-			$bg_effect_type = isset( $settings['cms_bg_effect_type'] ) ? $settings['cms_bg_effect_type'] : '';
-			$active_effect = $effect_type ?: $bg_effect_type;
-
-			if ( ! empty( $active_effect ) ) {
-				switch ( $active_effect ) {
-					case 'scroll':
-						$scripts[] = 'basicScroll';
-						break;
-					case 'tilt':
-						$scripts[] = 'vanilla-tilt';
-						break;
-					case 'floating':
-						$scripts[] = 'anime';
-						break;
-					// 'transform' and 'mouse_track' don't need external libraries
-				}
-			}
-
-			// Check for Sticky module usage
-			$sticky_type = isset( $settings['cms_sticky_type'] ) ? $settings['cms_sticky_type'] : '';
-
-			if ( ! empty( $sticky_type ) && 'default' !== $sticky_type ) {
-				if ( 'sticky' === $sticky_type ) {
-					$scripts[] = 'hc-sticky';
-				} elseif ( 'fixed' === $sticky_type ) {
-					$scripts[] = 'headroom';
-				}
-			}
-
-			// Recurse into child elements
-			if ( ! empty( $element['elements'] ) ) {
-				$scripts = array_merge( $scripts, $this->scan_elements_for_scripts( $element['elements'] ) );
-			}
-		}
-
-		return $scripts;
 	}
 
 	/**
@@ -1804,6 +1128,10 @@ class Frontend extends Base_App {
 		printf( '<style>%s</style>', $styles );
 	}
 
+	// =========================================================================
+	// Custom Cursor Methods
+	// =========================================================================
+
 	/**
 	 * Check if custom cursor should be enabled.
 	 *
@@ -2069,11 +1397,12 @@ class Frontend extends Base_App {
 	}
 
 	/**
-	 * Get cursor color based on settings (global from Kit or custom hex).
+	 * Validate hex color format.
 	 *
 	 * @since 1.21.0
 	 *
-	 * @return string Hex color value.
+	 * @param string $color Color to validate.
+	 * @return string Valid hex color or default.
 	 */
 	private function validate_hex_color( $color ) {
 		if ( empty( $color ) || ! is_string( $color ) ) {
@@ -2086,6 +1415,13 @@ class Frontend extends Base_App {
 		return '#222222';
 	}
 
+	/**
+	 * Get cursor color based on settings (global from Kit or custom hex).
+	 *
+	 * @since 1.21.0
+	 *
+	 * @return string Hex color value.
+	 */
 	private function get_cursor_color() {
 		$color_source = get_option( 'elementor_custom_cursor_color_source', 'custom' );
 

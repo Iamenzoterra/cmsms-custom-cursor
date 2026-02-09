@@ -1,6 +1,6 @@
 # Custom Cursor v5.6 - Known Issues
 
-**Last Updated:** February 6, 2026
+**Last Updated:** February 9, 2026
 **Version:** 5.6
 
 ---
@@ -27,6 +27,7 @@ This document consolidates all known issues, bugs, and technical debt across the
 │   ✅ v5.5-SEC: SEC-001/002/003, BUG-002, BUG-003, MEM-001/002/003          │
 │   ✅ v5.6: CSS-001, CSS-002, MEM-004, CODE-002, CODE-003                    │
 │   ✅ v5.6 P4 v2 enhancements: P4-004, P4-005, P4-006 (form bugs)           │
+│   ✅ v5.6: DEPLOY-001 (frontend.php breaking other widgets)                  │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -386,6 +387,47 @@ requestAnimationFrame loop runs constantly even when cursor stationary.
 
 ---
 
+### ~~DEPLOY-001: frontend.php Breaking Other Widgets (Swap Button)~~ ✅ RESOLVED
+
+| Field | Value |
+|-------|-------|
+| **Location** | `includes/frontend.php` |
+| **Type** | Deployment / Compatibility |
+| **Status** | ✅ **Resolved in v5.6** |
+| **Since** | v5.5 |
+| **Fixed** | February 9, 2026 |
+
+**Description:**
+Deploying our `frontend.php` to another site broke the CMSMasters Swap Button widget (lost animation/styles) and potentially other widgets. Removing ALL our files fixed the button. Even after reverting the `wp_strip_all_tags()` change, the button remained broken. Only restoring the original addon's `frontend.php` fixed it.
+
+**Root Cause (3 issues in our old frontend.php):**
+
+1. **PERF-001 conditional loading** — Removed `basicScroll`, `vanilla-tilt`, `anime`, `hc-sticky`, `headroom` from `cmsmasters-frontend` script dependencies. Swap Button depends on `anime.js` which was no longer loaded as a dependency.
+
+2. **Missing widget style registrations** — `widget-cmsmasters-swap-button` and `widget-cmsmasters-image-accordion` were missing from the `widgets_responsive_styles_files_names()` and `widgets_styles_files_names()` arrays respectively.
+
+3. **~1000 lines of non-cursor code** — Font preload, resource hints, Google Fonts display:swap forcing, and conditional loading logic were added to the file, modifying original addon behavior.
+
+**Resolution:**
+Rewrote `frontend.php` from scratch using the clean original addon file (1,126 lines) and surgically added ONLY cursor-related code:
+- 3 hook registrations in `init_actions()` (lines 118-121)
+- 7 cursor methods at the end of the class (lines 1131-1466)
+- Total: 1,467 lines (down from 2,131)
+
+**Lessons Learned:**
+
+| Rule | Why |
+|------|-----|
+| **NEVER modify original addon methods** | Other widgets depend on exact script dependencies and style registrations |
+| **NEVER remove script dependencies** | `anime.js`, `vanilla-tilt`, etc. are needed by widgets we don't control |
+| **NEVER use `wp_strip_all_tags()` on CSS** | It strips CSS `>` child selectors |
+| **ONLY add cursor methods** | Keep our code isolated at the end of the class |
+| **Always diff against clean original** | Our repo's reference copy (`cmsmasters-elementor-addon/`) already had our changes and was not a clean baseline |
+
+**Clean original location:** `c:\work\cmsaddon\cmsmasters-elementor-addon-main\cmsmasters-elementor-addon-main\includes\frontend.php`
+
+---
+
 ## Medium Priority Issues
 
 ### PERF-002: Background Sampling Expensive
@@ -699,6 +741,7 @@ Latest v5.5-SEC fixes: SEC-001/002/003 (security), BUG-002/003, MEM-001/002/003 
 | P4-004 | Cursor not restoring when moving UP from form | isFormZone() mouseout fix | v5.6 |
 | P4-005 | Cursor flickering between form fields | Container detection | v5.6 |
 | P4-006 | TEXTAREA not hiding cursor | Added to isFormZone() | v5.6 |
+| DEPLOY-001 | frontend.php breaking Swap Button + other widgets | Clean rewrite from original | v5.6 |
 | P5-001 | Cursor over video elements | P5 auto-hide | v5.5 |
 | P5-002 | Cursor over iframes | P5 auto-hide | v5.5 |
 | BUG-100 | Widget boundary not respected | v5.3 grandparent fix | v5.3 |
@@ -779,4 +822,4 @@ If applicable.
 
 ---
 
-*Last Updated: February 6, 2026 | Version: 5.6*
+*Last Updated: February 9, 2026 | Version: 5.6*
