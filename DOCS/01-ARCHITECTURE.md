@@ -103,6 +103,55 @@
 
 ---
 
+## Module Loading Chain
+
+How the plugin loads cursor-related components:
+
+```
+cmsmasters-elementor-addon.php
+    │
+    └──▶ includes/plugin.php
+              │
+              ├──▶ new Editor()    (includes/editor.php)     — ALWAYS loaded
+              │         │
+              │         ├──▶ navigator-indicator.js           — ALWAYS enqueued in editor
+              │         │       config: { cursorEnabled: bool }
+              │         │
+              │         ├──▶ cursor-editor-sync.js            — ONLY if cursor + editor preview enabled
+              │         │
+              │         └──▶ editor-navigator.css              — ALWAYS enqueued in editor
+              │
+              ├──▶ new Frontend()  (includes/frontend.php)   — ALWAYS loaded
+              │         │
+              │         ├──▶ custom-cursor.js                 — ONLY if should_enable() = true
+              │         └──▶ custom-cursor.css                — ONLY if should_enable() = true
+              │
+              └──▶ Modules_Manager (includes/managers/modules.php)
+                        │
+                        └──▶ 'cursor-controls'               — Registered in modules list
+                                  │
+                                  └──▶ modules/cursor-controls/module.php
+                                            │
+                                            ├──▶ register_controls()        — Adds "Custom Cursor" section to Advanced tab
+                                            └──▶ apply_cursor_attributes()  — Renders data-attributes on frontend
+```
+
+**Critical:** `includes/managers/modules.php` must contain `'cursor-controls'` in its modules array.
+Without it, the cursor controls won't appear in Elementor editor's Advanced tab.
+
+**Loading conditions:**
+
+| Component | Loads when | Controls |
+|---|---|---|
+| `editor.php` | Always in editor | Script enqueue |
+| `navigator-indicator.js` | Always in editor | Indicators + legend in Navigator panel |
+| `cursor-editor-sync.js` | `cursor_enabled=yes` AND `editor_preview=yes` | Live cursor in preview |
+| `module.php` | `'cursor-controls'` in `modules.php` | Advanced tab controls |
+| `frontend.php` | Always on frontend | Cursor engine enqueue |
+| `custom-cursor.js` | `should_enable()` = true | Cursor rendering |
+
+---
+
 ## Data Flow Pipeline
 
 ```

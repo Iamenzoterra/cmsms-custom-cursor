@@ -9,9 +9,12 @@
 | Category | Files | Total Lines |
 |----------|-------|-------------|
 | JavaScript | 3 | 4,002 |
-| PHP | 4 | 4,758 |
+| PHP | 5 | ~4,900 |
 | CSS | 2 | 587 |
-| **Total** | **9** | **9,347** |
+| **Total** | **10** | **~9,500** |
+
+> **Note:** `includes/managers/modules.php` is part of the full addon plugin but
+> is required for cursor module registration. See [01-ARCHITECTURE.md](01-ARCHITECTURE.md#module-loading-chain).
 
 ---
 
@@ -329,18 +332,26 @@
 
          editor.php
                │
-               ├──▶ navigator-indicator.js ──┐
+               ├──▶ navigator-indicator.js ──┐    (ALWAYS loaded)
                │                             │ postMessage
-               └──▶ cursor-editor-sync.js ◀──┘
+               └──▶ cursor-editor-sync.js ◀──┘    (only if cursor + editor preview enabled)
                            │
                            ▼
                     custom-cursor.js
 
 
-         module.php
+              MODULE REGISTRATION
+              ───────────────────
+
+         includes/managers/modules.php
                │
-               ▼ (data attributes)
-         [HTML elements] ─────────────────▶ custom-cursor.js
+               └──▶ 'cursor-controls' (must be in modules array!)
+                           │
+                           ▼
+                    module.php
+                           │
+                           ▼ (data attributes)
+                    [HTML elements] ─────────────▶ custom-cursor.js
 ```
 
 ---

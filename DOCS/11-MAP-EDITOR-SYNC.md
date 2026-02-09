@@ -334,6 +334,27 @@ function initPreviewMessageListener() {
 
 ## Navigator Indicator System
 
+### Loading & Dependencies
+
+**Script loading** (via `editor.php`):
+- `navigator-indicator.js` is **always** enqueued in Elementor editor
+- Does NOT depend on `cursor_enabled` option — loads even when cursor is disabled
+- Depends on: `jquery`, `elementor-editor`, `cmsmasters-elementor`
+
+**Configuration** passed via inline script:
+```js
+window.cmsmastersNavigatorConfig = { cursorEnabled: bool };
+```
+- `cursorEnabled: true` — shows core/special/hidden indicators (normal mode)
+- `cursorEnabled: false` — shows only "show" indicators (elements that override disabled cursor)
+
+**Legend visibility conditions:**
+1. Legend HTML is **always** injected into Navigator panel
+2. Legend becomes **visible** only when at least one indicator exists (`.cmsm-legend-visible` class)
+3. On a new site with no cursor settings configured — legend stays hidden until a widget gets cursor settings
+
+**CSS** (`editor-navigator.css`): Always enqueued in editor. Styles for indicators and legend.
+
 ### Indicator Update Flow
 
 ```
