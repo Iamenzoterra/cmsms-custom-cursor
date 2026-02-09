@@ -69,10 +69,13 @@ cp -r assets includes modules commit/
 find commit -type f \( -name "*.pre-*" -o -name "*.backup" \) -delete
 ```
 
-**Result:** `/commit` folder contains 14 files ready for deployment:
+**Result:** `/commit` folder contains 15 files ready for deployment:
 - 10 files from `assets/` (5 source + 5 minified)
-- 2 PHP files from `includes/`
+- 3 PHP files from `includes/` (frontend.php, editor.php, managers/modules.php)
 - 2 PHP files from `modules/`
+
+**Important:** `includes/managers/modules.php` registers `cursor-controls` module.
+Without it, the cursor controls won't appear in Elementor editor on new sites.
 
 ---
 
