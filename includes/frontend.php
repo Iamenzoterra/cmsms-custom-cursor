@@ -1801,8 +1801,7 @@ class Frontend extends Base_App {
 	}
 
 	public function print_styles( $styles ) {
-		$safe_styles = wp_strip_all_tags( $styles );
-		printf( '<style>%s</style>', $safe_styles );
+		printf( '<style>%s</style>', $styles );
 	}
 
 	/**
