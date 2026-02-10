@@ -1288,11 +1288,22 @@
 			clearInterval(watchModelInterval);
 			watchModelInterval = null;
 		}
+		// Disconnect device mode observer
+		if (deviceModeObserver) {
+			deviceModeObserver.disconnect();
+			deviceModeObserver = null;
+		}
+		lastDeviceMode = 'desktop';
 		if (window.CMSM_DEBUG) console.log('[NavigatorIndicator] Cleanup completed');
 	}
 
 	// === Device mode: notify preview iframe on responsive switch ===
+	var deviceModeObserver = null;
+	var lastDeviceMode = 'desktop';
+
 	function sendDeviceMode(mode) {
+		if (mode === lastDeviceMode) return;
+		lastDeviceMode = mode;
 		var previewIframe = document.getElementById('elementor-preview-iframe');
 		if (previewIframe && previewIframe.contentWindow) {
 			previewIframe.contentWindow.postMessage({
@@ -1303,12 +1314,17 @@
 	}
 
 	function setupDeviceModeListener() {
-		if (typeof elementor !== 'undefined' && elementor.channels && elementor.channels.deviceMode) {
-			elementor.listenTo(elementor.channels.deviceMode, 'change', function() {
-				var mode = elementor.channels.deviceMode.request('currentMode');
-				sendDeviceMode(mode || 'desktop');
-			});
-		}
+		// Watch body data-elementor-device-mode attribute for changes
+		if (deviceModeObserver) deviceModeObserver.disconnect();
+		deviceModeObserver = new MutationObserver(function() {
+			var mode = document.body.getAttribute('data-elementor-device-mode') || 'desktop';
+			sendDeviceMode(mode);
+		});
+		deviceModeObserver.observe(document.body, { attributes: true, attributeFilter: ['data-elementor-device-mode'] });
+
+		// Send initial state
+		var initialMode = document.body.getAttribute('data-elementor-device-mode') || 'desktop';
+		sendDeviceMode(initialMode);
 	}
 
 	// Initialize when Elementor preview is loaded
