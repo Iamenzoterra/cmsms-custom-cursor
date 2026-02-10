@@ -1157,7 +1157,25 @@ class Frontend extends Base_App {
 
 		// If in Elementor preview iframe, check editor preview option
 		if ( $in_elementor_preview ) {
-			return 'yes' === get_option( 'elementor_custom_cursor_editor_preview', '' );
+			if ( 'yes' !== get_option( 'elementor_custom_cursor_editor_preview', '' ) ) {
+				return false;
+			}
+
+			// Skip cursor for Theme Builder templates (Entry, Popup, Archive, etc.)
+			// where cursor doesn't render in editor preview
+			if ( class_exists( '\Elementor\Plugin' ) ) {
+				$preview_id = isset( $_GET['elementor-preview'] ) ? absint( $_GET['elementor-preview'] ) : 0;
+
+				if ( $preview_id ) {
+					$document = \Elementor\Plugin::$instance->documents->get( $preview_id );
+
+					if ( $document && 0 === strpos( $document->get_name(), 'cmsmasters_' ) ) {
+						return false;
+					}
+				}
+			}
+
+			return true;
 		}
 
 		// Block on admin pages (main editor frame, settings panels)

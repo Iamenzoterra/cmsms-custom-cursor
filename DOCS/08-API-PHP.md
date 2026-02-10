@@ -48,6 +48,10 @@ Determines if custom cursor should be enabled on current page.
 **Checks (in order):**
 1. `elementor_custom_cursor_enabled` option must be `'yes'`
 2. If in Elementor preview iframe, checks `elementor_custom_cursor_editor_preview`
+2.5. If in Elementor preview iframe, blocks on Theme Builder template types (cmsmasters_* document types)
+   - Detects CMSMasters Theme Builder templates: Entry, Popup, Archive, Singular, Header, Footer, Tribe Events, WooCommerce product templates
+   - Uses document name prefix detection: `strpos($document->get_name(), 'cmsmasters_') === 0`
+   - Prevents cursor from loading on these template types where it doesn't render in editor preview
 3. Blocks on admin pages, customizer, and edit mode
 4. Returns `true` for frontend
 

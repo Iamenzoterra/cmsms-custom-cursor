@@ -350,6 +350,40 @@ Our previous `frontend.php` (2,131 lines) broke the Swap Button widget and poten
 
 ---
 
+#### 9. Theme Builder Template Detection (frontend.php)
+
+Added template type detection to disable cursor preview on unsupported Elementor Theme Builder templates.
+
+**Problem:**
+Cursor doesn't render on CMSMasters Theme Builder template types (Entry, Popup, Archive, Singular, Header, Footer, Tribe Events, WooCommerce product templates) in Elementor editor preview, but the cursor scripts were still loading and attempting to initialize.
+
+**Solution:**
+Added document type check in `should_enable_custom_cursor()` (lines 1164-1176):
+
+```php
+// Skip cursor for Theme Builder templates (Entry, Popup, Archive, etc.)
+// where cursor doesn't render in editor preview
+if ( class_exists( '\Elementor\Plugin' ) ) {
+    $preview_id = isset( $_GET['elementor-preview'] ) ? absint( $_GET['elementor-preview'] ) : 0;
+
+    if ( $preview_id ) {
+        $document = \Elementor\Plugin::$instance->documents->get( $preview_id );
+
+        if ( $document && 0 === strpos( $document->get_name(), 'cmsmasters_' ) ) {
+            return false;
+        }
+    }
+}
+```
+
+**Detection Method:**
+Uses document name prefix detection - all CMSMasters Theme Builder document types are prefixed with `cmsmasters_`.
+
+**Benefit:**
+Prevents unnecessary script loading and cursor initialization attempts on template types where cursor preview doesn't work.
+
+---
+
 ### Files Changed (v5.6 Complete)
 
 | File | Changes |
@@ -358,13 +392,14 @@ Our previous `frontend.php` (2,131 lines) broke the Swap Button widget and poten
 | `assets/lib/custom-cursor/custom-cursor.js` | Added CONSTANTS, CursorState, SpecialCursorManager, Pure Effect Functions, Debug Mode, Form Detection Fix |
 | `assets/js/cursor-editor-sync.js` | Console cleanup (CMSM_DEBUG guard) |
 | `assets/js/navigator-indicator.js` | Empty catch blocks now log errors |
-| `includes/frontend.php` | Clean rewrite from original + cursor methods only (DEPLOY-001 fix) |
+| `includes/frontend.php` | Clean rewrite from original + cursor methods only (DEPLOY-001 fix) + Theme Builder template detection |
 | `modules/settings/settings-page.php` | Removed performance tab (font preload not part of cursor) |
 | `DOCS/02-CHANGELOG-v5_6.md` | Updated (this file) |
 | `DOCS/03-BACKLOG.md` | Marked P4-004, P4-005, P4-006 resolved |
 | `DOCS/04-KNOWN-ISSUES.md` | Marked CSS-001, MEM-004, CODE-002, CODE-003, P4-004, P4-005, P4-006 resolved |
 | `DOCS/05-API-JAVASCRIPT.md` | Documented CONSTANTS, CursorState, SpecialCursorManager, Pure Functions, debug() API, isFormZone() |
 | `DOCS/06-API-CSS.md` | Updated z-index documentation, added new CSS variables |
+| `DOCS/08-API-PHP.md` | Updated should_enable_custom_cursor() with Theme Builder template detection |
 | `DOCS/09-MAP-DEPENDENCY.md` | Updated with SpecialCursorManager and pure function dependencies |
 | `DOCS/12-REF-BODY-CLASSES.md` | Added CursorState references |
 | `DOCS/13-REF-EFFECTS.md` | Updated with pure function references |

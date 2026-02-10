@@ -145,10 +145,12 @@ Without it, the cursor controls won't appear in Elementor editor's Advanced tab.
 |---|---|---|
 | `editor.php` | Always in editor | Script enqueue |
 | `navigator-indicator.js` | Always in editor | Indicators + legend in Navigator panel |
-| `cursor-editor-sync.js` | `cursor_enabled=yes` AND `editor_preview=yes` | Live cursor in preview |
+| `cursor-editor-sync.js` | `cursor_enabled=yes` AND `editor_preview=yes` AND NOT on cmsmasters_* template types | Live cursor in preview |
 | `module.php` | `'cursor-controls'` in `modules.php` | Advanced tab controls |
 | `frontend.php` | Always on frontend | Cursor engine enqueue |
-| `custom-cursor.js` | `should_enable()` = true | Cursor rendering |
+| `custom-cursor.js` | `should_enable()` = true AND NOT on cmsmasters_* template types in preview | Cursor rendering |
+
+**Note:** Theme Builder template types (Entry, Popup, Archive, Singular, Header, Footer, Tribe Events, WooCommerce product templates) are detected via document name prefix `cmsmasters_` and excluded from cursor loading in editor preview because the cursor doesn't render on these template types.
 
 ---
 
