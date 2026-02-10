@@ -1288,49 +1288,12 @@
 			clearInterval(watchModelInterval);
 			watchModelInterval = null;
 		}
-		// Disconnect device mode observer
-		if (deviceModeObserver) {
-			deviceModeObserver.disconnect();
-			deviceModeObserver = null;
-		}
-		lastDeviceMode = 'desktop';
 		if (window.CMSM_DEBUG) console.log('[NavigatorIndicator] Cleanup completed');
-	}
-
-	// === Device mode: notify preview iframe on responsive switch ===
-	var deviceModeObserver = null;
-	var lastDeviceMode = 'desktop';
-
-	function sendDeviceMode(mode) {
-		if (mode === lastDeviceMode) return;
-		lastDeviceMode = mode;
-		var previewIframe = document.getElementById('elementor-preview-iframe');
-		if (previewIframe && previewIframe.contentWindow) {
-			previewIframe.contentWindow.postMessage({
-				type: 'cmsmasters:cursor:device-mode',
-				mode: mode
-			}, TRUSTED_ORIGIN);
-		}
-	}
-
-	function setupDeviceModeListener() {
-		// Watch body data-elementor-device-mode attribute for changes
-		if (deviceModeObserver) deviceModeObserver.disconnect();
-		deviceModeObserver = new MutationObserver(function() {
-			var mode = document.body.getAttribute('data-elementor-device-mode') || 'desktop';
-			sendDeviceMode(mode);
-		});
-		deviceModeObserver.observe(document.body, { attributes: true, attributeFilter: ['data-elementor-device-mode'] });
-
-		// Send initial state
-		var initialMode = document.body.getAttribute('data-elementor-device-mode') || 'desktop';
-		sendDeviceMode(initialMode);
 	}
 
 	// Initialize when Elementor preview is loaded
 	if (typeof elementor !== 'undefined') {
 		elementor.on('preview:loaded', init);
-		elementor.on('preview:loaded', setupDeviceModeListener);
 		// MEM-001 + MEM-002: Cleanup on preview destroyed
 		elementor.on('preview:destroyed', cleanup);
 
@@ -1346,7 +1309,6 @@
 		$(window).on('elementor:init', function() {
 			if (typeof elementor !== 'undefined') {
 				elementor.on('preview:loaded', init);
-				elementor.on('preview:loaded', setupDeviceModeListener);
 				elementor.on('preview:destroyed', cleanup); // MEM-001 + MEM-002
 			}
 		});

@@ -275,10 +275,6 @@
             startPreloader();
         }
 
-        if (event.data.type === 'cmsmasters:cursor:device-mode') {
-            setResponsiveHidden(event.data.mode !== 'desktop');
-            return;
-        }
         if (event.data.type === 'cmsmasters:cursor:update') {
             var id = event.data.elementId, s = event.data.settings;
             if (id && s) {
@@ -691,6 +687,13 @@
     function init() {
         createPanel();
         disableCursor();
+
+        // Responsive mode: watch body[data-elementor-device-mode] set by elementorFrontend
+        // When Elementor switches to tablet/mobile, this attribute changes from 'desktop'
+        new MutationObserver(function() {
+            var mode = document.body.getAttribute('data-elementor-device-mode') || 'desktop';
+            setResponsiveHidden(mode !== 'desktop');
+        }).observe(document.body, { attributes: true, attributeFilter: ['data-elementor-device-mode'] });
 
         // Fallback: if Elementor doesn't send message within 2 seconds, start preloader anyway
         // This handles empty pages where no cursor:update/init messages are sent
