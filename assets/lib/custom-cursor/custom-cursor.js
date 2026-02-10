@@ -919,9 +919,6 @@
         } else if (el.closest && (
             el.closest('[role="listbox"]') ||
             el.closest('[role="combobox"]') ||
-            el.closest('[role="menu"]') ||
-            el.closest('[role="dialog"]') ||
-            el.closest('[aria-modal="true"]') ||
             el.closest('.air-datepicker') ||
             el.closest('.flatpickr-calendar') ||
             el.closest('.daterangepicker') ||
