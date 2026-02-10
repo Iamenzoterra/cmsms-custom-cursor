@@ -21,7 +21,6 @@
     var panelElement = null;
 
     // Responsive mode - hide cursor on tablet/mobile preview
-    var DESKTOP_MIN_WIDTH = 1025;
     var isResponsiveHidden = false;
     var wasEnabledBeforeResponsive = false;
 
@@ -276,6 +275,10 @@
             startPreloader();
         }
 
+        if (event.data.type === 'cmsmasters:cursor:device-mode') {
+            setResponsiveHidden(event.data.mode !== 'desktop');
+            return;
+        }
         if (event.data.type === 'cmsmasters:cursor:update') {
             var id = event.data.elementId, s = event.data.settings;
             if (id && s) {
@@ -672,27 +675,22 @@
     }
 
     // === Responsive mode: hide panel + cursor on tablet/mobile ===
-    function checkResponsiveMode() {
-        var isMobile = window.innerWidth < DESKTOP_MIN_WIDTH;
-
-        if (isMobile && !isResponsiveHidden) {
+    function setResponsiveHidden(hidden) {
+        if (hidden && !isResponsiveHidden) {
             isResponsiveHidden = true;
             wasEnabledBeforeResponsive = cursorEnabled;
             if (cursorEnabled) disableCursor();
             if (panelElement) panelElement.style.display = 'none';
-        } else if (!isMobile && isResponsiveHidden) {
+        } else if (!hidden && isResponsiveHidden) {
             isResponsiveHidden = false;
             if (panelElement) panelElement.style.display = '';
             if (wasEnabledBeforeResponsive) enableCursor();
         }
     }
 
-    window.addEventListener('resize', checkResponsiveMode);
-
     function init() {
         createPanel();
         disableCursor();
-        checkResponsiveMode();
 
         // Fallback: if Elementor doesn't send message within 2 seconds, start preloader anyway
         // This handles empty pages where no cursor:update/init messages are sent

@@ -1291,9 +1291,30 @@
 		if (window.CMSM_DEBUG) console.log('[NavigatorIndicator] Cleanup completed');
 	}
 
+	// === Device mode: notify preview iframe on responsive switch ===
+	function sendDeviceMode(mode) {
+		var previewIframe = document.getElementById('elementor-preview-iframe');
+		if (previewIframe && previewIframe.contentWindow) {
+			previewIframe.contentWindow.postMessage({
+				type: 'cmsmasters:cursor:device-mode',
+				mode: mode
+			}, TRUSTED_ORIGIN);
+		}
+	}
+
+	function setupDeviceModeListener() {
+		if (typeof elementor !== 'undefined' && elementor.channels && elementor.channels.deviceMode) {
+			elementor.listenTo(elementor.channels.deviceMode, 'change', function() {
+				var mode = elementor.channels.deviceMode.request('currentMode');
+				sendDeviceMode(mode || 'desktop');
+			});
+		}
+	}
+
 	// Initialize when Elementor preview is loaded
 	if (typeof elementor !== 'undefined') {
 		elementor.on('preview:loaded', init);
+		elementor.on('preview:loaded', setupDeviceModeListener);
 		// MEM-001 + MEM-002: Cleanup on preview destroyed
 		elementor.on('preview:destroyed', cleanup);
 
@@ -1309,6 +1330,7 @@
 		$(window).on('elementor:init', function() {
 			if (typeof elementor !== 'undefined') {
 				elementor.on('preview:loaded', init);
+				elementor.on('preview:loaded', setupDeviceModeListener);
 				elementor.on('preview:destroyed', cleanup); // MEM-001 + MEM-002
 			}
 		});
