@@ -246,7 +246,12 @@
         '/* that breaks SVG rendering in iframe. Disable in editor. */',
         'body.cmsm-cursor-blend-strong #cmsm-cursor-container {',
         '  filter: none !important;',
-        '}'
+        '}',
+        '',
+        '/* Responsive mode: hide everything on tablet/mobile */',
+        '#cmsms-cursor-panel.is-responsive-hidden { display: none !important; }',
+        'body.cmsms-responsive-hidden #cmsm-cursor-container { display: none !important; }',
+        'body.cmsms-responsive-hidden .cmsm-cursor { display: none !important; }'
     ].join('\n');
     document.head.appendChild(styleEl);
 
@@ -680,10 +685,12 @@
             isResponsiveHidden = true;
             wasEnabledBeforeResponsive = cursorEnabled;
             if (cursorEnabled) disableCursor();
-            if (panelElement) panelElement.style.display = 'none';
+            if (panelElement) panelElement.classList.add('is-responsive-hidden');
+            document.body.classList.add('cmsms-responsive-hidden');
         } else if (!hidden && isResponsiveHidden) {
             isResponsiveHidden = false;
-            if (panelElement) panelElement.style.display = '';
+            if (panelElement) panelElement.classList.remove('is-responsive-hidden');
+            document.body.classList.remove('cmsms-responsive-hidden');
             if (wasEnabledBeforeResponsive) enableCursor();
         }
     }
