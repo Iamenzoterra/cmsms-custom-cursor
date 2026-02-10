@@ -20,6 +20,11 @@
     var isLoading = false;
     var panelElement = null;
 
+    // Responsive mode - hide cursor on tablet/mobile preview
+    var DESKTOP_MIN_WIDTH = 1025;
+    var isResponsiveHidden = false;
+    var wasEnabledBeforeResponsive = false;
+
     // Preloader config
     var PRELOAD_DURATION = 15000; // 15 seconds
     var preloaderStartTime = null;
@@ -666,9 +671,28 @@
         }
     }
 
+    // === Responsive mode: hide panel + cursor on tablet/mobile ===
+    function checkResponsiveMode() {
+        var isMobile = window.innerWidth < DESKTOP_MIN_WIDTH;
+
+        if (isMobile && !isResponsiveHidden) {
+            isResponsiveHidden = true;
+            wasEnabledBeforeResponsive = cursorEnabled;
+            if (cursorEnabled) disableCursor();
+            if (panelElement) panelElement.style.display = 'none';
+        } else if (!isMobile && isResponsiveHidden) {
+            isResponsiveHidden = false;
+            if (panelElement) panelElement.style.display = '';
+            if (wasEnabledBeforeResponsive) enableCursor();
+        }
+    }
+
+    window.addEventListener('resize', checkResponsiveMode);
+
     function init() {
         createPanel();
         disableCursor();
+        checkResponsiveMode();
 
         // Fallback: if Elementor doesn't send message within 2 seconds, start preloader anyway
         // This handles empty pages where no cursor:update/init messages are sent
