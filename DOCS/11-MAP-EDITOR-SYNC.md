@@ -56,6 +56,7 @@ The editor sync system enables real-time cursor preview in Elementor editor. It 
 | `cmsmasters:cursor:init` | Editor → Preview | Send all cursor settings |
 | `cmsmasters:cursor:update` | Editor → Preview | Send single element update |
 | `cmsmasters:cursor:request-init` | Preview → Editor | Request settings resend |
+| `cmsmasters:cursor:device-mode` | Editor → Preview | Notify responsive mode change |
 
 ---
 
@@ -225,6 +226,72 @@ function initPreviewMessageListener() {
     });
 }
 ```
+
+---
+
+### cmsmasters:cursor:device-mode
+
+**Direction:** Editor → Preview
+
+**Triggered By:** Responsive mode toolbar changes in Elementor editor (desktop/tablet/mobile)
+
+**Purpose:** Hide cursor preview when user switches to tablet/mobile responsive view
+
+**Source:** `navigator-indicator.js` - `notifyDeviceMode()`
+
+**Payload:**
+```javascript
+{
+    type: 'cmsmasters:cursor:device-mode',
+    mode: 'tablet'  // 'desktop' | 'tablet' | 'mobile'
+}
+```
+
+**Handler (cursor-editor-sync.js line 283):**
+```javascript
+window.addEventListener('message', function(event) {
+    if (event.data.type === 'cmsmasters:cursor:device-mode') {
+        setResponsiveHidden(event.data.mode !== 'desktop');
+        return;
+    }
+});
+```
+
+**Detection Methods (navigator-indicator.js):**
+
+1. **Primary (Elementor 3.x+):** CustomEvent listener (line 1321)
+```javascript
+window.addEventListener('elementor/device-mode/change', function(e) {
+    notifyDeviceMode(e.detail && e.detail.activeMode || getDeviceModeFromBody());
+});
+```
+
+2. **Fallback:** MutationObserver on editor body class (line 1326)
+```javascript
+new MutationObserver(function() {
+    notifyDeviceMode(getDeviceModeFromBody());
+}).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+```
+
+**Body Class Pattern:**
+- Desktop: `<body class="... elementor-device-desktop ...">`
+- Tablet: `<body class="... elementor-device-tablet ...">`
+- Mobile: `<body class="... elementor-device-mobile ...">`
+
+**Behavior in Preview (cursor-editor-sync.js):**
+- Tablet/Mobile: Panel gets `is-responsive-hidden` class → `display: none !important`
+- Tablet/Mobile: Body gets `cmsms-responsive-hidden` class → hides cursor container
+- Desktop: Classes removed, cursor state restored if it was enabled before
+
+**Why This Approach:**
+
+Previous failed attempts:
+- ❌ `window.resize` in preview iframe - Elementor doesn't resize iframe viewport
+- ❌ `data-elementor-device-mode` in preview body - attribute doesn't update (CSS media queries don't fire)
+- ❌ `data-elementor-device-mode` on editor body - attribute doesn't exist on editor body
+- ❌ `elementor.channels.deviceMode` Backbone Radio - API unreliable
+
+✅ **Correct approach:** Editor body CLASS `elementor-device-*` detected via CustomEvent + MutationObserver
 
 ---
 

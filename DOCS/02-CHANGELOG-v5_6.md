@@ -384,23 +384,78 @@ Prevents unnecessary script loading and cursor initialization attempts on templa
 
 ---
 
+#### 10. Responsive Mode Detection (Editor + Preview)
+
+Added automatic cursor preview hiding when user switches to tablet/mobile responsive mode in Elementor editor toolbar.
+
+**Problem:**
+Cursor preview remained visible when switching to tablet/mobile responsive view, but the responsive CSS wrapper doesn't resize the iframe viewport - only changes the visible area via CSS. This made the cursor appear "stuck" and not properly testable in responsive mode.
+
+**Solution:**
+Implemented device mode detection in editor frame that communicates to preview iframe via postMessage.
+
+**Technical Implementation:**
+
+**Editor Frame (navigator-indicator.js):**
+- Added `notifyDeviceMode(mode)` function (line 1299) that sends `cmsmasters:cursor:device-mode` postMessage
+- Added `getDeviceModeFromBody()` (line 1311) that parses `elementor-device-{mode}` class from editor body
+- Detection via two methods:
+  1. `window.addEventListener('elementor/device-mode/change')` - CustomEvent from Elementor 3.x+ (line 1321)
+  2. `MutationObserver` on editor body class - fallback for body class changes (line 1326)
+- `lastDeviceMode` variable prevents duplicate messages
+
+**Preview Iframe (cursor-editor-sync.js):**
+- Added `isResponsiveHidden` and `wasEnabledBeforeResponsive` state variables (lines 23-25)
+- Added `setResponsiveHidden(hidden)` function (line 683)
+- Message handler listens for `cmsmasters:cursor:device-mode` (line 283)
+- When tablet/mobile detected:
+  - Panel gets `is-responsive-hidden` class → CSS `display: none !important`
+  - Body gets `cmsms-responsive-hidden` class → CSS hides `#cmsm-cursor-container`
+  - Current cursor state saved, cursor disabled
+- When desktop restored:
+  - Classes removed, cursor state restored if it was enabled before
+
+**CSS (cursor-editor-sync.js inline styles):**
+```css
+/* Responsive mode: hide everything on tablet/mobile */
+#cmsms-cursor-panel.is-responsive-hidden { display: none !important; }
+body.cmsms-responsive-hidden #cmsm-cursor-container { display: none !important; }
+body.cmsms-responsive-hidden .cmsm-cursor { display: none !important; }
+```
+
+**Why Previous Approaches Failed:**
+- **window.resize** in preview iframe: Elementor doesn't resize the iframe viewport, only the CSS wrapper
+- **data-elementor-device-mode** attribute in preview body: Doesn't update because CSS media queries don't fire (viewport unchanged)
+- **data-elementor-device-mode** on editor body: This attribute doesn't exist on editor body, only on preview body
+- **elementor.channels.deviceMode** Backbone Radio: API unreliable
+- **style.display='none'** on panel: Overridden by panel CSS `display: flex !important`
+
+**Correct Approach:** Editor frame body CLASS `elementor-device-desktop/tablet/mobile` detected via CustomEvent + MutationObserver, communicated to preview via postMessage.
+
+**Files Changed:**
+- `assets/js/navigator-indicator.js` - Device mode detection and notification
+- `assets/js/cursor-editor-sync.js` - Responsive hiding logic and CSS
+
+---
+
 ### Files Changed (v5.6 Complete)
 
 | File | Changes |
 |------|---------|
 | `assets/lib/custom-cursor/custom-cursor.css` | Z-index CSS custom properties (CSS-001 fix) |
 | `assets/lib/custom-cursor/custom-cursor.js` | Added CONSTANTS, CursorState, SpecialCursorManager, Pure Effect Functions, Debug Mode, Form Detection Fix |
-| `assets/js/cursor-editor-sync.js` | Console cleanup (CMSM_DEBUG guard) |
-| `assets/js/navigator-indicator.js` | Empty catch blocks now log errors |
+| `assets/js/cursor-editor-sync.js` | Console cleanup (CMSM_DEBUG guard), responsive mode hiding |
+| `assets/js/navigator-indicator.js` | Empty catch blocks now log errors, device mode detection |
 | `includes/frontend.php` | Clean rewrite from original + cursor methods only (DEPLOY-001 fix) + Theme Builder template detection |
 | `modules/settings/settings-page.php` | Removed performance tab (font preload not part of cursor) |
 | `DOCS/02-CHANGELOG-v5_6.md` | Updated (this file) |
 | `DOCS/03-BACKLOG.md` | Marked P4-004, P4-005, P4-006 resolved |
 | `DOCS/04-KNOWN-ISSUES.md` | Marked CSS-001, MEM-004, CODE-002, CODE-003, P4-004, P4-005, P4-006 resolved |
-| `DOCS/05-API-JAVASCRIPT.md` | Documented CONSTANTS, CursorState, SpecialCursorManager, Pure Functions, debug() API, isFormZone() |
+| `DOCS/05-API-JAVASCRIPT.md` | Documented CONSTANTS, CursorState, SpecialCursorManager, Pure Functions, debug() API, isFormZone(), device mode functions |
 | `DOCS/06-API-CSS.md` | Updated z-index documentation, added new CSS variables |
 | `DOCS/08-API-PHP.md` | Updated should_enable_custom_cursor() with Theme Builder template detection |
 | `DOCS/09-MAP-DEPENDENCY.md` | Updated with SpecialCursorManager and pure function dependencies |
+| `DOCS/11-MAP-EDITOR-SYNC.md` | Added cmsmasters:cursor:device-mode message type |
 | `DOCS/12-REF-BODY-CLASSES.md` | Added CursorState references |
 | `DOCS/13-REF-EFFECTS.md` | Updated with pure function references |
 

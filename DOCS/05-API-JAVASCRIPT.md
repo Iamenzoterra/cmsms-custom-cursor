@@ -1316,6 +1316,40 @@ Removes all data-cursor-* attributes from element.
 
 ---
 
+### Responsive Mode Functions
+
+#### setResponsiveHidden(hidden)
+
+**Line:** 683
+
+```javascript
+setResponsiveHidden(true)   // Hide cursor on tablet/mobile
+setResponsiveHidden(false)  // Restore cursor on desktop
+```
+
+Controls cursor visibility based on responsive mode.
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| hidden | boolean | true to hide cursor, false to restore |
+
+**Returns:** `void`
+
+**Side Effects:**
+- Adds/removes `is-responsive-hidden` class to panel
+- Adds/removes `cmsms-responsive-hidden` class to body
+- Saves/restores cursor enabled state
+
+**State Management:**
+- `isResponsiveHidden` - Current responsive hidden state
+- `wasEnabledBeforeResponsive` - Cursor state before hiding
+
+**Triggered By:** `cmsmasters:cursor:device-mode` postMessage from editor
+
+---
+
 #### getSize(v, d)
 
 **Line:** 519
@@ -1472,14 +1506,20 @@ Sends message to parent requesting initial cursor settings.
 
 ### Message Handler
 
-**Line:** 253
+**Line:** 268
 
 ```javascript
 window.addEventListener('message', function(e) {
+    if (e.data.type === 'cmsmasters:cursor:device-mode') { ... }
     if (e.data.type === 'cmsmasters:cursor:init') { ... }
     if (e.data.type === 'cmsmasters:cursor:update') { ... }
 })
 ```
+
+**Handles Three Message Types:**
+1. `cmsmasters:cursor:device-mode` - Responsive mode changes (line 283)
+2. `cmsmasters:cursor:update` - Single element update (line 287)
+3. `cmsmasters:cursor:init` - Initial settings batch (line 294)
 
 ---
 
@@ -1793,6 +1833,61 @@ tryAddLegend(5)
 Adds legend with retry logic.
 
 **Returns:** `void`
+
+---
+
+### Device Mode Detection
+
+#### notifyDeviceMode(mode)
+
+**Line:** 1299
+
+```javascript
+notifyDeviceMode('tablet')  // Sends device mode to preview iframe
+```
+
+Sends device mode change message to preview iframe when responsive mode changes in Elementor editor.
+
+**Parameters:**
+
+| Name | Type | Values | Description |
+|------|------|--------|-------------|
+| mode | string | `'desktop'` \| `'tablet'` \| `'mobile'` | Current device mode |
+
+**Returns:** `void`
+
+**Message Sent:**
+```javascript
+{
+    type: 'cmsmasters:cursor:device-mode',
+    mode: 'tablet'
+}
+```
+
+**Triggered By:**
+- `elementor/device-mode/change` CustomEvent (Elementor 3.x+)
+- MutationObserver on editor body class changes (fallback)
+
+**Side Effects:** Sends postMessage to preview iframe
+
+---
+
+#### getDeviceModeFromBody()
+
+**Line:** 1311
+
+```javascript
+getDeviceModeFromBody()  // Returns: 'desktop' | 'tablet' | 'mobile'
+```
+
+Extracts current device mode from editor body class.
+
+**Returns:** `string` - Device mode (`'desktop'`, `'tablet'`, or `'mobile'`)
+
+**Detection Method:**
+Parses `elementor-device-{mode}` class from `document.body.className`
+
+**Fallback:** Returns `'desktop'` if no mode class found
 
 ---
 
