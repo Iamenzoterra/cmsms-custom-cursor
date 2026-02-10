@@ -1291,9 +1291,42 @@
 		if (window.CMSM_DEBUG) console.log('[NavigatorIndicator] Cleanup completed');
 	}
 
+	// === Device mode: notify preview iframe on responsive switch ===
+	// Editor body gets CLASS elementor-device-{mode} (desktop/tablet/mobile)
+	// Preview iframe viewport does NOT resize, so detection must happen here
+	var lastDeviceMode = 'desktop';
+
+	function notifyDeviceMode(mode) {
+		if (mode === lastDeviceMode) return;
+		lastDeviceMode = mode;
+		var previewIframe = document.getElementById('elementor-preview-iframe');
+		if (previewIframe && previewIframe.contentWindow) {
+			previewIframe.contentWindow.postMessage({
+				type: 'cmsmasters:cursor:device-mode',
+				mode: mode
+			}, TRUSTED_ORIGIN);
+		}
+	}
+
+	function getDeviceModeFromBody() {
+		var match = document.body.className.match(/elementor-device-(\w+)/);
+		return match ? match[1] : 'desktop';
+	}
+
 	// Initialize when Elementor preview is loaded
 	if (typeof elementor !== 'undefined') {
 		elementor.on('preview:loaded', init);
+
+		// Listen for device mode changes via CustomEvent (Elementor 3.x+)
+		window.addEventListener('elementor/device-mode/change', function(e) {
+			notifyDeviceMode(e.detail && e.detail.activeMode || getDeviceModeFromBody());
+		});
+
+		// Fallback: MutationObserver on editor body class changes
+		new MutationObserver(function() {
+			notifyDeviceMode(getDeviceModeFromBody());
+		}).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+
 		// MEM-001 + MEM-002: Cleanup on preview destroyed
 		elementor.on('preview:destroyed', cleanup);
 
