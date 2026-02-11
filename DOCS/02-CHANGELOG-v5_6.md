@@ -599,13 +599,28 @@ Cursor preview panel (switcher) showed on Entry and Popup template types in Elem
 
 ---
 
+#### 13. Cursor Preview Panel — Center + Viewport Clamping
+
+Improved cursor preview panel positioning and drag behavior in editor.
+
+**Changes (`cursor-editor-sync.js`):**
+- Panel now centered horizontally (`left:50% + translateX(-50%)`) instead of `right:20px`
+- Drag handlers use `setProperty` with `!important` for reliable positioning over injected styles
+- Added `clampPanelToViewport()` — prevents panel from going off-screen after drag
+- Re-clamp on `window.resize` (e.g. Elementor responsive mode switch)
+
+**Files Changed:**
+- `assets/js/cursor-editor-sync.js` (panel CSS + drag logic)
+
+---
+
 ### Files Changed (v5.6 Complete)
 
 | File | Changes |
 |------|---------|
 | `assets/lib/custom-cursor/custom-cursor.css` | Z-index CSS custom properties (CSS-001 fix) |
 | `assets/lib/custom-cursor/custom-cursor.js` | Added CONSTANTS, CursorState, SpecialCursorManager, Pure Effect Functions, Debug Mode, Form Detection Fix, Icon SVG Color Fix |
-| `assets/js/cursor-editor-sync.js` | Console cleanup (CMSM_DEBUG guard), responsive mode hiding, entry/popup template hiding |
+| `assets/js/cursor-editor-sync.js` | Console cleanup (CMSM_DEBUG guard), responsive mode hiding, entry/popup template hiding, panel centering + viewport clamping |
 | `assets/js/navigator-indicator.js` | Empty catch blocks now log errors, device mode detection, template-check postMessage |
 | `includes/frontend.php` | Clean rewrite from original + cursor methods only (DEPLOY-001 fix) + Entry/Popup template detection |
 | `modules/settings/settings-page.php` | Removed performance tab (font preload not part of cursor) |
@@ -629,4 +644,4 @@ Cursor preview panel (switcher) showed on Entry and Popup template types in Elem
 
 ---
 
-*Last Updated: February 9, 2026 | Version: 5.6*
+*Last Updated: February 11, 2026 | Version: 5.6*
