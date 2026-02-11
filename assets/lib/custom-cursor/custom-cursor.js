@@ -2361,6 +2361,23 @@
     document.addEventListener('mouseover', function(e) {
         var t = e.target;
 
+        // Immediate special cursor detection on zone entry (bypass throttle to prevent ring trail)
+        if (t && t.closest && !SpecialCursorManager.isActive()) {
+            var specialZone = t.closest('[data-cursor-icon],[data-cursor-image],[data-cursor-text]');
+            if (specialZone) {
+                // Use event coords to avoid stale mx/my
+                var x = e.clientX;
+                var y = e.clientY;
+
+                detectCursorMode(x, y);
+
+                // Sync throttle state so next mousemove doesn't re-detect immediately
+                lastDetect = Date.now();
+                lastDetectX = x;
+                lastDetectY = y;
+            }
+        }
+
         // Image cursor hover: check if entering a clickable element inside image zone
         if (imageCursorEl) {
             var imageZone = t.closest ? t.closest('[data-cursor-image]') : null;
