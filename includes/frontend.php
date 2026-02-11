@@ -1220,7 +1220,7 @@ class Frontend extends Base_App {
 
 		wp_enqueue_style(
 			'cmsmasters-custom-cursor',
-			$this->get_css_assets_url( 'custom-cursor', self::get_lib_src( 'custom-cursor' ), false ),
+			$this->get_css_assets_url( 'custom-cursor', self::get_lib_src( 'custom-cursor' ) ),
 			array(),
 			CMSMASTERS_ELEMENTOR_VERSION
 		);
