@@ -8,7 +8,7 @@
     'use strict';
 
     if (window.self === window.top) return;
-    if (!document.body.classList.contains('cmsm-cursor-enabled')) return;
+    if (!document.body.classList.contains('cmsmasters-cursor-enabled')) return;
 
     // Skip on Entry and Popup templates - no cursor panel needed
     // Only entries (*_entry) and popup are excluded; header/footer/archive/singular show cursor
@@ -44,21 +44,21 @@
 
     // ===== STYLES =====
     var styleEl = document.createElement('style');
-    styleEl.id = 'cmsms-cursor-editor-sync-styles';
+    styleEl.id = 'cmsmasters-cursor-editor-sync-styles';
     styleEl.textContent = [
         // Hide cursor elements but exclude panel and its children
-        'body.cmsms-cursor-disabled [class*="cmsms-cursor"]:not([id="cmsms-cursor-panel"]):not([class*="cmsms-cursor-panel"]):not([class*="cmsms-cursor-switch"]):not([class*="cmsms-cursor-slider"]):not(.panel-label):not(.switch-wrap):not(.switch-input):not(.switch-track):not(.switch-knob):not(.switch-text),',
-        'body.cmsms-cursor-disabled [class*="cmsm-cursor"]:not([id="cmsms-cursor-panel"]):not(#cmsm-cursor-container) {',
+        'body.cmsmasters-cursor-disabled [class*="cmsmasters-cursor"]:not([id="cmsmasters-cursor-panel"]):not([class*="cmsmasters-cursor-panel"]):not([class*="cmsmasters-cursor-switch"]):not([class*="cmsmasters-cursor-slider"]):not(.panel-label):not(.switch-wrap):not(.switch-input):not(.switch-track):not(.switch-knob):not(.switch-text),',
+        'body.cmsmasters-cursor-disabled [class*="cmsmasters-cursor"]:not([id="cmsmasters-cursor-panel"]):not(#cmsmasters-cursor-container) {',
         '  opacity: 0 !important;',
         '  visibility: hidden !important;',
         '  pointer-events: none !important;',
         '}',
         '',
-        'body.cmsms-cursor-disabled { cursor: auto !important; }',
-        'body.cmsms-cursor-disabled * { cursor: inherit !important; }',
+        'body.cmsmasters-cursor-disabled { cursor: auto !important; }',
+        'body.cmsmasters-cursor-disabled * { cursor: inherit !important; }',
         '',
         // Panel - always visible, draggable
-        '#cmsms-cursor-panel {',
+        '#cmsmasters-cursor-panel {',
         '  position: fixed !important;',
         '  bottom: 20px !important;',
         '  left: 50% !important;',
@@ -78,10 +78,10 @@
         '  opacity: 1 !important;',
         '  visibility: visible !important;',
         '}',
-        '#cmsms-cursor-panel.is-dragging { cursor: grabbing !important; }',
+        '#cmsmasters-cursor-panel.is-dragging { cursor: grabbing !important; }',
         '',
         // Label - flex container to center text, same height as switch
-        '#cmsms-cursor-panel .panel-label {',
+        '#cmsmasters-cursor-panel .panel-label {',
         '  display: flex !important;',
         '  align-items: center !important;',
         '  height: 26px !important;',
@@ -94,7 +94,7 @@
         '}',
         '',
         // Switch wrapper
-        '#cmsms-cursor-panel .switch-wrap {',
+        '#cmsmasters-cursor-panel .switch-wrap {',
         '  position: relative !important;',
         '  display: block !important;',
         '  width: 52px !important;',
@@ -105,14 +105,14 @@
         '  padding: 0 !important;',
         '}',
         '',
-        '#cmsms-cursor-panel .switch-input {',
+        '#cmsmasters-cursor-panel .switch-input {',
         '  position: absolute !important;',
         '  opacity: 0 !important;',
         '  width: 0 !important;',
         '  height: 0 !important;',
         '}',
         '',
-        '#cmsms-cursor-panel .switch-track {',
+        '#cmsmasters-cursor-panel .switch-track {',
         '  position: absolute !important;',
         '  top: 0 !important;',
         '  left: 0 !important;',
@@ -123,7 +123,7 @@
         '  transition: background 0.2s !important;',
         '}',
         '',
-        '#cmsms-cursor-panel .switch-knob {',
+        '#cmsmasters-cursor-panel .switch-knob {',
         '  position: absolute !important;',
         '  width: 20px !important;',
         '  height: 20px !important;',
@@ -136,7 +136,7 @@
         '}',
         '',
         // Switch text - centered in track using flexbox
-        '#cmsms-cursor-panel .switch-text {',
+        '#cmsmasters-cursor-panel .switch-text {',
         '  position: absolute !important;',
         '  top: 0 !important;',
         '  left: 0 !important;',
@@ -155,16 +155,16 @@
         '}',
         '',
         // Checked state
-        '#cmsms-cursor-panel .switch-input:checked ~ .switch-track {',
+        '#cmsmasters-cursor-panel .switch-input:checked ~ .switch-track {',
         '  background: linear-gradient(135deg, #d946ef 0%, #a855f7 100%) !important;',
         '}',
         '',
-        '#cmsms-cursor-panel .switch-input:checked ~ .switch-knob {',
+        '#cmsmasters-cursor-panel .switch-input:checked ~ .switch-knob {',
         '  left: 29px !important;',
         '  background: #fff !important;',
         '}',
         '',
-        '#cmsms-cursor-panel .switch-input:checked ~ .switch-text {',
+        '#cmsmasters-cursor-panel .switch-input:checked ~ .switch-text {',
         '  justify-content: flex-start !important;',
         '  padding-left: 7px !important;',
         '  padding-right: 0 !important;',
@@ -172,18 +172,18 @@
         '}',
         '',
         // Loading state
-        '#cmsms-cursor-panel.is-loading .switch-wrap { pointer-events: none !important; opacity: 0.7 !important; }',
-        '#cmsms-cursor-panel.is-loading .switch-knob {',
+        '#cmsmasters-cursor-panel.is-loading .switch-wrap { pointer-events: none !important; opacity: 0.7 !important; }',
+        '#cmsmasters-cursor-panel.is-loading .switch-knob {',
         '  background: transparent !important;',
         '  border: 2px solid #a855f7 !important;',
         '  border-top-color: transparent !important;',
-        '  animation: cmsms-spin 0.8s linear infinite !important;',
+        '  animation: cmsmasters-spin 0.8s linear infinite !important;',
         '}',
         '',
-        '@keyframes cmsms-spin { to { transform: rotate(360deg); } }',
+        '@keyframes cmsmasters-spin { to { transform: rotate(360deg); } }',
         '',
         // Buzz animation for preloader (0.5s shake + 3.5s pause = 4s total)
-        '@keyframes cmsms-buzz {',
+        '@keyframes cmsmasters-buzz {',
         '  0% { transform: rotate(0deg); }',
         '  3% { transform: rotate(3deg); }',
         '  6% { transform: rotate(-3deg); }',
@@ -193,20 +193,20 @@
         '}',
         '',
         // Fade-in animation for switch
-        '@keyframes cmsms-fade-in {',
+        '@keyframes cmsmasters-fade-in {',
         '  from { opacity: 0; transform: scale(0.95); }',
         '  to { opacity: 1; transform: scale(1); }',
         '}',
         '',
         // Preloader mode - stacked layout with buzz
-        '#cmsms-cursor-panel.is-preloading {',
+        '#cmsmasters-cursor-panel.is-preloading {',
         '  flex-direction: column !important;',
         '  gap: 8px !important;',
         '  min-width: 140px !important;',
-        '  animation: cmsms-buzz 4s ease-in-out infinite !important;',
+        '  animation: cmsmasters-buzz 4s ease-in-out infinite !important;',
         '}',
         '',
-        '#cmsms-cursor-panel.is-preloading .panel-label {',
+        '#cmsmasters-cursor-panel.is-preloading .panel-label {',
         '  justify-content: center !important;',
         '  height: auto !important;',
         '  font-size: 11px !important;',
@@ -216,19 +216,19 @@
         '}',
         '',
         // Switch mode - apply fade-in animation
-        '#cmsms-cursor-panel:not(.is-preloading) .switch-wrap {',
-        '  animation: cmsms-fade-in 0.3s ease forwards !important;',
+        '#cmsmasters-cursor-panel:not(.is-preloading) .switch-wrap {',
+        '  animation: cmsmasters-fade-in 0.3s ease forwards !important;',
         '}',
         '',
         // Preloader styles
-        '#cmsms-cursor-panel .preloader-wrap {',
+        '#cmsmasters-cursor-panel .preloader-wrap {',
         '  display: flex !important;',
         '  align-items: center !important;',
         '  gap: 10px !important;',
         '  width: 100% !important;',
         '}',
         '',
-        '#cmsms-cursor-panel .preloader-track {',
+        '#cmsmasters-cursor-panel .preloader-track {',
         '  flex: 1 !important;',
         '  height: 4px !important;',
         '  background: #3f3f46 !important;',
@@ -237,7 +237,7 @@
         '  min-width: 120px !important;',
         '}',
         '',
-        '#cmsms-cursor-panel .preloader-fill {',
+        '#cmsmasters-cursor-panel .preloader-fill {',
         '  height: 100% !important;',
         '  width: 0%;',
         '  background: linear-gradient(135deg, #d946ef 0%, #a855f7 100%) !important;',
@@ -245,7 +245,7 @@
         '  transition: width 0.1s linear !important;',
         '}',
         '',
-        '#cmsms-cursor-panel .preloader-percent {',
+        '#cmsmasters-cursor-panel .preloader-percent {',
         '  color: #e4e4e7 !important;',
         '  font-size: 12px !important;',
         '  font-weight: 600 !important;',
@@ -256,21 +256,21 @@
         '/* FIX: Blend Mode Strong SVG invisibility in editor */',
         '/* filter: contrast(1.5) creates nested stacking context */',
         '/* that breaks SVG rendering in iframe. Disable in editor. */',
-        'body.cmsm-cursor-blend-strong #cmsm-cursor-container {',
+        'body.cmsmasters-cursor-blend-strong #cmsmasters-cursor-container {',
         '  filter: none !important;',
         '}',
         '',
         '/* Responsive mode: hide everything on tablet/mobile */',
-        '#cmsms-cursor-panel.is-responsive-hidden { display: none !important; }',
-        'body.cmsms-responsive-hidden #cmsm-cursor-container { display: none !important; }',
-        'body.cmsms-responsive-hidden .cmsm-cursor { display: none !important; }',
+        '#cmsmasters-cursor-panel.is-responsive-hidden { display: none !important; }',
+        'body.cmsmasters-responsive-hidden #cmsmasters-cursor-container { display: none !important; }',
+        'body.cmsmasters-responsive-hidden .cmsmasters-cursor { display: none !important; }',
         '',
         '/* Theme Builder template: hide panel when editing Entry/Popup/Archive/etc. */',
-        '#cmsms-cursor-panel.is-template-hidden { display: none !important; }'
+        '#cmsmasters-cursor-panel.is-template-hidden { display: none !important; }'
     ].join('\n');
     document.head.appendChild(styleEl);
 
-    document.body.classList.add('cmsms-cursor-disabled');
+    document.body.classList.add('cmsmasters-cursor-disabled');
 
     document.addEventListener('keydown', function(e) {
         if (e.key.toLowerCase() === 'c' && !e.ctrlKey && !e.metaKey && !e.altKey) {
@@ -400,7 +400,7 @@
         if (panelElement) return;
 
         panelElement = document.createElement('div');
-        panelElement.id = 'cmsms-cursor-panel';
+        panelElement.id = 'cmsmasters-cursor-panel';
         panelElement.setAttribute('data-cursor', 'hide');
         panelElement.classList.add('is-preloading');
 
@@ -554,7 +554,7 @@
     function disableCursor() {
         cursorEnabled = false;
         isLoading = false;
-        document.body.classList.add('cmsms-cursor-disabled');
+        document.body.classList.add('cmsmasters-cursor-disabled');
         if (panelElement) panelElement.classList.remove('is-loading');
         var input = getInput(), text = getText();
         if (input) input.checked = false;
@@ -564,7 +564,7 @@
     function enableCursor() {
         cursorEnabled = true;
         isLoading = false;
-        document.body.classList.remove('cmsms-cursor-disabled');
+        document.body.classList.remove('cmsmasters-cursor-disabled');
         if (panelElement) panelElement.classList.remove('is-loading');
         var input = getInput(), text = getText();
         if (input) input.checked = true;
@@ -743,11 +743,11 @@
             wasEnabledBeforeResponsive = cursorEnabled;
             if (cursorEnabled) disableCursor();
             if (panelElement) panelElement.classList.add('is-responsive-hidden');
-            document.body.classList.add('cmsms-responsive-hidden');
+            document.body.classList.add('cmsmasters-responsive-hidden');
         } else if (!hidden && isResponsiveHidden) {
             isResponsiveHidden = false;
             if (panelElement) panelElement.classList.remove('is-responsive-hidden');
-            document.body.classList.remove('cmsms-responsive-hidden');
+            document.body.classList.remove('cmsmasters-responsive-hidden');
             if (wasEnabledBeforeResponsive) enableCursor();
         }
     }

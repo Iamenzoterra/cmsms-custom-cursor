@@ -8,32 +8,32 @@
    ========================================================================== */
 
 :root {
-    --cmsm-cursor-color:#222;
-    --cmsm-cursor-color-light:#fff;
-    --cmsm-cursor-color-dark:#222;
-    --cmsm-cursor-dot-size:8px;
-    --cmsm-cursor-dot-hover-size:8px
+    --cmsmasters-cursor-color:#222;
+    --cmsmasters-cursor-color-light:#fff;
+    --cmsmasters-cursor-color-dark:#222;
+    --cmsmasters-cursor-dot-size:8px;
+    --cmsmasters-cursor-dot-hover-size:8px
 }
 
-body.cmsm-cursor-on-dark {
-    --cmsm-cursor-color:var(--cmsm-cursor-color-light)!important
+body.cmsmasters-cursor-on-dark {
+    --cmsmasters-cursor-color:var(--cmsmasters-cursor-color-light)!important
 }
 
-body.cmsm-cursor-on-light {
-    --cmsm-cursor-color:var(--cmsm-cursor-color-dark)!important
+body.cmsmasters-cursor-on-light {
+    --cmsmasters-cursor-color:var(--cmsmasters-cursor-color-dark)!important
 }
 
 /* ==========================================================================
    Core Cursor Elements (container, base, cursor:none)
    ========================================================================== */
 
-#cmsm-cursor-container {
-    --cmsm-cursor-z-default: 999999;
-    --cmsm-cursor-z-blend: 9999;
-    z-index: var(--cmsm-cursor-z-default)
+#cmsmasters-cursor-container {
+    --cmsmasters-cursor-z-default: 999999;
+    --cmsmasters-cursor-z-blend: 9999;
+    z-index: var(--cmsmasters-cursor-z-default)
 }
 
-.cmsm-cursor {
+.cmsmasters-cursor {
     position:fixed;
     top:0;
     left:0;
@@ -44,17 +44,17 @@ body.cmsm-cursor-on-light {
     transform:translate3d(-200px,-200px,0)
 }
 
-.cmsm-cursor-enabled .cmsm-cursor {
+.cmsmasters-cursor-enabled .cmsmasters-cursor {
     opacity:1
 }
 
-.cmsm-cursor-enabled,
-.cmsm-cursor-enabled * {
+.cmsmasters-cursor-enabled,
+.cmsmasters-cursor-enabled * {
     cursor:none!important
 }
 
-.cmsm-cursor-enabled.cmsm-cursor-dual,
-.cmsm-cursor-enabled.cmsm-cursor-dual * {
+.cmsmasters-cursor-enabled.cmsmasters-cursor-dual,
+.cmsmasters-cursor-enabled.cmsmasters-cursor-dual * {
     cursor:default!important
 }
 
@@ -110,7 +110,7 @@ body.cmsm-cursor-on-light {
 }
 
 @media (hover:none) and (pointer:coarse) {
-    #cmsm-cursor-container,.cmsm-cursor {
+    #cmsmasters-cursor-container,.cmsmasters-cursor {
         display:none!important
     }
 }
@@ -119,20 +119,20 @@ body.cmsm-cursor-on-light {
    Dot & Ring
    ========================================================================== */
 
-.cmsm-cursor-dot {
-    width:var(--cmsm-cursor-dot-size);
-    height:var(--cmsm-cursor-dot-size);
-    background:var(--cmsm-cursor-color);
+.cmsmasters-cursor-dot {
+    width:var(--cmsmasters-cursor-dot-size);
+    height:var(--cmsmasters-cursor-dot-size);
+    background:var(--cmsmasters-cursor-color);
     border-radius:50%;
-    margin-left:calc(var(--cmsm-cursor-dot-size)/ -2);
-    margin-top:calc(var(--cmsm-cursor-dot-size)/ -2);
+    margin-left:calc(var(--cmsmasters-cursor-dot-size)/ -2);
+    margin-top:calc(var(--cmsmasters-cursor-dot-size)/ -2);
     transition:background-color .15s ease-out,width .2s cubic-bezier(.25, 1, .5, 1),height .2s cubic-bezier(.25, 1, .5, 1),margin .2s cubic-bezier(.25, 1, .5, 1)
 }
 
-.cmsm-cursor-ring {
+.cmsmasters-cursor-ring {
     width:40px;
     height:40px;
-    border:2px solid var(--cmsm-cursor-color);
+    border:2px solid var(--cmsmasters-cursor-color);
     border-radius:50%;
     margin-left:-20px;
     margin-top:-20px;
@@ -144,27 +144,27 @@ body.cmsm-cursor-on-light {
    Blend Modes
    ========================================================================== */
 
-body.cmsm-cursor-blend-medium,
-body.cmsm-cursor-blend-soft,
-body.cmsm-cursor-blend-strong {
+body.cmsmasters-cursor-blend-medium,
+body.cmsmasters-cursor-blend-soft,
+body.cmsmasters-cursor-blend-strong {
     isolation:isolate
 }
 
-body.cmsm-cursor-blend-medium #cmsm-cursor-container,
-body.cmsm-cursor-blend-soft #cmsm-cursor-container,
-body.cmsm-cursor-blend-strong #cmsm-cursor-container {
-    z-index: var(--cmsm-cursor-z-blend)
+body.cmsmasters-cursor-blend-medium #cmsmasters-cursor-container,
+body.cmsmasters-cursor-blend-soft #cmsmasters-cursor-container,
+body.cmsmasters-cursor-blend-strong #cmsmasters-cursor-container {
+    z-index: var(--cmsmasters-cursor-z-blend)
 }
 
-body.cmsm-cursor-blend-soft #cmsm-cursor-container {
+body.cmsmasters-cursor-blend-soft #cmsmasters-cursor-container {
     mix-blend-mode:exclusion
 }
 
-body.cmsm-cursor-blend-medium #cmsm-cursor-container {
+body.cmsmasters-cursor-blend-medium #cmsmasters-cursor-container {
     mix-blend-mode:difference
 }
 
-body.cmsm-cursor-blend-strong #cmsm-cursor-container {
+body.cmsmasters-cursor-blend-strong #cmsmasters-cursor-container {
     mix-blend-mode:difference;
     filter:contrast(1.5)
 }
@@ -173,49 +173,49 @@ body.cmsm-cursor-blend-strong #cmsm-cursor-container {
    Cursor States (hover, down, text, hidden)
    ========================================================================== */
 
-body.cmsm-cursor-hover .cmsm-cursor-ring {
+body.cmsmasters-cursor-hover .cmsmasters-cursor-ring {
     width:60px;
     height:60px;
     margin-left:-30px;
     margin-top:-30px;
     opacity:.5;
-    background-color:color-mix(in srgb,var(--cmsm-cursor-color) 10%,transparent)
+    background-color:color-mix(in srgb,var(--cmsmasters-cursor-color) 10%,transparent)
 }
 
-body.cmsm-cursor-down .cmsm-cursor-ring {
+body.cmsmasters-cursor-down .cmsmasters-cursor-ring {
     width:30px;
     height:30px;
     margin-left:-15px;
     margin-top:-15px;
-    background-color:color-mix(in srgb,var(--cmsm-cursor-color) 90%,transparent)
+    background-color:color-mix(in srgb,var(--cmsmasters-cursor-color) 90%,transparent)
 }
 
-body.cmsm-cursor-down .cmsm-cursor-dot {
+body.cmsmasters-cursor-down .cmsmasters-cursor-dot {
     opacity:.5
 }
 
-body.cmsm-cursor-text .cmsm-cursor-ring {
+body.cmsmasters-cursor-text .cmsmasters-cursor-ring {
     width:4px;
     height:24px;
     border-radius:2px;
     margin-left:-2px;
     margin-top:-12px;
-    background-color:var(--cmsm-cursor-color);
+    background-color:var(--cmsmasters-cursor-color);
     border:none;
     opacity:1
 }
 
-body.cmsm-cursor-text .cmsm-cursor-dot {
+body.cmsmasters-cursor-text .cmsmasters-cursor-dot {
     opacity:0
 }
 
-body.cmsm-cursor-hidden .cmsm-cursor {
+body.cmsmasters-cursor-hidden .cmsmasters-cursor {
     opacity:0!important
 }
 
 /* System cursor fallback when custom cursor hides (form zones, video/iframe) */
-body.cmsm-cursor-hidden,
-body.cmsm-cursor-hidden * {
+body.cmsmasters-cursor-hidden,
+body.cmsmasters-cursor-hidden * {
     cursor:default!important
 }
 
@@ -223,41 +223,41 @@ body.cmsm-cursor-hidden * {
    Size Variants & Themes
    ========================================================================== */
 
-body.cmsm-cursor-size-sm .cmsm-cursor-ring {
+body.cmsmasters-cursor-size-sm .cmsmasters-cursor-ring {
     width:20px;
     height:20px;
     margin-left:-10px;
     margin-top:-10px
 }
 
-body.cmsm-cursor-size-lg .cmsm-cursor-ring {
+body.cmsmasters-cursor-size-lg .cmsmasters-cursor-ring {
     width:80px;
     height:80px;
     margin-left:-40px;
     margin-top:-40px
 }
 
-body.cmsm-cursor-theme-dot {
-    --cmsm-cursor-dot-size:10px;
-    --cmsm-cursor-dot-hover-size:20px
+body.cmsmasters-cursor-theme-dot {
+    --cmsmasters-cursor-dot-size:10px;
+    --cmsmasters-cursor-dot-hover-size:20px
 }
 
-body.cmsm-cursor-theme-dot .cmsm-cursor-ring {
+body.cmsmasters-cursor-theme-dot .cmsmasters-cursor-ring {
     display:none!important
 }
 
-body.cmsm-cursor-theme-dot.cmsm-cursor-hover .cmsm-cursor-dot {
-    width:var(--cmsm-cursor-dot-hover-size);
-    height:var(--cmsm-cursor-dot-hover-size);
-    margin-left:calc(var(--cmsm-cursor-dot-hover-size)/ -2);
-    margin-top:calc(var(--cmsm-cursor-dot-hover-size)/ -2)
+body.cmsmasters-cursor-theme-dot.cmsmasters-cursor-hover .cmsmasters-cursor-dot {
+    width:var(--cmsmasters-cursor-dot-hover-size);
+    height:var(--cmsmasters-cursor-dot-hover-size);
+    margin-left:calc(var(--cmsmasters-cursor-dot-hover-size)/ -2);
+    margin-top:calc(var(--cmsmasters-cursor-dot-hover-size)/ -2)
 }
 
 /* ==========================================================================
    Special Cursor: Image
    ========================================================================== */
 
-.cmsm-cursor-image {
+.cmsmasters-cursor-image {
     position:fixed;
     top:0;
     left:0;
@@ -274,16 +274,16 @@ body.cmsm-cursor-theme-dot.cmsm-cursor-hover .cmsm-cursor-dot {
     cursor:none!important
 }
 
-body.cmsm-cursor-blend-medium .cmsm-cursor-image,
-body.cmsm-cursor-blend-soft .cmsm-cursor-image,
-body.cmsm-cursor-blend-strong .cmsm-cursor-image {
+body.cmsmasters-cursor-blend-medium .cmsmasters-cursor-image,
+body.cmsmasters-cursor-blend-soft .cmsmasters-cursor-image,
+body.cmsmasters-cursor-blend-strong .cmsmasters-cursor-image {
     filter:none
 }
 
-.cmsm-cursor-image.cmsm-cursor-image-buzz,
-.cmsm-cursor-image.cmsm-cursor-image-pulse,
-.cmsm-cursor-image.cmsm-cursor-image-shake,
-.cmsm-cursor-image.cmsm-cursor-image-wobble {
+.cmsmasters-cursor-image.cmsmasters-cursor-image-buzz,
+.cmsmasters-cursor-image.cmsmasters-cursor-image-pulse,
+.cmsmasters-cursor-image.cmsmasters-cursor-image-shake,
+.cmsmasters-cursor-image.cmsmasters-cursor-image-wobble {
     transition:none
 }
 
@@ -291,14 +291,14 @@ body.cmsm-cursor-blend-strong .cmsm-cursor-image {
    Special Cursor: Text
    ========================================================================== */
 
-.cmsm-cursor-text-el.cmsm-cursor-text-buzz,
-.cmsm-cursor-text-el.cmsm-cursor-text-pulse,
-.cmsm-cursor-text-el.cmsm-cursor-text-shake,
-.cmsm-cursor-text-el.cmsm-cursor-text-wobble {
+.cmsmasters-cursor-text-el.cmsmasters-cursor-text-buzz,
+.cmsmasters-cursor-text-el.cmsmasters-cursor-text-pulse,
+.cmsmasters-cursor-text-el.cmsmasters-cursor-text-shake,
+.cmsmasters-cursor-text-el.cmsmasters-cursor-text-wobble {
     transition:none
 }
 
-.cmsm-cursor-text-el {
+.cmsmasters-cursor-text-el {
     position:fixed;
     top:0;
     left:0;
@@ -316,9 +316,9 @@ body.cmsm-cursor-blend-strong .cmsm-cursor-image {
     cursor:none!important
 }
 
-body.cmsm-cursor-blend-medium .cmsm-cursor-text-el,
-body.cmsm-cursor-blend-soft .cmsm-cursor-text-el,
-body.cmsm-cursor-blend-strong .cmsm-cursor-text-el {
+body.cmsmasters-cursor-blend-medium .cmsmasters-cursor-text-el,
+body.cmsmasters-cursor-blend-soft .cmsmasters-cursor-text-el,
+body.cmsmasters-cursor-blend-strong .cmsmasters-cursor-text-el {
     filter:none
 }
 
@@ -326,7 +326,7 @@ body.cmsm-cursor-blend-strong .cmsm-cursor-text-el {
    Special Cursor: Icon
    ========================================================================== */
 
-.cmsm-cursor-icon-el {
+.cmsmasters-cursor-icon-el {
     position:fixed;
     top:0;
     left:0;
@@ -340,15 +340,15 @@ body.cmsm-cursor-blend-strong .cmsm-cursor-text-el {
     transform:translate3d(-200px,-200px,0)
 }
 
-.cmsm-cursor-icon-el i,
-.cmsm-cursor-icon-el img,
-.cmsm-cursor-icon-el svg {
+.cmsmasters-cursor-icon-el i,
+.cmsmasters-cursor-icon-el img,
+.cmsmasters-cursor-icon-el svg {
     display:block;
     width:1em;
     height:1em
 }
 
-.cmsm-cursor-icon-el svg {
+.cmsmasters-cursor-icon-el svg {
     fill:currentColor
 }
 
@@ -357,16 +357,16 @@ body.cmsm-cursor-blend-strong .cmsm-cursor-text-el {
     cursor:none!important
 }
 
-.cmsm-cursor-icon-el.cmsm-cursor-icon-buzz,
-.cmsm-cursor-icon-el.cmsm-cursor-icon-pulse,
-.cmsm-cursor-icon-el.cmsm-cursor-icon-shake,
-.cmsm-cursor-icon-el.cmsm-cursor-icon-wobble {
+.cmsmasters-cursor-icon-el.cmsmasters-cursor-icon-buzz,
+.cmsmasters-cursor-icon-el.cmsmasters-cursor-icon-pulse,
+.cmsmasters-cursor-icon-el.cmsmasters-cursor-icon-shake,
+.cmsmasters-cursor-icon-el.cmsmasters-cursor-icon-wobble {
     transition:none
 }
 
-body.cmsm-cursor-blend-medium .cmsm-cursor-icon-el,
-body.cmsm-cursor-blend-soft .cmsm-cursor-icon-el,
-body.cmsm-cursor-blend-strong .cmsm-cursor-icon-el {
+body.cmsmasters-cursor-blend-medium .cmsmasters-cursor-icon-el,
+body.cmsmasters-cursor-blend-soft .cmsmasters-cursor-icon-el,
+body.cmsmasters-cursor-blend-strong .cmsmasters-cursor-icon-el {
     filter:none
 }
 
@@ -374,23 +374,23 @@ body.cmsm-cursor-blend-strong .cmsm-cursor-icon-el {
    Cursor Inner Wrapper
    ========================================================================== */
 
-.cmsm-cursor-inner {
+.cmsmasters-cursor-inner {
     display:inline-flex;
     align-items:center;
     justify-content:center;
     will-change:transform
 }
 
-.cmsm-cursor-image .cmsm-cursor-inner {
+.cmsmasters-cursor-image .cmsmasters-cursor-inner {
     width:100%;
     height:100%
 }
 
-.cmsm-cursor-text-el .cmsm-cursor-inner {
+.cmsmasters-cursor-text-el .cmsmasters-cursor-inner {
     white-space:nowrap
 }
 
-.cmsm-cursor-icon-el .cmsm-cursor-inner {
+.cmsmasters-cursor-icon-el .cmsmasters-cursor-inner {
     line-height:1
 }
 
@@ -398,12 +398,12 @@ body.cmsm-cursor-blend-strong .cmsm-cursor-icon-el {
    Popup & Overlay Z-index
    ========================================================================== */
 
-.air-datepicker #cmsm-cursor-container,
-.daterangepicker #cmsm-cursor-container,
-.elementor-popup-modal #cmsm-cursor-container,
-.flatpickr-calendar #cmsm-cursor-container,
-.ui-datepicker #cmsm-cursor-container {
-    z-index: var(--cmsm-cursor-z-default)
+.air-datepicker #cmsmasters-cursor-container,
+.daterangepicker #cmsmasters-cursor-container,
+.elementor-popup-modal #cmsmasters-cursor-container,
+.flatpickr-calendar #cmsmasters-cursor-container,
+.ui-datepicker #cmsmasters-cursor-container {
+    z-index: var(--cmsmasters-cursor-z-default)
 }
 
 /* ==========================================================================
@@ -417,20 +417,20 @@ body.cmsm-cursor-blend-strong .cmsm-cursor-icon-el {
  */
 @supports not (background-color: color-mix(in srgb, red 50%, blue)) {
     /* Default: dark cursor (#222) on light background */
-    body.cmsm-cursor-hover .cmsm-cursor-ring {
+    body.cmsmasters-cursor-hover .cmsmasters-cursor-ring {
         background-color: rgba(34, 34, 34, 0.1)
     }
 
-    body.cmsm-cursor-down .cmsm-cursor-ring {
+    body.cmsmasters-cursor-down .cmsmasters-cursor-ring {
         background-color: rgba(34, 34, 34, 0.9)
     }
 
     /* Adaptive: light cursor (#fff) on dark background */
-    body.cmsm-cursor-on-dark.cmsm-cursor-hover .cmsm-cursor-ring {
+    body.cmsmasters-cursor-on-dark.cmsmasters-cursor-hover .cmsmasters-cursor-ring {
         background-color: rgba(255, 255, 255, 0.1)
     }
 
-    body.cmsm-cursor-on-dark.cmsm-cursor-down .cmsm-cursor-ring {
+    body.cmsmasters-cursor-on-dark.cmsmasters-cursor-down .cmsmasters-cursor-ring {
         background-color: rgba(255, 255, 255, 0.9)
     }
 }

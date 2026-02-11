@@ -1231,7 +1231,7 @@ class Frontend extends Base_App {
 		// Custom color (low specificity so adaptive can override)
 		$cursor_color = $this->get_cursor_color();
 		if ( ! empty( $cursor_color ) ) {
-			$inline_css_parts[] = ':root { --cmsm-cursor-color: ' . esc_attr( $cursor_color ) . '; --cmsm-cursor-color-dark: ' . esc_attr( $cursor_color ) . '; }';
+			$inline_css_parts[] = ':root { --cmsmasters-cursor-color: ' . esc_attr( $cursor_color ) . '; --cmsmasters-cursor-color-dark: ' . esc_attr( $cursor_color ) . '; }';
 		}
 
 		// Dot sizes (high specificity to override theme defaults)
@@ -1240,14 +1240,14 @@ class Frontend extends Base_App {
 
 		$size_vars = array();
 		if ( ! empty( $dot_size ) && is_numeric( $dot_size ) ) {
-			$size_vars[] = '--cmsm-cursor-dot-size: ' . intval( $dot_size ) . 'px';
+			$size_vars[] = '--cmsmasters-cursor-dot-size: ' . intval( $dot_size ) . 'px';
 		}
 		if ( ! empty( $dot_hover_size ) && is_numeric( $dot_hover_size ) ) {
-			$size_vars[] = '--cmsm-cursor-dot-hover-size: ' . intval( $dot_hover_size ) . 'px';
+			$size_vars[] = '--cmsmasters-cursor-dot-hover-size: ' . intval( $dot_hover_size ) . 'px';
 		}
 
 		if ( ! empty( $size_vars ) ) {
-			$inline_css_parts[] = 'body.cmsm-cursor-enabled[class] { ' . implode( '; ', $size_vars ) . '; }';
+			$inline_css_parts[] = 'body.cmsmasters-cursor-enabled[class] { ' . implode( '; ', $size_vars ) . '; }';
 		}
 
 		if ( ! empty( $inline_css_parts ) ) {
@@ -1262,7 +1262,7 @@ class Frontend extends Base_App {
 			true
 		);
 
-		// Collect inline JS parts (window properties — NOT subject to cmsm- → cmsmasters- rename)
+		// Collect inline JS parts (window properties — NOT subject to cmsmasters- → cmsmasters- rename)
 		$inline_js_parts = array();
 
 		// Adaptive cursor setting
@@ -1299,19 +1299,19 @@ class Frontend extends Base_App {
 	 */
 	public function add_cursor_body_class( $classes ) {
 		if ( $this->should_enable_custom_cursor() ) {
-			$classes[] = 'cmsm-cursor-enabled';
+			$classes[] = 'cmsmasters-cursor-enabled';
 
 			// Theme class via PHP (fallback if JS fails) - CRITICAL for correct styling
 			$cursor_theme = get_option( 'elementor_custom_cursor_theme', 'classic' );
 			$cursor_theme = apply_filters( 'cmsmasters_custom_cursor_theme', $cursor_theme );
 			if ( ! empty( $cursor_theme ) ) {
-				$classes[] = 'cmsm-cursor-theme-' . sanitize_html_class( $cursor_theme );
+				$classes[] = 'cmsmasters-cursor-theme-' . sanitize_html_class( $cursor_theme );
 			}
 
 			// Dual cursor mode - show system cursor alongside custom cursor
 			$dual_mode = get_option( 'elementor_custom_cursor_dual_mode', '' );
 			if ( 'yes' === $dual_mode ) {
-				$classes[] = 'cmsm-cursor-dual';
+				$classes[] = 'cmsmasters-cursor-dual';
 			}
 
 			// Add blend mode class based on intensity
@@ -1322,15 +1322,15 @@ class Frontend extends Base_App {
 					$blend_mode = 'medium';
 				}
 				if ( in_array( $blend_mode, array( 'soft', 'medium', 'strong' ), true ) ) {
-					$classes[] = 'cmsm-cursor-blend';
-					$classes[] = 'cmsm-cursor-blend-' . $blend_mode;
+					$classes[] = 'cmsmasters-cursor-blend';
+					$classes[] = 'cmsmasters-cursor-blend-' . $blend_mode;
 				}
 			}
 
 			// Add wobble effect class (elastic deformation based on velocity)
 			$wobble = get_option( 'elementor_custom_cursor_wobble', '' );
 			if ( 'yes' === $wobble ) {
-				$classes[] = 'cmsm-cursor-wobble';
+				$classes[] = 'cmsmasters-cursor-wobble';
 			}
 		}
 		return $classes;
@@ -1351,9 +1351,9 @@ class Frontend extends Base_App {
 		}
 
 		// Wrapper creates isolated stacking context - z-index in CSS allows blend mode override
-		echo '<div id="cmsm-cursor-container" style="position:fixed;top:0;left:0;width:0;height:0;pointer-events:none;">';
-		echo '<div class="cmsm-cursor cmsm-cursor-dot" aria-hidden="true"></div>';
-		echo '<div class="cmsm-cursor cmsm-cursor-ring" aria-hidden="true"></div>';
+		echo '<div id="cmsmasters-cursor-container" style="position:fixed;top:0;left:0;width:0;height:0;pointer-events:none;">';
+		echo '<div class="cmsmasters-cursor cmsmasters-cursor-dot" aria-hidden="true"></div>';
+		echo '<div class="cmsmasters-cursor cmsmasters-cursor-ring" aria-hidden="true"></div>';
 		echo '</div>';
 
 		// Inline critical JS for instant cursor response
@@ -1372,13 +1372,13 @@ class Frontend extends Base_App {
 	 */
 	private function print_cursor_critical_js() {
 		?>
-		<script id="cmsm-cursor-critical">
+		<script id="cmsmasters-cursor-critical">
 		(function(){
 			// Skip if main script already loaded or touch device
 			if(window.cmsmCursorInit||'ontouchstart'in window)return;
 
-			const dot=document.querySelector('.cmsm-cursor-dot');
-			const ring=document.querySelector('.cmsm-cursor-ring');
+			const dot=document.querySelector('.cmsmasters-cursor-dot');
+			const ring=document.querySelector('.cmsmasters-cursor-ring');
 			if(!dot||!ring)return;
 
 			let mx=0,my=0,dx=0,dy=0,rx=0,ry=0;

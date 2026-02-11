@@ -6,10 +6,10 @@
  * @since 1.0.0
  *
  * Indicator Types:
- * - .cmsm-nav-cursor-core    - Purple dot: non-default Core settings (hover, color, blend, effect)
- * - .cmsm-nav-cursor-special - Blue dot: Special cursor active (Image/Text/Icon)
- * - .cmsm-nav-cursor-hidden  - Gray dot: cursor hidden on element
- * - .cmsm-nav-cursor-show    - Green dot: cursor shown (when addon cursor globally disabled)
+ * - .cmsmasters-nav-cursor-core    - Purple dot: non-default Core settings (hover, color, blend, effect)
+ * - .cmsmasters-nav-cursor-special - Blue dot: Special cursor active (Image/Text/Icon)
+ * - .cmsmasters-nav-cursor-hidden  - Gray dot: cursor hidden on element
+ * - .cmsmasters-nav-cursor-show    - Green dot: cursor shown (when addon cursor globally disabled)
  */
 
 /* =====================================================
@@ -17,12 +17,12 @@
    Uses Elementor's native indicator class for proper integration
    ===================================================== */
 
-.cmsm-nav-cursor-indicator {
+.cmsmasters-nav-cursor-indicator {
 	cursor: help;
 	transition: transform 0.15s ease, opacity 0.15s ease;
 }
 
-.cmsm-nav-cursor-indicator:hover {
+.cmsmasters-nav-cursor-indicator:hover {
 	transform: scale(1.4);
 }
 
@@ -31,28 +31,28 @@
    ===================================================== */
 
 /* Core settings (purple) - hover style, color, effect, blend */
-.cmsm-nav-cursor-core {
+.cmsmasters-nav-cursor-core {
 	background: #9b59b6 !important;
 }
 
 /* Special cursor (light blue) - Image/Text/Icon */
-.cmsm-nav-cursor-special {
+.cmsmasters-nav-cursor-special {
 	background: #3498db !important;
 }
 
 /* Hidden cursor (gray) - cursor hidden on element */
-.cmsm-nav-cursor-hidden {
+.cmsmasters-nav-cursor-hidden {
 	background: #95a5a6 !important;
 	opacity: 0.8;
 }
 
 /* Show cursor when addon disabled (green) */
-.cmsm-nav-cursor-show {
+.cmsmasters-nav-cursor-show {
 	background: #27ae60 !important;
 }
 
 /* Inherit parent cursor (amber/orange) */
-.cmsm-nav-cursor-inherit {
+.cmsmasters-nav-cursor-inherit {
 	background: #e67e22 !important;
 }
 
@@ -62,11 +62,11 @@
    AND inherit is not currently ON (so user can always turn it off)
    ===================================================== */
 
-#elementor-panel:not(.cmsm-has-parent-cursor):not(.cmsm-inherit-active)
+#elementor-panel:not(.cmsmasters-has-parent-cursor):not(.cmsmasters-inherit-active)
 	.elementor-control-cmsmasters_cursor_inherit_parent,
-#elementor-panel:not(.cmsm-has-parent-cursor):not(.cmsm-inherit-active)
+#elementor-panel:not(.cmsmasters-has-parent-cursor):not(.cmsmasters-inherit-active)
 	.elementor-control-cmsmasters_cursor_inherit_blend,
-#elementor-panel:not(.cmsm-has-parent-cursor):not(.cmsm-inherit-active)
+#elementor-panel:not(.cmsmasters-has-parent-cursor):not(.cmsmasters-inherit-active)
 	.elementor-control-cmsmasters_cursor_inherit_effect {
 	display: none !important;
 }
@@ -75,7 +75,7 @@
    TOOLTIP
    ===================================================== */
 
-.cmsm-nav-cursor-indicator[title] {
+.cmsmasters-nav-cursor-indicator[title] {
 	position: relative;
 }
 
@@ -86,7 +86,7 @@
    ===================================================== */
 
 /* Legend container */
-.cmsm-nav-cursor-legend-wrapper {
+.cmsmasters-nav-cursor-legend-wrapper {
 	display: none; /* Hidden by default, shown via JS when indicators exist */
 	flex-direction: column;
 	border-top: 1px solid var(--e-a-border-color-bold, rgba(255, 255, 255, 0.1));
@@ -97,12 +97,12 @@
 	z-index: 10;
 }
 
-.cmsm-nav-cursor-legend-wrapper.cmsm-legend-visible {
+.cmsmasters-nav-cursor-legend-wrapper.cmsmasters-legend-visible {
 	display: flex !important;
 }
 
 /* Legend header */
-.cmsm-nav-cursor-legend-header {
+.cmsmasters-nav-cursor-legend-header {
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -112,7 +112,7 @@
 	color: var(--e-a-color-txt-muted, #888);
 }
 
-.cmsm-nav-cursor-legend-header a {
+.cmsmasters-nav-cursor-legend-header a {
 	display: inline-flex;
 	align-items: center;
 	color: var(--e-a-color-txt-muted, #888);
@@ -120,17 +120,17 @@
 	transition: opacity 0.2s ease;
 }
 
-.cmsm-nav-cursor-legend-header a:hover {
+.cmsmasters-nav-cursor-legend-header a:hover {
 	opacity: 1;
 }
 
-.cmsm-nav-cursor-legend-header svg {
+.cmsmasters-nav-cursor-legend-header svg {
 	width: 11px;
 	height: 11px;
 }
 
 /* Legend items row */
-.cmsm-nav-cursor-legend {
+.cmsmasters-nav-cursor-legend {
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -140,14 +140,14 @@
 	color: var(--e-a-color-txt-muted, #999);
 }
 
-.cmsm-legend-item {
+.cmsmasters-legend-item {
 	display: inline-flex;
 	align-items: center;
 	gap: 5px;
 	white-space: nowrap;
 }
 
-.cmsm-legend-item .cmsm-nav-cursor-indicator {
+.cmsmasters-legend-item .cmsmasters-nav-cursor-indicator {
 	margin-left: 0;
 	cursor: default;
 	pointer-events: none;
@@ -155,7 +155,7 @@
 	height: 6px !important;
 }
 
-.cmsm-legend-item .cmsm-nav-cursor-indicator:hover {
+.cmsmasters-legend-item .cmsmasters-nav-cursor-indicator:hover {
 	transform: none;
 }
 
@@ -166,79 +166,79 @@
 
 /* Dark mode color definitions (shared by .elementor-editor-dark and auto dark mode) */
 .elementor-editor-dark,
-.elementor-editor-auto.cmsm-dark-mode-active {
-	--cmsm-indicator-core: #b07cc5;
-	--cmsm-indicator-special: #5dade2;
-	--cmsm-indicator-hidden: #a0adb5;
-	--cmsm-indicator-show: #4caf50;
-	--cmsm-indicator-inherit: #f0a040;
-	--cmsm-legend-border: rgba(255, 255, 255, 0.1);
+.elementor-editor-auto.cmsmasters-dark-mode-active {
+	--cmsmasters-indicator-core: #b07cc5;
+	--cmsmasters-indicator-special: #5dade2;
+	--cmsmasters-indicator-hidden: #a0adb5;
+	--cmsmasters-indicator-show: #4caf50;
+	--cmsmasters-indicator-inherit: #f0a040;
+	--cmsmasters-legend-border: rgba(255, 255, 255, 0.1);
 }
 
 /* Apply dark mode colors via variables */
-.elementor-editor-dark .cmsm-nav-cursor-core,
-.elementor-editor-auto.cmsm-dark-mode-active .cmsm-nav-cursor-core {
-	background: var(--cmsm-indicator-core) !important;
+.elementor-editor-dark .cmsmasters-nav-cursor-core,
+.elementor-editor-auto.cmsmasters-dark-mode-active .cmsmasters-nav-cursor-core {
+	background: var(--cmsmasters-indicator-core) !important;
 }
 
-.elementor-editor-dark .cmsm-nav-cursor-special,
-.elementor-editor-auto.cmsm-dark-mode-active .cmsm-nav-cursor-special {
-	background: var(--cmsm-indicator-special) !important;
+.elementor-editor-dark .cmsmasters-nav-cursor-special,
+.elementor-editor-auto.cmsmasters-dark-mode-active .cmsmasters-nav-cursor-special {
+	background: var(--cmsmasters-indicator-special) !important;
 }
 
-.elementor-editor-dark .cmsm-nav-cursor-hidden,
-.elementor-editor-auto.cmsm-dark-mode-active .cmsm-nav-cursor-hidden {
-	background: var(--cmsm-indicator-hidden) !important;
+.elementor-editor-dark .cmsmasters-nav-cursor-hidden,
+.elementor-editor-auto.cmsmasters-dark-mode-active .cmsmasters-nav-cursor-hidden {
+	background: var(--cmsmasters-indicator-hidden) !important;
 }
 
-.elementor-editor-dark .cmsm-nav-cursor-show,
-.elementor-editor-auto.cmsm-dark-mode-active .cmsm-nav-cursor-show {
-	background: var(--cmsm-indicator-show) !important;
+.elementor-editor-dark .cmsmasters-nav-cursor-show,
+.elementor-editor-auto.cmsmasters-dark-mode-active .cmsmasters-nav-cursor-show {
+	background: var(--cmsmasters-indicator-show) !important;
 }
 
-.elementor-editor-dark .cmsm-nav-cursor-inherit,
-.elementor-editor-auto.cmsm-dark-mode-active .cmsm-nav-cursor-inherit {
-	background: var(--cmsm-indicator-inherit) !important;
+.elementor-editor-dark .cmsmasters-nav-cursor-inherit,
+.elementor-editor-auto.cmsmasters-dark-mode-active .cmsmasters-nav-cursor-inherit {
+	background: var(--cmsmasters-indicator-inherit) !important;
 }
 
-.elementor-editor-dark .cmsm-nav-cursor-legend,
-.elementor-editor-auto.cmsm-dark-mode-active .cmsm-nav-cursor-legend {
-	border-top-color: var(--cmsm-legend-border);
+.elementor-editor-dark .cmsmasters-nav-cursor-legend,
+.elementor-editor-auto.cmsmasters-dark-mode-active .cmsmasters-nav-cursor-legend {
+	border-top-color: var(--cmsmasters-legend-border);
 }
 
 /* Auto dark mode - add class via media query detection */
 @media (prefers-color-scheme: dark) {
 	.elementor-editor-auto {
-		--cmsm-indicator-core: #b07cc5;
-		--cmsm-indicator-special: #5dade2;
-		--cmsm-indicator-hidden: #a0adb5;
-		--cmsm-indicator-show: #4caf50;
-		--cmsm-indicator-inherit: #f0a040;
-		--cmsm-legend-border: rgba(255, 255, 255, 0.1);
+		--cmsmasters-indicator-core: #b07cc5;
+		--cmsmasters-indicator-special: #5dade2;
+		--cmsmasters-indicator-hidden: #a0adb5;
+		--cmsmasters-indicator-show: #4caf50;
+		--cmsmasters-indicator-inherit: #f0a040;
+		--cmsmasters-legend-border: rgba(255, 255, 255, 0.1);
 	}
 
-	.elementor-editor-auto .cmsm-nav-cursor-core {
-		background: var(--cmsm-indicator-core) !important;
+	.elementor-editor-auto .cmsmasters-nav-cursor-core {
+		background: var(--cmsmasters-indicator-core) !important;
 	}
 
-	.elementor-editor-auto .cmsm-nav-cursor-special {
-		background: var(--cmsm-indicator-special) !important;
+	.elementor-editor-auto .cmsmasters-nav-cursor-special {
+		background: var(--cmsmasters-indicator-special) !important;
 	}
 
-	.elementor-editor-auto .cmsm-nav-cursor-hidden {
-		background: var(--cmsm-indicator-hidden) !important;
+	.elementor-editor-auto .cmsmasters-nav-cursor-hidden {
+		background: var(--cmsmasters-indicator-hidden) !important;
 	}
 
-	.elementor-editor-auto .cmsm-nav-cursor-show {
-		background: var(--cmsm-indicator-show) !important;
+	.elementor-editor-auto .cmsmasters-nav-cursor-show {
+		background: var(--cmsmasters-indicator-show) !important;
 	}
 
-	.elementor-editor-auto .cmsm-nav-cursor-inherit {
-		background: var(--cmsm-indicator-inherit) !important;
+	.elementor-editor-auto .cmsmasters-nav-cursor-inherit {
+		background: var(--cmsmasters-indicator-inherit) !important;
 	}
 
-	.elementor-editor-auto .cmsm-nav-cursor-legend {
-		border-top-color: var(--cmsm-legend-border);
+	.elementor-editor-auto .cmsmasters-nav-cursor-legend {
+		border-top-color: var(--cmsmasters-legend-border);
 	}
 }
 
@@ -264,7 +264,7 @@
 }
 
 /* Ensure indicator has proper dimensions and override Elementor's native styles */
-.cmsm-nav-cursor-indicator {
+.cmsmasters-nav-cursor-indicator {
 	width: 8px !important;
 	height: 8px !important;
 	border-radius: 50% !important;

@@ -23,7 +23,7 @@ select[name="elementor_custom_cursor_color_source"] {
 }
 
 /* Color swatches container */
-.cmsm-color-swatches {
+.cmsmasters-color-swatches {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 8px;
@@ -31,7 +31,7 @@ select[name="elementor_custom_cursor_color_source"] {
 }
 
 /* Individual swatch button */
-.cmsm-color-swatch-btn {
+.cmsmasters-color-swatch-btn {
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
@@ -45,19 +45,19 @@ select[name="elementor_custom_cursor_color_source"] {
 	line-height: 1.4;
 }
 
-.cmsm-color-swatch-btn:hover {
+.cmsmasters-color-swatch-btn:hover {
 	border-color: #0073aa;
 	background: #f0f7fc;
 }
 
-.cmsm-color-swatch-btn.active {
+.cmsmasters-color-swatch-btn.active {
 	border-color: #0073aa;
 	background: #e5f3ff;
 	box-shadow: 0 0 0 1px #0073aa;
 }
 
 /* Color circle inside button */
-.cmsm-swatch-circle {
+.cmsmasters-swatch-circle {
 	width: 20px;
 	height: 20px;
 	border-radius: 50%;
@@ -67,7 +67,7 @@ select[name="elementor_custom_cursor_color_source"] {
 }
 
 /* Custom color button - rainbow gradient (default) */
-.cmsm-color-swatch-btn.cmsm-custom-color-btn .cmsm-swatch-circle {
+.cmsmasters-color-swatch-btn.cmsmasters-custom-color-btn .cmsmasters-swatch-circle {
 	background: conic-gradient(
 		red, yellow, lime, aqua, blue, magenta, red
 	);
@@ -76,9 +76,9 @@ select[name="elementor_custom_cursor_color_source"] {
 /* When custom color is set, inline style overrides rainbow */
 
 /* Hide Pickr button completely - we trigger it programmatically */
-.cmsm-pickr-inline,
-.cmsm-pickr-inline + .pickr,
-.cmsm-color-swatch-btn .pickr {
+.cmsmasters-pickr-inline,
+.cmsmasters-pickr-inline + .pickr,
+.cmsmasters-color-swatch-btn .pickr {
 	position: absolute !important;
 	width: 0 !important;
 	height: 0 !important;

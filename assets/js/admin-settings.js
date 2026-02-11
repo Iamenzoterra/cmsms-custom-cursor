@@ -37,18 +37,18 @@ jQuery(function($) {
 	var $colorInput = $('input[name="elementor_custom_cursor_color"]');
 	var $colorRow = $colorInput.closest('tr');
 
-	var $swatchesContainer = $('<div class="cmsm-color-swatches"></div>');
+	var $swatchesContainer = $('<div class="cmsmasters-color-swatches"></div>');
 	var currentValue = $colorSource.val();
 	var customColorValue = $colorInput.val() || '#222222';
 	var $customBtn = null;
 
 	$.each(colorOptions, function(value, label) {
-		var $btn = $('<button type="button" class="cmsm-color-swatch-btn" data-value="' + value + '"></button>');
+		var $btn = $('<button type="button" class="cmsmasters-color-swatch-btn" data-value="' + value + '"></button>');
 
 		if (value === 'custom') {
-			$btn.addClass('cmsm-custom-color-btn');
-			var $pickerSpan = $('<span class="cmsm-pickr-inline"></span>');
-			var $circle = $('<span class="cmsm-swatch-circle"></span>');
+			$btn.addClass('cmsmasters-custom-color-btn');
+			var $pickerSpan = $('<span class="cmsmasters-pickr-inline"></span>');
+			var $circle = $('<span class="cmsmasters-swatch-circle"></span>');
 			var $label = $('<span></span>').text(label);
 			$btn.append($pickerSpan, $circle, $label);
 			$customBtn = $btn;
@@ -59,7 +59,7 @@ jQuery(function($) {
 			}
 		} else {
 			var color = kitColors[value] || '#ccc';
-			var $circle = $('<span class="cmsm-swatch-circle"></span>').css('background-color', color);
+			var $circle = $('<span class="cmsmasters-swatch-circle"></span>').css('background-color', color);
 			var $label = $('<span></span>').text(label);
 			$btn.append($circle, $label);
 		}
@@ -74,7 +74,7 @@ jQuery(function($) {
 	$colorSource.after($swatchesContainer);
 
 	// --- Initialize Pickr ---
-	var $pickerEl = $customBtn.find('.cmsm-pickr-inline');
+	var $pickerEl = $customBtn.find('.cmsmasters-pickr-inline');
 	var pickr = Pickr.create({
 		el: $pickerEl[0],
 		theme: 'monolith',
@@ -104,7 +104,7 @@ jQuery(function($) {
 	function updateCustomButtonColor(hex) {
 		$colorInput.val(hex);
 		$customBtn.addClass('has-color');
-		$customBtn.find('.cmsm-swatch-circle').css('background', hex);
+		$customBtn.find('.cmsmasters-swatch-circle').css('background', hex);
 	}
 
 	pickr.on('save', function(color) {
@@ -121,13 +121,13 @@ jQuery(function($) {
 	});
 
 	// --- Swatch button clicks ---
-	$swatchesContainer.on('click', '.cmsm-color-swatch-btn', function() {
+	$swatchesContainer.on('click', '.cmsmasters-color-swatch-btn', function() {
 		var $btn = $(this);
 		var value = $btn.data('value');
 
 		$colorSource.val(value);
 
-		$swatchesContainer.find('.cmsm-color-swatch-btn').removeClass('active');
+		$swatchesContainer.find('.cmsmasters-color-swatch-btn').removeClass('active');
 		$btn.addClass('active');
 
 		if (value === 'custom') {

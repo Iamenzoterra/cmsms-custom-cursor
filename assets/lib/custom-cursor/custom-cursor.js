@@ -333,7 +333,7 @@
         if (debugOverlayEl) return;
 
         debugOverlayEl = document.createElement('div');
-        debugOverlayEl.id = 'cmsm-cursor-debug';
+        debugOverlayEl.id = 'cmsmasters-cursor-debug';
         debugOverlayEl.style.cssText = 'position:fixed;bottom:10px;left:10px;z-index:2147483647;' +
             'background:rgba(0,0,0,0.85);color:#0f0;font:11px/1.4 monospace;' +
             'padding:8px 12px;border-radius:4px;pointer-events:none;' +
@@ -478,17 +478,17 @@
 
             // --- Boolean toggles ---
             if ('hover' in prev) {
-                body.classList.toggle('cmsm-cursor-hover', this._state.hover);
+                body.classList.toggle('cmsmasters-cursor-hover', this._state.hover);
             }
             if ('down' in prev) {
-                body.classList.toggle('cmsm-cursor-down', this._state.down);
+                body.classList.toggle('cmsmasters-cursor-down', this._state.down);
             }
             if ('hidden' in prev) {
-                body.classList.toggle('cmsm-cursor-hidden', this._state.hidden);
+                body.classList.toggle('cmsmasters-cursor-hidden', this._state.hidden);
                 // In solo mode, force instant opacity restore to prevent no-cursor gap
                 // (CSS transition: opacity .3s would leave 300ms with neither cursor visible)
-                if (!this._state.hidden && !body.classList.contains('cmsm-cursor-dual')) {
-                    var cursors = container ? container.querySelectorAll('.cmsm-cursor') : [];
+                if (!this._state.hidden && !body.classList.contains('cmsmasters-cursor-dual')) {
+                    var cursors = container ? container.querySelectorAll('.cmsmasters-cursor') : [];
                     for (var i = 0; i < cursors.length; i++) {
                         cursors[i].style.transition = 'none';
                         cursors[i].offsetHeight;
@@ -503,40 +503,40 @@
                 }
             }
             if ('text' in prev) {
-                body.classList.toggle('cmsm-cursor-text', this._state.text);
+                body.classList.toggle('cmsmasters-cursor-text', this._state.text);
             }
 
             // --- Mutually exclusive: Adaptive mode ---
             if ('mode' in prev) {
                 if (prev.mode) {
-                    body.classList.remove('cmsm-cursor-' + prev.mode);
+                    body.classList.remove('cmsmasters-cursor-' + prev.mode);
                 }
                 if (this._state.mode) {
-                    body.classList.add('cmsm-cursor-' + this._state.mode);
+                    body.classList.add('cmsmasters-cursor-' + this._state.mode);
                 }
             }
 
             // --- Mutually exclusive: Size ---
             if ('size' in prev) {
                 if (prev.size) {
-                    body.classList.remove('cmsm-cursor-size-' + prev.size);
+                    body.classList.remove('cmsmasters-cursor-size-' + prev.size);
                 }
                 if (this._state.size) {
-                    body.classList.add('cmsm-cursor-size-' + this._state.size);
+                    body.classList.add('cmsmasters-cursor-size-' + this._state.size);
                 }
             }
 
             // --- Mutually exclusive: Blend ---
             if ('blend' in prev) {
                 if (prev.blend) {
-                    body.classList.remove('cmsm-cursor-blend-' + prev.blend);
+                    body.classList.remove('cmsmasters-cursor-blend-' + prev.blend);
                     if (!this._state.blend) {
-                        body.classList.remove('cmsm-cursor-blend');
+                        body.classList.remove('cmsmasters-cursor-blend');
                     }
                 }
                 if (this._state.blend) {
-                    body.classList.add('cmsm-cursor-blend');
-                    body.classList.add('cmsm-cursor-blend-' + this._state.blend);
+                    body.classList.add('cmsmasters-cursor-blend');
+                    body.classList.add('cmsmasters-cursor-blend-' + this._state.blend);
                 }
             }
         }
@@ -546,17 +546,17 @@
     var body = document.body;
     if (!body) return;
     CursorState.init(body); // Initialize state machine with body reference
-    if (!body.classList.contains('cmsm-cursor-enabled')) return;
+    if (!body.classList.contains('cmsmasters-cursor-enabled')) return;
     if (matchMedia('(prefers-reduced-motion:reduce)').matches) return;
     if (matchMedia('(hover:none),(pointer:coarse)').matches) return;
-    // Note: PHP controls cmsm-cursor-enabled class, including for Elementor preview iframe
+    // Note: PHP controls cmsmasters-cursor-enabled class, including for Elementor preview iframe
     // Block main editor frame (has elementor-editor-wp-page) but allow preview iframe (doesn't have it)
     if (body.classList.contains('elementor-editor-wp-page')) return;
 
     // === SETUP ===
-    var container = document.getElementById('cmsm-cursor-container');
-    var dot = document.querySelector('.cmsm-cursor-dot');
-    var ring = document.querySelector('.cmsm-cursor-ring');
+    var container = document.getElementById('cmsmasters-cursor-container');
+    var dot = document.querySelector('.cmsmasters-cursor-dot');
+    var ring = document.querySelector('.cmsmasters-cursor-ring');
     if (!container || !dot || !ring) return;
 
     // === CRITICAL SCRIPT TAKEOVER ===
@@ -573,7 +573,7 @@
             var initX = parseFloat(dotMatch[1]) || OFFSCREEN_POSITION;
             var initY = parseFloat(dotMatch[2]) || OFFSCREEN_POSITION;
             // Remove critical script element now that we're taking over
-            var criticalScript = document.getElementById('cmsm-cursor-critical');
+            var criticalScript = document.getElementById('cmsmasters-cursor-critical');
             if (criticalScript) criticalScript.remove();
         }
     }
@@ -609,7 +609,7 @@
 
     // Theme support
     var theme = window.cmsmCursorTheme || 'classic';
-    body.classList.add('cmsm-cursor-theme-' + theme);
+    body.classList.add('cmsmasters-cursor-theme-' + theme);
 
     // Adaptive cursor
     var adaptive = window.cmsmCursorAdaptive || false;
@@ -678,11 +678,11 @@
     // Blend mode intensity (global setting, can be overridden per-element via data-cursor-blend)
     // Values: '' (off), 'soft', 'medium', 'strong'
     var globalBlendIntensity = '';
-    if (body.classList.contains('cmsm-cursor-blend-strong')) {
+    if (body.classList.contains('cmsmasters-cursor-blend-strong')) {
         globalBlendIntensity = 'strong';
-    } else if (body.classList.contains('cmsm-cursor-blend-medium')) {
+    } else if (body.classList.contains('cmsmasters-cursor-blend-medium')) {
         globalBlendIntensity = 'medium';
-    } else if (body.classList.contains('cmsm-cursor-blend-soft')) {
+    } else if (body.classList.contains('cmsmasters-cursor-blend-soft')) {
         globalBlendIntensity = 'soft';
     }
     var currentBlendIntensity = globalBlendIntensity;
@@ -730,7 +730,7 @@
                     // Apply effect class
                     var imgEffectClass = (config.effect === '' || config.effect === 'default') ? (isWobbleEnabled() ? 'wobble' : '') : (config.effect === 'none' ? '' : config.effect);
                     if (imgEffectClass) {
-                        imageCursorEl.classList.add('cmsm-cursor-image-' + imgEffectClass);
+                        imageCursorEl.classList.add('cmsmasters-cursor-image-' + imgEffectClass);
                     }
                     break;
                 case 'text':
@@ -748,7 +748,7 @@
                     // Apply effect class
                     var txtEffectClass = (textCursorEffect === '' || textCursorEffect === 'default') ? (isWobbleEnabled() ? 'wobble' : '') : (textCursorEffect === 'none' ? '' : textCursorEffect);
                     if (txtEffectClass) {
-                        textCursorEl.classList.add('cmsm-cursor-text-' + txtEffectClass);
+                        textCursorEl.classList.add('cmsmasters-cursor-text-' + txtEffectClass);
                     }
                     break;
                 case 'icon':
@@ -772,7 +772,7 @@
                     // Apply effect class
                     var icoEffectClass = (iconCursorEffect === '' || iconCursorEffect === 'default') ? (isWobbleEnabled() ? 'wobble' : '') : (iconCursorEffect === 'none' ? '' : iconCursorEffect);
                     if (icoEffectClass) {
-                        iconCursorEl.classList.add('cmsm-cursor-icon-' + icoEffectClass);
+                        iconCursorEl.classList.add('cmsmasters-cursor-icon-' + icoEffectClass);
                     }
                     break;
             }
@@ -906,8 +906,8 @@
     }
 
     // Wobble effect (spring physics with overshoot) - see CONSTANTS section
-    // Enabled via window.cmsmCursorWobble or body class .cmsm-cursor-wobble
-    function isWobbleEnabled() { return window.cmsmCursorWobble || body.classList.contains('cmsm-cursor-wobble'); }
+    // Enabled via window.cmsmCursorWobble or body class .cmsmasters-cursor-wobble
+    function isWobbleEnabled() { return window.cmsmCursorWobble || body.classList.contains('cmsmasters-cursor-wobble'); }
 
     /**
      * Checks if element is inside a "form zone" where custom cursor should hide.
@@ -1111,7 +1111,7 @@
         document.body.appendChild(container);
         if (forcedColor) {
             forcedColor = null;
-            body.style.removeProperty("--cmsm-cursor-color");
+            body.style.removeProperty("--cmsmasters-cursor-color");
         }
         // Restore blend mode intensity to global setting when leaving popup
         if (currentBlendIntensity !== globalBlendIntensity) {
@@ -1130,10 +1130,10 @@
         if (!imageCursorEl) {
             // Create outer wrapper (for position, rotation, scale)
             imageCursorEl = document.createElement('div');
-            imageCursorEl.className = 'cmsm-cursor cmsm-cursor-image';
+            imageCursorEl.className = 'cmsmasters-cursor cmsmasters-cursor-image';
             // Create inner wrapper (for counter-rotation)
             imageCursorInner = document.createElement('div');
-            imageCursorInner.className = 'cmsm-cursor-inner';
+            imageCursorInner.className = 'cmsmasters-cursor-inner';
             // Create actual image
             imageCursorImg = document.createElement('img');
             imageCursorImg.style.display = 'block';
@@ -1202,13 +1202,13 @@
         if (isNew) {
             // Create outer wrapper (for position, rotation, scale, background)
             textCursorEl = document.createElement('div');
-            textCursorEl.className = 'cmsm-cursor cmsm-cursor-text-el';
+            textCursorEl.className = 'cmsmasters-cursor cmsmasters-cursor-text-el';
             // CRITICAL: Disable transition and set initial position BEFORE adding to DOM
             textCursorEl.style.transition = 'none';
             textCursorEl.style.opacity = '0';
             // Create inner wrapper (for counter-rotation, text content)
             textCursorInner = document.createElement('span');
-            textCursorInner.className = 'cmsm-cursor-inner';
+            textCursorInner.className = 'cmsmasters-cursor-inner';
             textCursorEl.appendChild(textCursorInner);
             container.appendChild(textCursorEl);
         }
@@ -1309,13 +1309,13 @@
         if (isNew) {
             // Create outer wrapper (for position, rotation, scale, background)
             iconCursorEl = document.createElement('div');
-            iconCursorEl.className = 'cmsm-cursor cmsm-cursor-icon-el';
+            iconCursorEl.className = 'cmsmasters-cursor cmsmasters-cursor-icon-el';
             // CRITICAL: Disable transition to prevent fly-in animation
             iconCursorEl.style.transition = 'none';
             iconCursorEl.style.opacity = '0';
             // Create inner wrapper (for counter-rotation, icon content)
             iconCursorInner = document.createElement('span');
-            iconCursorInner.className = 'cmsm-cursor-inner';
+            iconCursorInner.className = 'cmsmasters-cursor-inner';
             iconCursorEl.appendChild(iconCursorInner);
             container.appendChild(iconCursorEl);
         }
@@ -1325,10 +1325,10 @@
         // Apply styles: color to inner, background to outer
         if (!styles.preserveColors) {
             iconCursorInner.style.color = styles.color || '#000000';
-            iconCursorEl.classList.remove('cmsm-cursor-icon-preserve');
+            iconCursorEl.classList.remove('cmsmasters-cursor-icon-preserve');
         } else {
             // Add class for CSS isolation from blend mode effects
-            iconCursorEl.classList.add('cmsm-cursor-icon-preserve');
+            iconCursorEl.classList.add('cmsmasters-cursor-icon-preserve');
         }
         iconCursorEl.style.backgroundColor = styles.bgColor || '#ffffff';
         iconCursorInner.style.fontSize = styles.size + 'px';
@@ -1342,7 +1342,7 @@
             if (src && src.toLowerCase().indexOf('.svg') !== -1) {
                 // Replace img with colored span using mask
                 var coloredEl = document.createElement('span');
-                coloredEl.className = 'cmsm-cursor-icon-svg';
+                coloredEl.className = 'cmsmasters-cursor-icon-svg';
                 coloredEl.style.display = 'block';
                 coloredEl.style.width = '1em';
                 coloredEl.style.height = '1em';
@@ -1401,7 +1401,7 @@
                 }
 
                 // Set stroke to currentColor on SVG root for stroke-based icons
-                // (fill: currentColor already set via CSS rule .cmsm-cursor-icon-el svg)
+                // (fill: currentColor already set via CSS rule .cmsmasters-cursor-icon-el svg)
                 svgEl.style.stroke = 'currentColor';
             }
         }
@@ -1558,7 +1558,7 @@
             var candidate = elements[i];
             // Skip cursor elements, html, and body
             if (candidate === document.documentElement || candidate === document.body) continue;
-            if (candidate.closest && candidate.closest('#cmsm-cursor-container')) continue;
+            if (candidate.closest && candidate.closest('#cmsmasters-cursor-container')) continue;
             el = candidate;
             break;
         }
@@ -1952,7 +1952,7 @@
             // Element has EXPLICIT color - use it
             if (selfColor !== forcedColor) {
                 forcedColor = selfColor;
-                body.style.setProperty('--cmsm-cursor-color', selfColor, 'important');
+                body.style.setProperty('--cmsmasters-cursor-color', selfColor, 'important');
             }
         } else {
             // Element has NO color attribute - walk up to find color (smart cascade)
@@ -1976,12 +1976,12 @@
                 var newColor = colorEl.getAttribute('data-cursor-color');
                 if (newColor !== forcedColor) {
                     forcedColor = newColor;
-                    body.style.setProperty('--cmsm-cursor-color', newColor, 'important');
+                    body.style.setProperty('--cmsmasters-cursor-color', newColor, 'important');
                 }
             } else if (forcedColor) {
                 // No parent with color - use default
                 forcedColor = null;
-                body.style.removeProperty('--cmsm-cursor-color');
+                body.style.removeProperty('--cmsmasters-cursor-color');
             }
         }
 

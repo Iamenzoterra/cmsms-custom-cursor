@@ -623,7 +623,7 @@
 			var navEl = this;
 
 			// Remove existing indicator (will re-add if needed)
-			$el.find('.cmsm-nav-cursor-indicator').remove();
+			$el.find('.cmsmasters-nav-cursor-indicator').remove();
 
 			// Get container
 			var container = getContainerFromNavElement(navEl);
@@ -660,7 +660,7 @@
 				}
 
 
-				var indicatorClass = 'elementor-navigator__element__indicator cmsm-nav-cursor-indicator cmsm-nav-cursor-' + cursorInfo.type;
+				var indicatorClass = 'elementor-navigator__element__indicator cmsmasters-nav-cursor-indicator cmsmasters-nav-cursor-' + cursorInfo.type;
 				var tooltip = getTooltip(cursorInfo, settings);
 
 				var $indicator = $('<div>')
@@ -688,29 +688,29 @@
 		if (!$navigator.length) return;
 
 		// Check if legend already exists
-		if ($navigator.find('.cmsm-nav-cursor-legend-wrapper').length) return;
+		if ($navigator.find('.cmsmasters-nav-cursor-legend-wrapper').length) return;
 
 		// Info icon SVG
 		var infoIcon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>';
 
 		// Create legend HTML with wrapper and header
-		var legendHtml = '<div class="cmsm-nav-cursor-legend-wrapper">' +
-			'<div class="cmsm-nav-cursor-legend-header">' +
+		var legendHtml = '<div class="cmsmasters-nav-cursor-legend-wrapper">' +
+			'<div class="cmsmasters-nav-cursor-legend-header">' +
 				'<span>Cursor settings in use:</span>' +
 				'<a href="https://cmsmasters.studio" target="_blank" rel="noopener" title="Learn more">' + infoIcon + '</a>' +
 			'</div>' +
-			'<div class="cmsm-nav-cursor-legend">' +
-				'<span class="cmsm-legend-item">' +
-					'<span class="cmsm-nav-cursor-indicator cmsm-nav-cursor-core"></span> Core' +
+			'<div class="cmsmasters-nav-cursor-legend">' +
+				'<span class="cmsmasters-legend-item">' +
+					'<span class="cmsmasters-nav-cursor-indicator cmsmasters-nav-cursor-core"></span> Core' +
 				'</span>' +
-				'<span class="cmsm-legend-item">' +
-					'<span class="cmsm-nav-cursor-indicator cmsm-nav-cursor-special"></span> Special' +
+				'<span class="cmsmasters-legend-item">' +
+					'<span class="cmsmasters-nav-cursor-indicator cmsmasters-nav-cursor-special"></span> Special' +
 				'</span>' +
-				'<span class="cmsm-legend-item">' +
-					'<span class="cmsm-nav-cursor-indicator cmsm-nav-cursor-hidden"></span> Hidden' +
+				'<span class="cmsmasters-legend-item">' +
+					'<span class="cmsmasters-nav-cursor-indicator cmsmasters-nav-cursor-hidden"></span> Hidden' +
 				'</span>' +
-				'<span class="cmsm-legend-item">' +
-					'<span class="cmsm-nav-cursor-indicator cmsm-nav-cursor-inherit"></span> Inherit' +
+				'<span class="cmsmasters-legend-item">' +
+					'<span class="cmsmasters-nav-cursor-indicator cmsmasters-nav-cursor-inherit"></span> Inherit' +
 				'</span>' +
 			'</div>' +
 		'</div>';
@@ -755,13 +755,13 @@
 	 * @param {boolean} hasIndicators
 	 */
 	function updateLegendVisibility(hasIndicators) {
-		var $legend = $('.cmsm-nav-cursor-legend-wrapper');
+		var $legend = $('.cmsmasters-nav-cursor-legend-wrapper');
 		if (!$legend.length) return;
 
 		if (hasIndicators) {
-			$legend.addClass('cmsm-legend-visible');
+			$legend.addClass('cmsmasters-legend-visible');
 		} else {
-			$legend.removeClass('cmsm-legend-visible');
+			$legend.removeClass('cmsmasters-legend-visible');
 		}
 
 	}
@@ -791,14 +791,14 @@
 				var hasRelevantAdd = Array.prototype.some.call(mutation.addedNodes, function(node) {
 					if (node.nodeType !== 1) return false;
 					// Ignore our indicator elements
-					if (node.classList && node.classList.contains('cmsm-nav-cursor-indicator')) return false;
+					if (node.classList && node.classList.contains('cmsmasters-nav-cursor-indicator')) return false;
 					return true;
 				});
 
 				// Check removed nodes - ignore our indicators
 				var hasRelevantRemove = Array.prototype.some.call(mutation.removedNodes, function(node) {
 					if (node.nodeType !== 1) return false;
-					if (node.classList && node.classList.contains('cmsm-nav-cursor-indicator')) return false;
+					if (node.classList && node.classList.contains('cmsmasters-nav-cursor-indicator')) return false;
 					return true;
 				});
 
@@ -1074,7 +1074,7 @@
 			var hasParent = checkParentCursorSettings(container);
 			if (hasParent !== lastHasParentCursor) {
 				lastHasParentCursor = hasParent;
-				jQuery('#elementor-panel').toggleClass('cmsm-has-parent-cursor', hasParent);
+				jQuery('#elementor-panel').toggleClass('cmsmasters-has-parent-cursor', hasParent);
 			}
 
 			var inheritOn = settings && typeof settings.get === 'function'
@@ -1082,7 +1082,7 @@
 				: false;
 			if (inheritOn !== lastInheritOn) {
 				lastInheritOn = inheritOn;
-				jQuery('#elementor-panel').toggleClass('cmsm-inherit-active', inheritOn);
+				jQuery('#elementor-panel').toggleClass('cmsmasters-inherit-active', inheritOn);
 			}
 		} catch(e) { if (window.CMSM_DEBUG) console.warn('[NavigatorIndicator] Settings model watcher failed', e); }
 	}
