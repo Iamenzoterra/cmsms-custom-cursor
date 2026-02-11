@@ -201,4 +201,5 @@ if (Date.now() - lastModeChangeTime < STICKY_MODE_DURATION) return;
 3. Edit **source** files in `assets/`, `includes/`, `modules/`
 4. Run agents for verification
 5. Update `DOCS/` via doc-keeper agent
-6. Remind user: `npm run build` before testing
+6. **MANDATORY: Update `DOCS/DEVLOG.md`** — append an entry for every change session. Include: problem, approach iterations (with what failed and why), final solution, key insights. This is a living document and the primary record of development decisions.
+7. Remind user: `npm run build` before testing
