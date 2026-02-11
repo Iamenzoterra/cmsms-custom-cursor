@@ -1252,11 +1252,29 @@
 	 * Check if current document is a Theme Builder template (cmsmasters_ prefix)
 	 * Entry, Popup, Archive, Singular, Header, Footer, etc. don't support cursor in editor preview
 	 */
+	/**
+	 * Check if current document is a Theme Builder template (cmsmasters_ prefix)
+	 * Entry, Popup, Archive, Singular, Header, Footer, etc. don't support cursor in editor preview
+	 * Uses two methods: Elementor JS API + preview iframe DOM fallback
+	 */
 	function isThemeBuilderTemplate() {
 		try {
+			// Method 1: Elementor current document config
 			var doc = elementor.documents.getCurrent();
-			if (!doc || !doc.config) return false;
-			return (doc.config.type || '').indexOf('cmsmasters_') === 0;
+			if (doc && doc.config && (doc.config.type || '').indexOf('cmsmasters_') === 0) {
+				return true;
+			}
+
+			// Method 2: Preview iframe data-elementor-type attribute (more reliable on document switch)
+			var previewIframe = document.getElementById('elementor-preview-iframe');
+			if (previewIframe && previewIframe.contentDocument) {
+				var root = previewIframe.contentDocument.querySelector('.elementor[data-elementor-type]');
+				if (root && (root.getAttribute('data-elementor-type') || '').indexOf('cmsmasters_') === 0) {
+					return true;
+				}
+			}
+
+			return false;
 		} catch(e) { return false; }
 	}
 
@@ -1264,11 +1282,17 @@
 	 * Main initialization
 	 */
 	function init() {
-		// Check if current document is a Theme Builder template
-		var isThemeBuilder = isThemeBuilderTemplate();
+		// Load typography cache early (harmless if Theme Builder - just won't be used)
+		loadTypographyCache(function() {
+			sendInitialCursorSettingsWithRetry(5, 500);
+		});
 
-		// Notify preview iframe to hide/show cursor panel on document switch
+		// Wait for Navigator and document context to be fully ready
 		setTimeout(function() {
+			// Check if current document is a Theme Builder template
+			var isThemeBuilder = isThemeBuilderTemplate();
+
+			// Notify preview iframe to hide/show cursor panel
 			var previewIframe = document.getElementById('elementor-preview-iframe');
 			if (previewIframe && previewIframe.contentWindow) {
 				previewIframe.contentWindow.postMessage({
@@ -1276,31 +1300,18 @@
 					isThemeBuilder: isThemeBuilder
 				}, TRUSTED_ORIGIN);
 			}
-		}, INIT_DELAY_MS);
 
-		// Skip cursor initialization for Theme Builder templates
-		if (isThemeBuilder) {
-			if (window.CMSM_DEBUG) console.log('[NavigatorIndicator] Theme Builder template, skipping cursor init');
-			return;
-		}
+			// Skip cursor initialization for Theme Builder templates
+			if (isThemeBuilder) {
+				if (window.CMSM_DEBUG) console.log('[NavigatorIndicator] Theme Builder template, skipping cursor init');
+				return;
+			}
 
-		// Load typography cache FIRST - wait for it before sending initial settings
-		// This is CRITICAL because resolveGlobalTypography needs the cache
-		loadTypographyCache(function() {
-			// Now that cache is ready, send initial cursor settings
-			sendInitialCursorSettingsWithRetry(5, 500);
-		});
-
-		// Wait for Navigator to be ready
-		setTimeout(function() {
 			tryAddLegend(LEGEND_RETRY_ATTEMPTS);
 			updateNavigatorIndicators();
 			initNavigatorObserver();
 			initSettingsListener();
 			initPreviewMessageListener();
-
-			// Initial settings are sent from loadTypographyCache callback
-			// to ensure typography cache is ready before resolving globals
 		}, INIT_DELAY_MS);
 	}
 
@@ -1324,8 +1335,9 @@
 	}
 
 	// === Device mode: notify preview iframe on responsive switch ===
-	// Editor body gets CLASS elementor-device-{mode} (desktop/tablet/mobile/widescreen)
+	// Editor body gets CLASS elementor-device-{mode} (desktop/tablet/mobile/widescreen/laptop)
 	// Preview iframe viewport does NOT resize, so detection must happen here
+	// Rule: hide cursor on touch modes (tablet/mobile), keep on mouse modes (desktop/widescreen/laptop)
 	var lastDeviceMode = 'desktop';
 
 	/**
@@ -1344,13 +1356,13 @@
 	function sendDeviceMode(mode) {
 		lastDeviceMode = mode;
 		var previewIframe = document.getElementById('elementor-preview-iframe');
+		console.log('[DeviceMode] sendDeviceMode:', mode, 'iframe:', !!previewIframe); // TEMP DEBUG
 		if (previewIframe && previewIframe.contentWindow) {
 			previewIframe.contentWindow.postMessage({
 				type: 'cmsmasters:cursor:device-mode',
 				mode: mode
 			}, TRUSTED_ORIGIN);
 		}
-		if (window.CMSM_DEBUG) console.log('[NavigatorIndicator] Device mode sent:', mode);
 	}
 
 	function getDeviceModeFromBody() {
@@ -1373,18 +1385,24 @@
 		// Primary: Elementor Backbone Radio channel for device mode changes
 		try {
 			if (elementor.channels && elementor.channels.deviceMode) {
+				console.log('[DeviceMode] Backbone Radio channel registered'); // TEMP DEBUG
 				elementor.channels.deviceMode.on('change', function() {
 					var mode = elementor.channels.deviceMode.request('currentMode');
+					console.log('[DeviceMode] Backbone Radio change:', mode); // TEMP DEBUG
 					notifyDeviceMode(mode || getDeviceModeFromBody());
 				});
+			} else {
+				console.log('[DeviceMode] No Backbone Radio channel available'); // TEMP DEBUG
 			}
 		} catch (e) {
-			if (window.CMSM_DEBUG) console.warn('[NavigatorIndicator] channels.deviceMode not available:', e);
+			console.warn('[DeviceMode] channels.deviceMode error:', e); // TEMP DEBUG
 		}
 
 		// Fallback: MutationObserver on editor body class changes
 		new MutationObserver(function() {
-			notifyDeviceMode(getDeviceModeFromBody());
+			var mode = getDeviceModeFromBody();
+			console.log('[DeviceMode] MutationObserver fired, body mode:', mode); // TEMP DEBUG
+			notifyDeviceMode(mode);
 		}).observe(document.body, { attributes: true, attributeFilter: ['class'] });
 
 		// MEM-001 + MEM-002: Cleanup on preview destroyed

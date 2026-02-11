@@ -10,6 +10,11 @@
     if (window.self === window.top) return;
     if (!document.body.classList.contains('cmsm-cursor-enabled')) return;
 
+    // Skip on Theme Builder templates (Entry, Popup, Archive, Header, Footer, etc.)
+    // These don't support cursor in editor preview - no panel needed
+    var _elRoot = document.querySelector('.elementor[data-elementor-type]');
+    if (_elRoot && (_elRoot.getAttribute('data-elementor-type') || '').indexOf('cmsmasters_') === 0) return;
+
     // === SEC-002 FIX: Origin validation for postMessage ===
     // Only accept messages from same origin (WordPress site)
     var TRUSTED_ORIGIN = window.location.origin;
@@ -295,7 +300,11 @@
         }
 
         if (event.data.type === 'cmsmasters:cursor:device-mode') {
-            setResponsiveHidden(event.data.mode !== 'desktop');
+            // Hide cursor only on touch-screen modes (tablet/mobile)
+            // Keep visible on mouse-driven modes (desktop/widescreen/laptop)
+            var isTouchMode = /tablet|mobile/i.test(event.data.mode);
+            console.log('[DeviceMode] RECEIVED in preview:', event.data.mode, 'isTouchMode:', isTouchMode); // TEMP DEBUG
+            setResponsiveHidden(isTouchMode);
             return;
         }
         if (event.data.type === 'cmsmasters:cursor:update') {
