@@ -16,12 +16,14 @@ class Module extends Base_Module {
 	}
 
 	protected function init_actions() {
-		// Hook after section_layout for position right under Layout in Advanced tab
-		// Container/Section/Column use section_layout
-		add_action( 'elementor/element/container/section_layout/after_section_end', array( $this, 'register_controls' ) );
-		add_action( 'elementor/element/section/section_layout/after_section_end', array( $this, 'register_controls' ) );
-		add_action( 'elementor/element/column/section_layout/after_section_end', array( $this, 'register_controls' ) );
-		// Widgets use _section_style (Advanced tab - always exists)
+		// Use _section_responsive — exists in Advanced tab on ALL structural types
+		// (section_layout is in Layout tab, which breaks Advanced tab ordering on Sections
+		//  and doesn't exist at all on Columns)
+		$structural_types = array( 'section', 'container', 'column' );
+		foreach ( $structural_types as $type ) {
+			add_action( "elementor/element/{$type}/_section_responsive/after_section_end", array( $this, 'register_controls' ) );
+		}
+		// Widgets use _section_style (Advanced tab)
 		add_action( 'elementor/element/common/_section_style/after_section_end', array( $this, 'register_controls' ) );
 	}
 
@@ -30,6 +32,7 @@ class Module extends Base_Module {
 		add_action( 'elementor/frontend/widget/before_render', array( $this, 'apply_cursor_attributes' ) );
 		add_action( 'elementor/frontend/section/before_render', array( $this, 'apply_cursor_attributes' ) );
 		add_action( 'elementor/frontend/container/before_render', array( $this, 'apply_cursor_attributes' ) );
+		add_action( 'elementor/frontend/column/before_render', array( $this, 'apply_cursor_attributes' ) );
 	}
 
 	public function register_controls( $element ) {
@@ -891,29 +894,41 @@ class Module extends Base_Module {
 	private function resolve_global_typography( $global_ref ) {
 		$typography_id = $this->parse_global_reference( $global_ref, 'typography' );
 		if ( ! $typography_id ) {
-			error_log( '[CURSOR TYPO DEBUG] No typography_id from: ' . $global_ref );
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( '[CURSOR TYPO DEBUG] No typography_id from: ' . $global_ref );
+			}
 			return null;
 		}
-		error_log( '[CURSOR TYPO DEBUG] Looking for typography_id: ' . $typography_id );
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( '[CURSOR TYPO DEBUG] Looking for typography_id: ' . $typography_id );
+		}
 
 		$kit_settings = $this->get_kit_settings();
 		if ( empty( $kit_settings ) ) {
-			error_log( '[CURSOR TYPO DEBUG] Kit settings is EMPTY!' );
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( '[CURSOR TYPO DEBUG] Kit settings is EMPTY!' );
+			}
 			return null;
 		}
-		error_log( '[CURSOR TYPO DEBUG] Kit settings keys: ' . implode( ', ', array_keys( $kit_settings ) ) );
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( '[CURSOR TYPO DEBUG] Kit settings keys: ' . implode( ', ', array_keys( $kit_settings ) ) );
+		}
 
 		$system_typography = $kit_settings['system_typography'] ?? array();
 		$custom_typography = $kit_settings['custom_typography'] ?? array();
 		$all_typography = array_merge( $system_typography, $custom_typography );
 
-		error_log( '[CURSOR TYPO DEBUG] system_typography count: ' . count( $system_typography ) );
-		error_log( '[CURSOR TYPO DEBUG] custom_typography count: ' . count( $custom_typography ) );
-		error_log( '[CURSOR TYPO DEBUG] all_typography IDs: ' . implode( ', ', array_map( function( $t ) { return $t['_id'] ?? 'no-id'; }, $all_typography ) ) );
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( '[CURSOR TYPO DEBUG] system_typography count: ' . count( $system_typography ) );
+			error_log( '[CURSOR TYPO DEBUG] custom_typography count: ' . count( $custom_typography ) );
+			error_log( '[CURSOR TYPO DEBUG] all_typography IDs: ' . implode( ', ', array_map( function( $t ) { return $t['_id'] ?? 'no-id'; }, $all_typography ) ) );
+		}
 
 		foreach ( $all_typography as $typography_data ) {
 			if ( isset( $typography_data['_id'] ) && $typography_data['_id'] === $typography_id ) {
-				error_log( '[CURSOR TYPO DEBUG] FOUND! font_family: ' . ( $typography_data['typography_font_family'] ?? 'EMPTY' ) );
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					error_log( '[CURSOR TYPO DEBUG] FOUND! font_family: ' . ( $typography_data['typography_font_family'] ?? 'EMPTY' ) );
+				}
 				return array(
 					'font_family'     => $typography_data['typography_font_family'] ?? '',
 					'font_size'       => $typography_data['typography_font_size']['size'] ?? '',
@@ -932,7 +947,9 @@ class Module extends Base_Module {
 			}
 		}
 
-		error_log( '[CURSOR TYPO DEBUG] NOT FOUND typography_id: ' . $typography_id );
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( '[CURSOR TYPO DEBUG] NOT FOUND typography_id: ' . $typography_id );
+		}
 		return null;
 	}
 
