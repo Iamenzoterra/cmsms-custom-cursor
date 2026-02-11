@@ -271,6 +271,9 @@ Coordinates special cursor lifecycle (image, text, icon). Ensures only one speci
 
 ```javascript
 SpecialCursorManager._activeType = null  // 'image' | 'text' | 'icon' | null
+
+// Related state variable (module-level):
+var isRingHidden = false  // Flag to skip ring paint when in special cursor zone (line ~596)
 ```
 
 #### SpecialCursorManager.activate(type, createFn)
@@ -729,29 +732,64 @@ Removes image cursor and resets all related state.
 
 #### showDefaultCursor()
 
-**Line:** 332
+**Line:** 1169
 
 ```javascript
 showDefaultCursor()
 ```
 
-Shows the default dot/ring cursor (restores opacity).
+Shows the default dot/ring cursor (restores opacity and visibility).
+
+**Implementation (lines 1169-1184):**
+- Restores dot opacity to default
+- Removes any scale transforms from dot
+- Sets `isRingHidden = false` to resume ring paint
+- Restores ring visibility
+- Snaps ring to current mouse position (prevents trail on show)
+- Disables ring transition for one frame, then re-enables
 
 **Returns:** `void`
+
+**Side Effects:**
+- Updates `isRingHidden` state flag
+- Modifies `rx`, `ry` positions (snap to mouse)
 
 ---
 
 #### hideDefaultCursor()
 
-**Line:** 338
+**Line:** 1186
 
 ```javascript
 hideDefaultCursor()
 ```
 
-Hides default cursor with smooth fade (opacity 0).
+Hides default cursor with complete paint removal to prevent ring trail/ghost during special cursor entry.
+
+**Implementation (lines 1186-1197):**
+- Sets dot opacity to 0 (smooth fade via CSS)
+- Sets `isRingHidden = true` to skip ring transform updates
+- Sets ring visibility to 'hidden' (complete paint removal)
+- Temporarily disables ring's CSS transition for one frame
+- Sets ring opacity to 0 (instant, no animation)
+- Restores ring's transition via `requestAnimationFrame`
+
+**Why Visibility Hidden + isRingHidden:**
+When entering special cursor zones, CSS `opacity .2s` transition would keep ring partially visible while lerp moved it to new position, creating a ~200ms trail/ghost effect. Two-part fix:
+1. `visibility: hidden` — removes ring from paint completely (prevents mix-blend-mode ghosting at opacity:0)
+2. `isRingHidden = true` — stops render loop from updating ring transform while hidden (prevents position drift during transition)
+
+**Bug Fixed:** Ring trail appeared when entering special cursor zones horizontally. Root cause was render loop updating `ring.style.transform` every frame during the 200ms opacity fade + `mix-blend-mode` ghosting at `opacity:0`.
 
 **Returns:** `void`
+
+**Side Effects:**
+- Updates `isRingHidden` state flag
+- Modifies ring visibility and opacity
+
+**Commits:**
+- 83e9fd0 (main fix: visibility + isRingHidden flag)
+- ee443f0 (mouseover detection bypass)
 
 ---
 
@@ -1097,11 +1135,41 @@ Main detection function for cursor appearance based on position.
 
 ---
 
+### Page Navigation Functions
+
+#### hideCursorOnNav()
+
+**Line:** ~2560
+
+```javascript
+hideCursorOnNav()
+```
+
+Hides cursor container on page navigation to prevent "double cursor" visual artifact during page transition.
+
+**Purpose:**
+When clicking a link, custom cursor would freeze at click position while system cursor continued moving, creating an ugly "double cursor" effect during the 100-300ms page transition.
+
+**Implementation:**
+- Sets `container.style.visibility = 'hidden'` with guard check `if (container)`
+- Called from `beforeunload` event handler (line ~2564) — fires on most navigations
+- Also attached to `pagehide` event (line 2587) — fires on BFCache/back-forward navigation (Safari, Firefox)
+
+**Why Two Events:**
+- `beforeunload` — Chrome, Firefox, most page navigations
+- `pagehide` — Safari, Firefox with BFCache (back/forward button)
+
+**Returns:** `void`
+
+**Commit:** 2f2d133 (February 11, 2026)
+
+---
+
 ### Animation Functions
 
 #### render()
 
-**Line:** 1250
+**Line:** ~1520
 
 ```javascript
 // Internal RAF loop - called automatically
@@ -1112,7 +1180,7 @@ function render() {
     // 4. Text cursor: position + effects
     // 5. Icon cursor: spring physics for size/rotate
     // 6. Core cursor effects (wobble/pulse/shake/buzz)
-    // 7. Apply transforms
+    // 7. Apply transforms (ring only if !isRingHidden)
     // 8. Request next frame
 }
 ```
@@ -1126,6 +1194,16 @@ Main animation loop running at 60fps.
 | mx, my | number | Mouse target position |
 | dx, dy | number | Dot current position (lerped) |
 | rx, ry | number | Ring current position (lerped) |
+| isRingHidden | boolean | Skip ring transform updates when true (line ~596) |
+
+**Ring Transform Guard (Line 2318):**
+```javascript
+if (!isRingHidden) {
+    ring.style.transform = 'translate3d(' + (rx + coreOffsetX) + 'px,' + ry + 'px,0)' + coreTransform;
+}
+```
+
+Ring transform is skipped when hidden to prevent position drift during opacity fade transitions. This prevents ring trail/ghost when entering special cursor zones.
 
 ---
 

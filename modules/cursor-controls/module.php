@@ -186,7 +186,7 @@ class Module extends Base_Module {
 				'label'     => __( 'Cursor Image', 'cmsmasters-elementor' ),
 				'type'      => Controls_Manager::MEDIA,
 				'dynamic'   => array( 'active' => true ),
-				'default'   => array( 'url' => '' ),
+				'default'   => array( 'url' => \Elementor\Utils::get_placeholder_image_src() ),
 				'condition' => array(
 					'cmsmasters_cursor_hide'           => '',
 					'cmsmasters_cursor_special_active' => 'yes',

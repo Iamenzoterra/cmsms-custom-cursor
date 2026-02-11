@@ -113,11 +113,13 @@ version-5.6/
 | 152-158 | Singleton guard | Prevents multiple instances |
 | 230, 791-800 | Sticky mode | Prevents adaptive mode flicker |
 | 428-708 | Special cursors | Image/text/icon cursor logic |
+| ~1183-1192 | `hideDefaultCursor()` ring trail fix | Instant transition removal prevents trail on special cursor entry |
 | 1328-1365 | `detectCursorMode()` | Background luminance detection |
 | 1344-1388 | Icon SVG color fix | Inline SVG attribute stripping for icon color |
 | 1387-1887 | `render()` | RAF animation loop |
 | 1891-2131 | Event listeners | Mouse, scroll, visibility handlers |
 | 2050-2080 | Touch detection | Hide on touch devices |
+| ~2555-2587 | Page navigation cleanup | Hide cursor on beforeunload + pagehide to prevent double cursor |
 
 ### navigator-indicator.js (Editor)
 | Lines | Function | Purpose |

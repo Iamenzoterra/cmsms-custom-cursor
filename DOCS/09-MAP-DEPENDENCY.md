@@ -56,7 +56,7 @@ Many functions have shifted ~120+ lines from v5.5 references.
 | ~540 | `createImageCursor(src)` | Create image cursor element |
 | ~565 | `removeImageCursor()` | Remove image cursor from DOM |
 | ~585 | `showDefaultCursor()` | Show default dot/ring cursor |
-| ~590 | `hideDefaultCursor()` | Hide default dot/ring cursor |
+| ~1183 | `hideDefaultCursor()` | Hide default dot/ring cursor (with ring transition fix) |
 | ~600 | `createTextCursor(content, styles)` | Create text cursor element |
 | ~700 | `removeTextCursor()` | Remove text cursor from DOM |
 | ~715 | `createIconCursor(content, styles)` | Create icon cursor element |
@@ -72,6 +72,7 @@ Many functions have shifted ~120+ lines from v5.5 references.
 | ~2200 | `resetCursorState()` | Reset all cursor state (touch device) |
 | ~2220 | `handleTouchChange(e)` | Handle touch/mouse mode switch |
 | ~2245 | `handleResize()` | Handle viewport resize |
+| ~2560 | `hideCursorOnNav()` | Hide cursor on page navigation (beforeunload + pagehide) |
 
 ---
 

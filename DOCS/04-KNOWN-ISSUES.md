@@ -22,10 +22,10 @@ This document consolidates all known issues, bugs, and technical debt across the
 │   ─────────────────────                                                     │
 │   Total:    24 active issues                                                │
 │                                                                             │
-│   Resolved: 41 issues (tracked for reference)                               │
+│   Resolved: 42 issues (tracked for reference)                               │
 │   ❌ False Positives: BUG-001, UX-001, UX-002 (not bugs after review)      │
 │   ✅ v5.5-SEC: SEC-001/002/003, BUG-002, BUG-003, MEM-001/002/003          │
-│   ✅ v5.6: CSS-001, CSS-002, MEM-004, CODE-002, CODE-003                    │
+│   ✅ v5.6: CSS-001, CSS-002, MEM-004, CODE-002, CODE-003, VIS-001          │
 │   ✅ v5.6 P4 v2 enhancements: P4-004, P4-005, P4-006 (form bugs)           │
 │   ✅ v5.6: DEPLOY-001 (frontend.php breaking other widgets)                  │
 │                                                                             │
@@ -594,6 +594,69 @@ Many hardcoded values without named constants:
 
 ---
 
+### ~~VIS-001: Ring Trail/Ghost on Special Cursor Entry~~ ✅ RESOLVED
+
+| Field | Value |
+|-------|-------|
+| **Location** | `custom-cursor.js:596, 1172, 1186-1197, 2318, 2368-2384` |
+| **Type** | Visual Bug |
+| **Status** | ✅ **Resolved in v5.6** |
+| **Since** | v4.0 |
+| **Fixed** | February 11, 2026 |
+
+**Description:**
+When entering a special cursor zone (image/text/icon) horizontally, the ring cursor showed a visible trail/ghost effect for ~200ms.
+
+**Root Cause:**
+Two-part issue:
+1. **CSS transition during opacity fade:** `ring.style.opacity` had CSS `transition: opacity .2s` that kept ring partially visible while lerp simultaneously moved ring position to new coordinates
+2. **mix-blend-mode ghosting at opacity:0:** Ring had `mix-blend-mode: difference` that was still visible even at `opacity:0`, creating a faint ghost
+3. **Render loop updating hidden ring:** Transform updates continued every frame (60fps) during the 200ms fade, moving the partially-visible ring
+
+**Resolution (3 changes):**
+
+1. **Added `isRingHidden` state flag (line 596):**
+   ```javascript
+   var isRingHidden = false; // Skip ring paint when in special cursor zone
+   ```
+
+2. **Modified `hideDefaultCursor()` (lines 1186-1197):**
+   - Sets `isRingHidden = true`
+   - Sets `ring.style.visibility = 'hidden'` — removes ring from paint completely (prevents mix-blend-mode ghosting)
+   - Temporarily disables CSS transition for one frame before setting `opacity:0` (prevents visible fade animation)
+
+3. **Modified `showDefaultCursor()` (line 1172):**
+   - Sets `isRingHidden = false` to resume ring paint
+   - Restores `ring.style.visibility = ''`
+
+4. **Guarded ring transform in render loop (line 2318):**
+   ```javascript
+   if (!isRingHidden) {
+       ring.style.transform = 'translate3d(' + rx + 'px,' + ry + 'px,0)' + coreTransform;
+   }
+   ```
+   Ring transform updates now skipped when hidden, preventing position drift during transition.
+
+5. **Added mouseover detection bypass (lines 2368-2384):**
+   - New `mouseover` event handler detects entry into special cursor zones
+   - Calls `detectCursorMode(e.clientX, e.clientY)` immediately with event coordinates
+   - Bypasses the 100ms detection throttle to prevent using stale mouse position
+   - Syncs throttle state to prevent double detection on next `mousemove`
+
+**Why This Works:**
+- `visibility: hidden` removes element from paint layer completely (no mix-blend-mode ghosting)
+- `isRingHidden` flag stops render loop from updating ring position while hidden
+- Mouseover bypass ensures ring hides using current event coordinates, not stale mx/my
+
+**Commits:**
+- 83e9fd0 — Main fix (visibility + isRingHidden flag + render guard)
+- ee443f0 — Mouseover detection bypass
+
+**Side Note:**
+Previous comment in code said ring transform was updated "for smooth transition back", but this caused the trail. Removing updates while hidden eliminates the artifact with no negative side effects.
+
+---
+
 ### ~~CODE-002: Console.log in Production~~ ✅ RESOLVED
 
 | Field | Value |
@@ -777,6 +840,7 @@ Latest v5.5-SEC fixes: SEC-001/002/003 (security), BUG-002/003, MEM-001/002/003 
 | MEM-004 | Special cursor DOM accumulation | SpecialCursorManager | v5.6 |
 | CODE-002 | Console.log in production | Debug mode infrastructure | v5.6 |
 | CODE-003 | Empty catch blocks | debugError + CMSM_DEBUG guards | v5.6 |
+| VIS-001 | Ring trail on special cursor entry | isRingHidden flag + visibility:hidden + render guard | v5.6 |
 | SEC-001 | XSS via innerHTML | SVG sanitizer with whitelist | v5.5-SEC |
 | SEC-002 | postMessage no origin check (editor) | TRUSTED_ORIGIN validation | v5.5-SEC |
 | SEC-003 | postMessage no origin check (preview) | TRUSTED_ORIGIN validation | v5.5-SEC |

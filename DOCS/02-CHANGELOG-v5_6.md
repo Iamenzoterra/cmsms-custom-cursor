@@ -614,12 +614,65 @@ Improved cursor preview panel positioning and drag behavior in editor.
 
 ---
 
+#### 14. Hide Custom Cursor on Page Navigation
+
+Added automatic cursor hiding during page navigation to prevent "double cursor" visual artifact.
+
+**Problem:**
+When clicking a link, custom cursor froze at click position while system cursor continued moving, creating an ugly "double cursor" effect during the 100-300ms page transition.
+
+**Solution (lines ~2555-2587):**
+- Added `hideCursorOnNav()` helper function that sets `container.style.visibility = 'hidden'`
+- Called from existing `beforeunload` event handler (full cleanup already present)
+- Added new `pagehide` event listener for BFCache/Safari coverage
+- Guard `if (container)` prevents errors if called before cursor init
+
+**Why Two Events:**
+- `beforeunload` — fires on most page navigations (Chrome, Firefox)
+- `pagehide` — fires when using browser back/forward with BFCache (Safari, Firefox)
+
+**Files Changed:**
+- `assets/lib/custom-cursor/custom-cursor.js` (lines ~2555-2587)
+
+**Commit:** 2f2d133
+
+---
+
+#### 15. Ring Trail Fix on Special Cursor Entry
+
+Fixed visible ring trail/ghost when entering special cursor zones (image/text/icon).
+
+**Problem:**
+When entering a special cursor zone, the ring had a ~200ms visible trail because CSS `opacity .2s` transition kept ring partially visible while lerp moved it to the new position.
+
+**Solution (lines ~1183-1192):**
+Modified `hideDefaultCursor()` to temporarily disable ring's transition for one frame before setting opacity to 0:
+
+```javascript
+var prevTransition = ring.style.transition;
+ring.style.transition = 'none';       // Disable transition
+ring.style.opacity = '0';              // Instant hide
+requestAnimationFrame(function() {    // Restore transition next frame
+    ring.style.transition = prevTransition;
+});
+```
+
+**Why This Works:**
+CSS transitions cause animation from old value to new value. While ring opacity animates 1 → 0 (200ms), lerp simultaneously moves ring position, creating a visible trail. Removing transition for one frame forces instant opacity change with no animation.
+
+**Files Changed:**
+- `assets/lib/custom-cursor/custom-cursor.js` (lines ~1183-1192)
+
+**Commit:** 2f2d133
+
+---
+
 ### Files Changed (v5.6 Complete)
 
 | File | Changes |
 |------|---------|
 | `assets/lib/custom-cursor/custom-cursor.css` | Z-index CSS custom properties (CSS-001 fix) |
-| `assets/lib/custom-cursor/custom-cursor.js` | Added CONSTANTS, CursorState, SpecialCursorManager, Pure Effect Functions, Debug Mode, Form Detection Fix, Icon SVG Color Fix |
+| `assets/lib/custom-cursor/custom-cursor.js` | Added CONSTANTS, CursorState, SpecialCursorManager, Pure Effect Functions, Debug Mode, Form Detection Fix, Icon SVG Color Fix, Page Navigation Hide, Ring Trail Fix |
 | `assets/js/cursor-editor-sync.js` | Console cleanup (CMSM_DEBUG guard), responsive mode hiding, entry/popup template hiding, panel centering + viewport clamping |
 | `assets/js/navigator-indicator.js` | Empty catch blocks now log errors, device mode detection, template-check postMessage |
 | `includes/frontend.php` | Clean rewrite from original + cursor methods only (DEPLOY-001 fix) + Entry/Popup template detection |
@@ -627,13 +680,14 @@ Improved cursor preview panel positioning and drag behavior in editor.
 | `DOCS/02-CHANGELOG-v5_6.md` | Updated (this file) |
 | `DOCS/03-BACKLOG.md` | Marked P4-004, P4-005, P4-006 resolved |
 | `DOCS/04-KNOWN-ISSUES.md` | Marked CSS-001, MEM-004, CODE-002, CODE-003, P4-004, P4-005, P4-006 resolved |
-| `DOCS/05-API-JAVASCRIPT.md` | Documented CONSTANTS, CursorState, SpecialCursorManager, Pure Functions, debug() API, isFormZone(), device mode functions, createIconCursor() SVG fix |
+| `DOCS/05-API-JAVASCRIPT.md` | Documented CONSTANTS, CursorState, SpecialCursorManager, Pure Functions, debug() API, isFormZone(), device mode functions, createIconCursor() SVG fix, hideCursorOnNav(), hideDefaultCursor() ring trail fix |
 | `DOCS/06-API-CSS.md` | Updated z-index documentation, added new CSS variables |
 | `DOCS/08-API-PHP.md` | Updated should_enable_custom_cursor() with Theme Builder template detection |
 | `DOCS/09-MAP-DEPENDENCY.md` | Updated with SpecialCursorManager and pure function dependencies |
 | `DOCS/11-MAP-EDITOR-SYNC.md` | Added cmsmasters:cursor:device-mode message type |
 | `DOCS/12-REF-BODY-CLASSES.md` | Added CursorState references |
 | `DOCS/13-REF-EFFECTS.md` | Updated with pure function references |
+| `DOCS/DEVLOG.md` | Added session entry for page navigation + ring trail fixes |
 
 ---
 

@@ -4,6 +4,64 @@ Living document tracking development sessions, decisions, and iterations.
 
 ---
 
+## 2026-02-11 — Default Placeholder Image for Image Cursor Type
+
+**Request:** When selecting Special Cursor → Image type, nothing renders until the user uploads an image. Icon type has default `fas fa-hand-pointer`, Text type has default `"View"`, but Image type had `'url' => ''`.
+
+**Solution:** One-line change in `modules/cursor-controls/module.php` — set the Media control default to `\Elementor\Utils::get_placeholder_image_src()`. This is the standard Elementor pattern used by Image Accordion, Featured Box, and other CMSMasters widgets.
+
+**Key decisions:**
+- Used FQCN (`\Elementor\Utils::...`) instead of adding `use` import — zero namespace collision risk
+- No JS/CSS changes needed — existing rendering pipeline handles any valid URL
+- Only affects **new** widgets or control resets; existing saved widgets are untouched
+
+---
+
+## 2026-02-11 — Ring Trail Fix (5 iterations) + Page Navigation Fix
+
+### Ring trail/ghost when entering special cursor zone horizontally
+
+**Problem:** Cursor in dot+ring mode — when mouse enters a flexbox container with special cursor (icon) horizontally, a visible ring trail/ghost appears. Works fine when entering vertically from top.
+
+**5 failed approaches before finding root cause:**
+
+1. **Snap ring position in `showDefaultCursor()`** — Wrong path: trail appears on ENTRY (hide), not EXIT (show)
+2. **Disable CSS transition in `showDefaultCursor()`** — Same wrong path
+3. **Disable CSS transition in `hideDefaultCursor()`** — Right function, wrong root cause
+4. **Instant detection via `mouseover`** — Correct timing fix, but not the actual cause
+5. **All of the above combined** — Still didn't work
+
+**Root cause (two factors):**
+1. Render loop (line ~2313) updates `ring.style.transform` **every frame** even when ring is "hidden" (`opacity: 0`). Transform has NO CSS transition → position changes are instant. But opacity fades over 200ms via CSS transition. During the fade, ring is partially visible AND moving → trail. Horizontal movement = larger lerp lag = more visible trail.
+2. `mix-blend-mode: difference/exclusion` on `#cmsm-cursor-container` can produce GPU compositor artifacts even at `opacity: 0` due to `will-change: transform, opacity` GPU layer promotion.
+
+**Why horizontal but not vertical:** Ring lerp factor (`L=0.15`) creates constant positional lag. Horizontal movement is typically faster → larger pixel distance between ring and mouse → more visible artifact during the opacity fade. Vertical entry has smaller lag → unnoticeable.
+
+**Final solution (`83e9fd0`):**
+1. **`isRingHidden` boolean flag** (line ~596) — clean state tracking
+2. **`visibility: hidden`** in `hideDefaultCursor()` — completely removes ring from paint/compositing. Immune to blend mode artifacts. Unlike `opacity: 0`, this truly hides the element.
+3. **Skip ring transform in render loop** — `if (!isRingHidden)` guard (line ~2313). Stops GPU from re-compositing hidden ring 60fps.
+4. **Snap + visibility restore** in `showDefaultCursor()` — `isRingHidden = false; ring.style.visibility = '';` + existing `rx=mx; ry=my;` snap
+
+**Key insight:** `opacity: 0` is NOT the same as invisible. Under GPU compositing + blend modes, a zero-opacity element can still produce visual artifacts. `visibility: hidden` is the correct way to completely remove an element from rendering without layout reflow.
+
+**Also includes (from earlier in session):**
+- Instant `mouseover` detection for special cursor zones (bypasses 100ms throttle)
+- Event coordinates (`e.clientX/Y`) used instead of potentially stale `mx/my`
+
+### Page navigation cursor freeze
+
+**Problem:** Clicking a link to navigate — cursor froze at click position while system cursor continued.
+
+**Solution:** Added `hideCursorOnNav()` setting `container.style.visibility = 'hidden'` on `beforeunload` + `pagehide` events.
+
+**Files changed:**
+- `assets/lib/custom-cursor/custom-cursor.js`
+
+**Commits:** c0f46fd, d7d4b0f, 2f2d133, ee443f0, 83e9fd0
+
+---
+
 ## 2026-02-11 — Icon Cursor SVG Color Fix (Uploaded Icons)
 
 **Problem:** Uploaded SVG icon from media library — color works in Elementor editor but reverts to original SVG colors on frontend.
