@@ -51,6 +51,26 @@
 	background: #27ae60 !important;
 }
 
+/* Inherit parent cursor (amber/orange) */
+.cmsm-nav-cursor-inherit {
+	background: #e67e22 !important;
+}
+
+/* =====================================================
+   INHERIT CONTROL VISIBILITY
+   Hide "Use Parent Cursor" controls when no parent has cursor settings
+   AND inherit is not currently ON (so user can always turn it off)
+   ===================================================== */
+
+#elementor-panel:not(.cmsm-has-parent-cursor):not(.cmsm-inherit-active)
+	.elementor-control-cmsmasters_cursor_inherit_parent,
+#elementor-panel:not(.cmsm-has-parent-cursor):not(.cmsm-inherit-active)
+	.elementor-control-cmsmasters_cursor_inherit_blend,
+#elementor-panel:not(.cmsm-has-parent-cursor):not(.cmsm-inherit-active)
+	.elementor-control-cmsmasters_cursor_inherit_effect {
+	display: none !important;
+}
+
 /* =====================================================
    TOOLTIP
    ===================================================== */
@@ -151,6 +171,7 @@
 	--cmsm-indicator-special: #5dade2;
 	--cmsm-indicator-hidden: #a0adb5;
 	--cmsm-indicator-show: #4caf50;
+	--cmsm-indicator-inherit: #f0a040;
 	--cmsm-legend-border: rgba(255, 255, 255, 0.1);
 }
 
@@ -175,6 +196,11 @@
 	background: var(--cmsm-indicator-show) !important;
 }
 
+.elementor-editor-dark .cmsm-nav-cursor-inherit,
+.elementor-editor-auto.cmsm-dark-mode-active .cmsm-nav-cursor-inherit {
+	background: var(--cmsm-indicator-inherit) !important;
+}
+
 .elementor-editor-dark .cmsm-nav-cursor-legend,
 .elementor-editor-auto.cmsm-dark-mode-active .cmsm-nav-cursor-legend {
 	border-top-color: var(--cmsm-legend-border);
@@ -187,6 +213,7 @@
 		--cmsm-indicator-special: #5dade2;
 		--cmsm-indicator-hidden: #a0adb5;
 		--cmsm-indicator-show: #4caf50;
+		--cmsm-indicator-inherit: #f0a040;
 		--cmsm-legend-border: rgba(255, 255, 255, 0.1);
 	}
 
@@ -204,6 +231,10 @@
 
 	.elementor-editor-auto .cmsm-nav-cursor-show {
 		background: var(--cmsm-indicator-show) !important;
+	}
+
+	.elementor-editor-auto .cmsm-nav-cursor-inherit {
+		background: var(--cmsm-indicator-inherit) !important;
 	}
 
 	.elementor-editor-auto .cmsm-nav-cursor-legend {

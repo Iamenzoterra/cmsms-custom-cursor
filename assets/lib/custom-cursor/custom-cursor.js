@@ -1616,6 +1616,31 @@
                    el.getAttribute('data-cursor-blend');
         }
 
+        // Does element define a cursor TYPE? (for cascade boundary in findWithBoundary)
+        // TYPE-ONLY: data-cursor (core), data-cursor-image/text/icon (special)
+        // NOT type: color, effect, blend — these are modifiers, not boundaries
+        // Inherit elements are transparent for type cascade
+        function hasCursorTypeSettings(el) {
+            if (!el || !el.getAttribute) return false;
+            if (el.getAttribute('data-cursor-inherit')) return false;
+            return el.getAttribute('data-cursor') ||
+                   el.getAttribute('data-cursor-image') ||
+                   el.getAttribute('data-cursor-text') ||
+                   el.getAttribute('data-cursor-icon');
+        }
+
+        // Find closest ancestor (including self) with data-cursor-inherit="yes"
+        function findClosestInheritEl(startEl) {
+            var current = startEl;
+            while (current && current !== document.body) {
+                if (current.getAttribute && current.getAttribute('data-cursor-inherit')) {
+                    return current;
+                }
+                current = current.parentElement;
+            }
+            return null;
+        }
+
         // Helper: find closest element with attribute (smart cascade)
         // P1 fix Attempt 5:
         // - "Clean" elements (no cursor settings) = transparent, cascade through
@@ -1642,9 +1667,11 @@
                     if (current.getAttribute(attrName)) {
                         return current;
                     }
-                    // Smart boundary: element has OTHER cursor settings but not this one
-                    // = "modified" element, stop here (use global default)
-                    if (current !== startEl && hasCursorSettings(current)) {
+                    // Smart boundary: element has cursor TYPE settings but not this one
+                    // = type boundary, stop here (use global default)
+                    // Only TYPE attrs (data-cursor, image/text/icon) create boundaries
+                    // Modifiers (color/effect/blend) do NOT block cascade
+                    if (current !== startEl && hasCursorTypeSettings(current)) {
                         return null;
                     }
                 }
@@ -1698,7 +1725,12 @@
         var coreEl = findWithBoundary(el, 'data-cursor', ['data-cursor-image', 'data-cursor-text', 'data-cursor-icon']);
         var coreColorEl = findWithBoundary(el, 'data-cursor-color', null);
         var coreEffectEl = findWithBoundary(el, 'data-cursor-effect', null);
-        
+
+        // Inherit elements don't participate in type depth comparison
+        if (coreEl && coreEl.getAttribute('data-cursor-inherit')) coreEl = null;
+        if (coreColorEl && coreColorEl.getAttribute('data-cursor-inherit')) coreColorEl = null;
+        if (coreEffectEl && coreEffectEl.getAttribute('data-cursor-inherit')) coreEffectEl = null;
+
         // Find closest core cursor element
         var closestCoreEl = null;
         var closestCoreDepth = Infinity;
@@ -1733,6 +1765,13 @@
             var imgRotateHover = parseInt(imageEl.getAttribute('data-cursor-image-rotate-hover')) || imgRotate;
             var imgEffect = imageEl.getAttribute('data-cursor-image-effect') || '';
 
+            // Inherit override: closest inherit element's effect/blend wins
+            var inheritEl = findClosestInheritEl(el);
+            if (inheritEl) {
+                var inheritEffect = inheritEl.getAttribute('data-cursor-inherit-effect');
+                if (inheritEffect !== null) imgEffect = inheritEffect;
+            }
+
             SpecialCursorManager.activate('image', {
                 src: imgSrc,
                 size: imgSize,
@@ -1748,6 +1787,11 @@
 
             // Handle blend mode for image cursor (widget boundary logic)
             var imgSelfBlend = imageEl.getAttribute ? imageEl.getAttribute('data-cursor-blend') : null;
+            // Inherit blend override
+            if (inheritEl) {
+                var inheritBlend = inheritEl.getAttribute('data-cursor-inherit-blend');
+                if (inheritBlend !== null) imgSelfBlend = inheritBlend;
+            }
             if (imgSelfBlend !== null) {
                 if (imgSelfBlend === 'off' || imgSelfBlend === 'no') {
                     if (currentBlendIntensity !== '') setBlendIntensity('');
@@ -1781,6 +1825,15 @@
                 debugWarn('special', 'Invalid typography JSON', typographyJson);
             }
 
+            var txtEffect = textEl.getAttribute('data-cursor-text-effect') || '';
+
+            // Inherit override: closest inherit element's effect/blend wins
+            var inheritEl = findClosestInheritEl(el);
+            if (inheritEl) {
+                var inheritEffect = inheritEl.getAttribute('data-cursor-inherit-effect');
+                if (inheritEffect !== null) txtEffect = inheritEffect;
+            }
+
             var txtStyles = {
                 typography: typography,
                 typographyJson: typographyJson,
@@ -1790,7 +1843,7 @@
                 padding: textEl.getAttribute('data-cursor-text-padding') || '10px',
                 fitCircle: textEl.getAttribute('data-cursor-text-circle') === 'yes',
                 circleSpacing: textEl.hasAttribute('data-cursor-text-circle-spacing') ? parseInt(textEl.getAttribute('data-cursor-text-circle-spacing')) : 10,
-                effect: textEl.getAttribute('data-cursor-text-effect') || ''
+                effect: txtEffect
             };
 
             SpecialCursorManager.activate('text', {
@@ -1800,6 +1853,11 @@
 
             // Handle blend mode for text cursor (widget boundary logic)
             var txtSelfBlend = textEl.getAttribute ? textEl.getAttribute('data-cursor-blend') : null;
+            // Inherit blend override
+            if (inheritEl) {
+                var inheritBlend = inheritEl.getAttribute('data-cursor-inherit-blend');
+                if (inheritBlend !== null) txtSelfBlend = inheritBlend;
+            }
             if (txtSelfBlend !== null) {
                 if (txtSelfBlend === 'off' || txtSelfBlend === 'no') {
                     if (currentBlendIntensity !== '') setBlendIntensity('');
@@ -1823,6 +1881,15 @@
         // ICON CURSOR
         } else if (specialType === 'icon') {
             var icoContent = iconElSpecial.getAttribute('data-cursor-icon');
+            var icoEffect = iconElSpecial.getAttribute('data-cursor-icon-effect') || '';
+
+            // Inherit override: closest inherit element's effect/blend wins
+            var inheritEl = findClosestInheritEl(el);
+            if (inheritEl) {
+                var inheritEffect = inheritEl.getAttribute('data-cursor-inherit-effect');
+                if (inheritEffect !== null) icoEffect = inheritEffect;
+            }
+
             var icoStyles = {
                 color: iconElSpecial.getAttribute('data-cursor-icon-color') || '#000000',
                 bgColor: iconElSpecial.getAttribute('data-cursor-icon-bg') || '#ffffff',
@@ -1835,7 +1902,7 @@
                 circleSpacing: iconElSpecial.hasAttribute('data-cursor-icon-circle-spacing') ? parseInt(iconElSpecial.getAttribute('data-cursor-icon-circle-spacing')) : 10,
                 borderRadius: iconElSpecial.getAttribute('data-cursor-icon-radius') || '',
                 padding: iconElSpecial.getAttribute('data-cursor-icon-padding') || '',
-                effect: iconElSpecial.getAttribute('data-cursor-icon-effect') || ''
+                effect: icoEffect
             };
 
             SpecialCursorManager.activate('icon', {
@@ -1849,6 +1916,11 @@
 
             // Handle blend mode for icon cursor (widget boundary logic)
             var icoSelfBlend = iconElSpecial.getAttribute ? iconElSpecial.getAttribute('data-cursor-blend') : null;
+            // Inherit blend override
+            if (inheritEl) {
+                var inheritBlend = inheritEl.getAttribute('data-cursor-inherit-blend');
+                if (inheritBlend !== null) icoSelfBlend = inheritBlend;
+            }
             if (icoSelfBlend !== null) {
                 if (icoSelfBlend === 'off' || icoSelfBlend === 'no') {
                     if (currentBlendIntensity !== '') setBlendIntensity('');

@@ -378,6 +378,12 @@
 		}
 
 
+		// Priority 1.5: Inherit mode (modifier — transparent for type cascade)
+		var inheritParent = settings.get('cmsmasters_cursor_inherit_parent');
+		if (inheritParent === 'yes') {
+			return { type: 'inherit' };
+		}
+
 		// Priority 2: Hidden cursor
 		var hideCursor = settings.get('cmsmasters_cursor_hide');
 		if (hideCursor === 'yes') {
@@ -415,6 +421,29 @@
 
 
 	/**
+	 * Check if any ancestor container has non-default cursor settings.
+	 * Used to show/hide "Use Parent Cursor" control in panel.
+	 *
+	 * @param {Object} container - Elementor container
+	 * @returns {boolean}
+	 */
+	function checkParentCursorSettings(container) {
+		var current = container.parent;
+		while (current) {
+			var settingsModel = current.model ? current.model.get('settings') : null;
+			if (settingsModel && typeof settingsModel.get === 'function') {
+				if (hasNonDefaultCursor(settingsModel)) return true;
+			}
+			current = current.parent;
+		}
+		return false;
+	}
+
+	// Cache for panel class toggles (avoid unnecessary DOM writes)
+	var lastHasParentCursor = null;
+	var lastInheritOn = null;
+
+	/**
 	 * Build tooltip text for indicator
 	 *
 	 * @param {Object} cursorInfo - Result from hasNonDefaultCursor
@@ -432,6 +461,9 @@
 					'icon': 'Icon'
 				}[cursorInfo.subtype] || cursorInfo.subtype;
 				return 'Special Cursor: ' + subtypeLabel;
+
+			case 'inherit':
+				return 'Inherit Parent Cursor';
 
 			case 'hidden':
 				return 'Cursor Hidden';
@@ -676,6 +708,9 @@
 				'</span>' +
 				'<span class="cmsm-legend-item">' +
 					'<span class="cmsm-nav-cursor-indicator cmsm-nav-cursor-hidden"></span> Hidden' +
+				'</span>' +
+				'<span class="cmsm-legend-item">' +
+					'<span class="cmsm-nav-cursor-indicator cmsm-nav-cursor-inherit"></span> Inherit' +
 				'</span>' +
 			'</div>' +
 		'</div>';
@@ -1033,6 +1068,21 @@
 
 				// Listen to ALL changes on settings model (including __globals__)
 				settings.on('change', onSettingsModelChange);
+			}
+
+			// Toggle panel CSS classes for inherit control visibility (cached)
+			var hasParent = checkParentCursorSettings(container);
+			if (hasParent !== lastHasParentCursor) {
+				lastHasParentCursor = hasParent;
+				jQuery('#elementor-panel').toggleClass('cmsm-has-parent-cursor', hasParent);
+			}
+
+			var inheritOn = settings && typeof settings.get === 'function'
+				? settings.get('cmsmasters_cursor_inherit_parent') === 'yes'
+				: false;
+			if (inheritOn !== lastInheritOn) {
+				lastInheritOn = inheritOn;
+				jQuery('#elementor-panel').toggleClass('cmsm-inherit-active', inheritOn);
 			}
 		} catch(e) { if (window.CMSM_DEBUG) console.warn('[NavigatorIndicator] Settings model watcher failed', e); }
 	}

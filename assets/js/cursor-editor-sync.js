@@ -579,6 +579,7 @@
 
     function clearAttributes(el) {
         ['data-cursor','data-cursor-color','data-cursor-blend','data-cursor-effect',
+         'data-cursor-inherit','data-cursor-inherit-blend','data-cursor-inherit-effect',
          'data-cursor-image','data-cursor-image-size','data-cursor-image-size-hover',
          'data-cursor-image-rotate','data-cursor-image-rotate-hover','data-cursor-image-effect',
          'data-cursor-text','data-cursor-text-typography','data-cursor-text-color',
@@ -599,6 +600,12 @@
         if (!element) return;
         clearAttributes(element);
         if (settings.cmsmasters_cursor_hide === 'yes') { element.setAttribute('data-cursor', 'hide'); return; }
+        if (settings.cmsmasters_cursor_inherit_parent === 'yes') {
+            element.setAttribute('data-cursor-inherit', 'yes');
+            if (settings.cmsmasters_cursor_inherit_blend) element.setAttribute('data-cursor-inherit-blend', settings.cmsmasters_cursor_inherit_blend);
+            if (settings.cmsmasters_cursor_inherit_effect) element.setAttribute('data-cursor-inherit-effect', settings.cmsmasters_cursor_inherit_effect);
+            return;
+        }
         if (settings.cmsmasters_cursor_special_active === 'yes') {
             var t = settings.cmsmasters_cursor_special_type || 'image';
             if (t === 'image') applyImageSettings(element, settings);
