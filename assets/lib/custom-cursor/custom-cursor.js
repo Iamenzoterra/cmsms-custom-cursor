@@ -593,6 +593,7 @@
     var my = _criticalPos ? _criticalPos.y : OFFSCREEN_POSITION;
     var dx = mx, dy = my; // dot position (lerped)
     var rx = mx, ry = my; // ring position (lerped)
+    var isRingHidden = false; // Flag to skip ring paint when in special cursor zone
     var hasValidPosition = !!_criticalPos; // Track if we have a real mouse position
 
     // Smoothness: lerp factor (higher = snappier, lower = smoother)
@@ -1168,6 +1169,8 @@
     function showDefaultCursor() {
         dot.style.opacity = '';
         dot.style.transform = dot.style.transform.replace(/ scale\([^)]+\)/, '') || dot.style.transform;
+        isRingHidden = false;
+        ring.style.visibility = '';
         // Snap ring to mouse position and show instantly to prevent trail/ghost
         rx = mx;
         ry = my;
@@ -1182,6 +1185,8 @@
 
     function hideDefaultCursor() {
         dot.style.opacity = '0';
+        isRingHidden = true;
+        ring.style.visibility = 'hidden';
         // Prevent ring trail: remove opacity transition for a single frame
         var prevTransition = ring.style.transition;
         ring.style.transition = 'none';
@@ -2308,9 +2313,11 @@
             coreTransform = ' rotate(' + calcBuzzRotation(coreEffectTime, BUZZ_CORE_AMPLITUDE) + 'deg)';
         }
 
-        // Default cursor (always update even if hidden, for smooth transition back)
+        // Default cursor
         dot.style.transform = 'translate3d(' + (dotX + coreOffsetX) + 'px,' + dotY + 'px,0)' + coreTransform;
-        ring.style.transform = 'translate3d(' + (rx + coreOffsetX) + 'px,' + ry + 'px,0)' + coreTransform;
+        if (!isRingHidden) {
+            ring.style.transform = 'translate3d(' + (rx + coreOffsetX) + 'px,' + ry + 'px,0)' + coreTransform;
+        }
 
         // Continue loop (track rafId for pause/resume)
         if (!isPaused) {
