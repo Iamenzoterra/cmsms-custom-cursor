@@ -250,6 +250,7 @@ Key tests:
 | Lines | Section | Key Changes (Feb 11, 2026) |
 |-------|---------|----------------------------|
 | ~918-984 | `isFormZone()` | Restored form container check (line 946), added 9 custom select library detectors (lines 950-970) |
+| ~1344-1388 | `createIconCursor()` | Inline SVG fill/stroke stripping for uploaded icon color fix |
 | ~1493-1900 | `detectCursorMode()` | Native SELECT activeElement check (line 1526) prevents false restoration |
 | ~2356+ | `mouseout` handler | Native SELECT activeElement check (line 2367) prevents false restoration |
 

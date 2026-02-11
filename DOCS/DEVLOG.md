@@ -4,6 +4,25 @@ Living document tracking development sessions, decisions, and iterations.
 
 ---
 
+## 2026-02-11 — Icon Cursor SVG Color Fix (Uploaded Icons)
+
+**Problem:** Uploaded SVG icon from media library — color works in Elementor editor but reverts to original SVG colors on frontend.
+
+**Root cause:** Editor creates `<img src="icon.svg">` → JS mask technique works. Frontend uses `Icons_Manager::render_icon()` which renders inline `<svg>` → `querySelector('img')` returns null → mask not applied → child `<path fill="#FF0000">` overrides CSS `fill: currentColor`.
+
+**Fix (`b3d0cab`):** Added inline SVG branch in `createIconCursor()` (lines 1344-1388):
+- Strip explicit `fill`/`stroke` attributes via `removeAttribute()` so elements inherit `currentColor` from CSS
+- Symmetric stroke handling for line-art SVGs
+- Case-insensitive value normalization (handles `URL(#grad)`, `None`, etc.)
+- Preserves: `none`, `currentColor`, `transparent`, `url(...)`, `inherit`
+- Gated by `!styles.preserveColors`
+
+**Known limitation:** SVGs with internal `<style>` blocks (e.g. `<style>.cls-1{fill:#f00}</style>`) won't recolor — CSS class specificity beats attribute removal.
+
+**Also committed (`7105def`):** Panel centering + viewport clamping for drag.
+
+---
+
 ## 2026-02-11 — Form Zone Auto-Hide Fix (Solo + Dual Mode)
 
 **Problem:** When Dual Cursor Mode disabled, no cursor visible on popups/offcanvas/forms. `cursor: none !important` hides system cursor, `isFormZone()` hides custom cursor = zero cursors.
