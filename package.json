@@ -5,8 +5,8 @@
   "description": "Build tools for Custom Cursor addon",
   "scripts": {
     "build": "npm run min:js && npm run min:css",
-    "min:js": "terser assets/lib/custom-cursor/custom-cursor.js -o assets/lib/custom-cursor/custom-cursor.min.js -c -m && terser assets/js/navigator-indicator.js -o assets/js/navigator-indicator.min.js -c -m && terser assets/js/cursor-editor-sync.js -o assets/js/cursor-editor-sync.min.js -c -m",
-    "min:css": "cleancss assets/lib/custom-cursor/custom-cursor.css -o assets/lib/custom-cursor/custom-cursor.min.css && cleancss assets/css/editor-navigator.css -o assets/css/editor-navigator.min.css"
+    "min:js": "terser assets/lib/custom-cursor/custom-cursor.js -o assets/lib/custom-cursor/custom-cursor.min.js -c -m && terser assets/js/navigator-indicator.js -o assets/js/navigator-indicator.min.js -c -m && terser assets/js/cursor-editor-sync.js -o assets/js/cursor-editor-sync.min.js -c -m && terser assets/js/admin-settings.js -o assets/js/admin-settings.min.js -c -m",
+    "min:css": "cleancss assets/lib/custom-cursor/custom-cursor.css -o assets/lib/custom-cursor/custom-cursor.min.css && cleancss assets/css/editor-navigator.css -o assets/css/editor-navigator.min.css && cleancss assets/css/admin-settings.css -o assets/css/admin-settings.min.css"
   },
   "devDependencies": {
     "terser": "^5.37.0",

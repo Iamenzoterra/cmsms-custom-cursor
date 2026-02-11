@@ -3,6 +3,10 @@
  * States controlled via BODY classes
  */
 
+/* ==========================================================================
+   CSS Custom Properties & Adaptive Colors
+   ========================================================================== */
+
 :root {
     --cmsm-cursor-color:#222;
     --cmsm-cursor-color-light:#fff;
@@ -18,6 +22,10 @@ body.cmsm-cursor-on-dark {
 body.cmsm-cursor-on-light {
     --cmsm-cursor-color:var(--cmsm-cursor-color-dark)!important
 }
+
+/* ==========================================================================
+   Core Cursor Elements (container, base, cursor:none)
+   ========================================================================== */
 
 #cmsm-cursor-container {
     --cmsm-cursor-z-default: 999999;
@@ -49,6 +57,10 @@ body.cmsm-cursor-on-light {
 .cmsm-cursor-enabled.cmsm-cursor-dual * {
     cursor:default!important
 }
+
+/* ==========================================================================
+   Plugin & UI Overrides (auto-hide, datepicker, select2, admin bar, touch)
+   ========================================================================== */
 
 [data-cursor=hide],
 [data-cursor=hide] *,
@@ -103,6 +115,10 @@ body.cmsm-cursor-on-light {
     }
 }
 
+/* ==========================================================================
+   Dot & Ring
+   ========================================================================== */
+
 .cmsm-cursor-dot {
     width:var(--cmsm-cursor-dot-size);
     height:var(--cmsm-cursor-dot-size);
@@ -123,6 +139,10 @@ body.cmsm-cursor-on-light {
     box-sizing:border-box;
     transition:width .2s cubic-bezier(.25, 1, .5, 1),height .2s cubic-bezier(.25, 1, .5, 1),margin .2s cubic-bezier(.25, 1, .5, 1),opacity .2s ease,background-color .2s ease,border-color .15s ease-out
 }
+
+/* ==========================================================================
+   Blend Modes
+   ========================================================================== */
 
 body.cmsm-cursor-blend-medium,
 body.cmsm-cursor-blend-soft,
@@ -148,6 +168,10 @@ body.cmsm-cursor-blend-strong #cmsm-cursor-container {
     mix-blend-mode:difference;
     filter:contrast(1.5)
 }
+
+/* ==========================================================================
+   Cursor States (hover, down, text, hidden)
+   ========================================================================== */
 
 body.cmsm-cursor-hover .cmsm-cursor-ring {
     width:60px;
@@ -195,6 +219,10 @@ body.cmsm-cursor-hidden * {
     cursor:default!important
 }
 
+/* ==========================================================================
+   Size Variants & Themes
+   ========================================================================== */
+
 body.cmsm-cursor-size-sm .cmsm-cursor-ring {
     width:20px;
     height:20px;
@@ -224,6 +252,10 @@ body.cmsm-cursor-theme-dot.cmsm-cursor-hover .cmsm-cursor-dot {
     margin-left:calc(var(--cmsm-cursor-dot-hover-size)/ -2);
     margin-top:calc(var(--cmsm-cursor-dot-hover-size)/ -2)
 }
+
+/* ==========================================================================
+   Special Cursor: Image
+   ========================================================================== */
 
 .cmsm-cursor-image {
     position:fixed;
@@ -255,6 +287,10 @@ body.cmsm-cursor-blend-strong .cmsm-cursor-image {
     transition:none
 }
 
+/* ==========================================================================
+   Special Cursor: Text
+   ========================================================================== */
+
 .cmsm-cursor-text-el.cmsm-cursor-text-buzz,
 .cmsm-cursor-text-el.cmsm-cursor-text-pulse,
 .cmsm-cursor-text-el.cmsm-cursor-text-shake,
@@ -285,6 +321,10 @@ body.cmsm-cursor-blend-soft .cmsm-cursor-text-el,
 body.cmsm-cursor-blend-strong .cmsm-cursor-text-el {
     filter:none
 }
+
+/* ==========================================================================
+   Special Cursor: Icon
+   ========================================================================== */
 
 .cmsm-cursor-icon-el {
     position:fixed;
@@ -330,6 +370,10 @@ body.cmsm-cursor-blend-strong .cmsm-cursor-icon-el {
     filter:none
 }
 
+/* ==========================================================================
+   Cursor Inner Wrapper
+   ========================================================================== */
+
 .cmsm-cursor-inner {
     display:inline-flex;
     align-items:center;
@@ -350,6 +394,10 @@ body.cmsm-cursor-blend-strong .cmsm-cursor-icon-el {
     line-height:1
 }
 
+/* ==========================================================================
+   Popup & Overlay Z-index
+   ========================================================================== */
+
 .air-datepicker #cmsm-cursor-container,
 .daterangepicker #cmsm-cursor-container,
 .elementor-popup-modal #cmsm-cursor-container,
@@ -357,6 +405,10 @@ body.cmsm-cursor-blend-strong .cmsm-cursor-icon-el {
 .ui-datepicker #cmsm-cursor-container {
     z-index: var(--cmsm-cursor-z-default)
 }
+
+/* ==========================================================================
+   Browser Compatibility Fallbacks
+   ========================================================================== */
 
 /**
  * CSS-002: Fallback for browsers without color-mix() support

@@ -30,6 +30,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class Frontend extends Base_App {
 
+	const DEFAULT_CURSOR_COLOR = '#222222';
+
 	/**
 	 * Whether the excerpt is being called.
 	 *
@@ -1223,14 +1225,16 @@ class Frontend extends Base_App {
 			CMSMASTERS_ELEMENTOR_VERSION
 		);
 
-		// Add custom color via inline CSS (low specificity so adaptive can override)
+		// Collect inline CSS parts
+		$inline_css_parts = array();
+
+		// Custom color (low specificity so adaptive can override)
 		$cursor_color = $this->get_cursor_color();
 		if ( ! empty( $cursor_color ) ) {
-			$color_css = ':root { --cmsm-cursor-color: ' . esc_attr( $cursor_color ) . '; --cmsm-cursor-color-dark: ' . esc_attr( $cursor_color ) . '; }';
-			wp_add_inline_style( 'cmsmasters-custom-cursor', $color_css );
+			$inline_css_parts[] = ':root { --cmsm-cursor-color: ' . esc_attr( $cursor_color ) . '; --cmsm-cursor-color-dark: ' . esc_attr( $cursor_color ) . '; }';
 		}
 
-		// Add dot sizes via inline CSS (high specificity to override theme defaults)
+		// Dot sizes (high specificity to override theme defaults)
 		$dot_size = get_option( 'elementor_custom_cursor_dot_size', '' );
 		$dot_hover_size = get_option( 'elementor_custom_cursor_dot_hover_size', '' );
 
@@ -1243,8 +1247,11 @@ class Frontend extends Base_App {
 		}
 
 		if ( ! empty( $size_vars ) ) {
-			$size_css = 'body.cmsm-cursor-enabled[class] { ' . implode( '; ', $size_vars ) . '; }';
-			wp_add_inline_style( 'cmsmasters-custom-cursor', $size_css );
+			$inline_css_parts[] = 'body.cmsm-cursor-enabled[class] { ' . implode( '; ', $size_vars ) . '; }';
+		}
+
+		if ( ! empty( $inline_css_parts ) ) {
+			wp_add_inline_style( 'cmsmasters-custom-cursor', implode( ' ', $inline_css_parts ) );
 		}
 
 		wp_enqueue_script(
@@ -1255,35 +1262,30 @@ class Frontend extends Base_App {
 			true
 		);
 
+		// Collect inline JS parts (window properties — NOT subject to cmsm- → cmsmasters- rename)
+		$inline_js_parts = array();
+
 		// Adaptive cursor setting
 		$adaptive = get_option( 'elementor_custom_cursor_adaptive', '' );
 		if ( 'yes' === $adaptive ) {
-			wp_add_inline_script(
-				'cmsmasters-custom-cursor',
-				'window.cmsmCursorAdaptive = true;',
-				'before'
-			);
+			$inline_js_parts[] = 'window.cmsmCursorAdaptive = true;';
 		}
 
 		// Cursor theme setting
 		$cursor_theme = get_option( 'elementor_custom_cursor_theme', 'classic' );
 		$cursor_theme = apply_filters( 'cmsmasters_custom_cursor_theme', $cursor_theme );
 		if ( ! empty( $cursor_theme ) && 'classic' !== $cursor_theme ) {
-			wp_add_inline_script(
-				'cmsmasters-custom-cursor',
-				'window.cmsmCursorTheme = "' . esc_js( $cursor_theme ) . '";',
-				'before'
-			);
+			$inline_js_parts[] = 'window.cmsmCursorTheme = "' . esc_js( $cursor_theme ) . '";';
 		}
 
 		// Cursor smoothness setting
 		$smoothness = get_option( 'elementor_custom_cursor_smoothness', 'normal' );
 		if ( ! empty( $smoothness ) && 'normal' !== $smoothness ) {
-			wp_add_inline_script(
-				'cmsmasters-custom-cursor',
-				'window.cmsmCursorSmooth = "' . esc_js( $smoothness ) . '";',
-				'before'
-			);
+			$inline_js_parts[] = 'window.cmsmCursorSmooth = "' . esc_js( $smoothness ) . '";';
+		}
+
+		if ( ! empty( $inline_js_parts ) ) {
+			wp_add_inline_script( 'cmsmasters-custom-cursor', implode( "\n", $inline_js_parts ), 'before' );
 		}
 	}
 
@@ -1375,12 +1377,12 @@ class Frontend extends Base_App {
 			// Skip if main script already loaded or touch device
 			if(window.cmsmCursorInit||'ontouchstart'in window)return;
 
-			var dot=document.querySelector('.cmsm-cursor-dot');
-			var ring=document.querySelector('.cmsm-cursor-ring');
+			const dot=document.querySelector('.cmsm-cursor-dot');
+			const ring=document.querySelector('.cmsm-cursor-ring');
 			if(!dot||!ring)return;
 
-			var mx=0,my=0,dx=0,dy=0,rx=0,ry=0;
-			var raf=null;
+			let mx=0,my=0,dx=0,dy=0,rx=0,ry=0;
+			let raf=null;
 
 			// Make cursors visible immediately
 			dot.style.opacity='1';
@@ -1430,13 +1432,13 @@ class Frontend extends Base_App {
 	 */
 	private function validate_hex_color( $color ) {
 		if ( empty( $color ) || ! is_string( $color ) ) {
-			return '#222222';
+			return self::DEFAULT_CURSOR_COLOR;
 		}
 		$color = trim( $color );
 		if ( preg_match( '/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/', $color ) ) {
 			return strtolower( $color );
 		}
-		return '#222222';
+		return self::DEFAULT_CURSOR_COLOR;
 	}
 
 	/**
@@ -1451,7 +1453,7 @@ class Frontend extends Base_App {
 
 		// If custom, return the hex color directly
 		if ( 'custom' === $color_source ) {
-			return $this->validate_hex_color( get_option( 'elementor_custom_cursor_color', '#222222' ) );
+			return $this->validate_hex_color( get_option( 'elementor_custom_cursor_color', self::DEFAULT_CURSOR_COLOR ) );
 		}
 
 		// Map source to Kit color ID
@@ -1463,7 +1465,7 @@ class Frontend extends Base_App {
 		);
 
 		if ( ! isset( $global_color_map[ $color_source ] ) ) {
-			return '#222222';
+			return self::DEFAULT_CURSOR_COLOR;
 		}
 
 		$color_id = $global_color_map[ $color_source ];
@@ -1471,7 +1473,7 @@ class Frontend extends Base_App {
 		// Get kit settings
 		$kit = \Elementor\Plugin::$instance->kits_manager->get_active_kit_for_frontend();
 		if ( ! $kit ) {
-			return '#222222';
+			return self::DEFAULT_CURSOR_COLOR;
 		}
 
 		$kit_settings = $kit->get_settings_for_display();
@@ -1480,11 +1482,11 @@ class Frontend extends Base_App {
 		// Search for the color
 		foreach ( $system_colors as $color_data ) {
 			if ( isset( $color_data['_id'] ) && $color_data['_id'] === $color_id ) {
-				return $color_data['color'] ?? '#222222';
+				return $color_data['color'] ?? self::DEFAULT_CURSOR_COLOR;
 			}
 		}
 
-		return '#222222';
+		return self::DEFAULT_CURSOR_COLOR;
 	}
 
 }

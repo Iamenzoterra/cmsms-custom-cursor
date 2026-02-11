@@ -65,286 +65,48 @@ class Settings_Page extends ElementorSettingsPage {
 			return;
 		}
 
-		// Enqueue Pickr color picker from CDN (Elementor-style)
+		// Vendor: Pickr v1.9.1 pinned (local copy, was jsDelivr).
 		wp_enqueue_style(
 			'pickr-monolith',
-			'https://cdn.jsdelivr.net/npm/@simonwep/pickr@1.9.1/dist/themes/monolith.min.css',
+			CMSMASTERS_ELEMENTOR_ASSETS_LIB_URL . 'pickr/monolith.min.css',
 			array(),
 			'1.9.1'
 		);
 
 		wp_enqueue_script(
 			'pickr',
-			'https://cdn.jsdelivr.net/npm/@simonwep/pickr@1.9.1/dist/pickr.min.js',
-			array(),
+			CMSMASTERS_ELEMENTOR_ASSETS_LIB_URL . 'pickr/pickr.min.js',
+			array( 'jquery' ),
 			'1.9.1',
 			true
 		);
 
-		// Convert radius inputs to number type
-		wp_add_inline_script( 'pickr', '
-			jQuery(function($) {
-				// Convert radius fields to number inputs
-				var radiusFields = [
-					"input[name=\"elementor_custom_cursor_dot_size\"]",
-					"input[name=\"elementor_custom_cursor_dot_hover_size\"]"
-				];
-				radiusFields.forEach(function(selector) {
-					var $input = $(selector);
-					if ($input.length) {
-						$input.attr("type", "number");
-						$input.attr("min", "1");
-						$input.attr("max", "999");
-						$input.attr("step", "1");
-					}
-				});
-			});
-		' );
+		// Admin settings page CSS + JS
+		wp_enqueue_style(
+			'cmsmasters-admin-settings',
+			CMSMASTERS_ELEMENTOR_ASSETS_URL . 'css/admin-settings.min.css',
+			array( 'wp-admin' ),
+			CMSMASTERS_ELEMENTOR_VERSION
+		);
 
-		// Get Kit colors for cursor color swatches
-		$kit_colors = $this->get_kit_colors_for_cursor();
+		wp_enqueue_script(
+			'cmsmasters-admin-settings',
+			CMSMASTERS_ELEMENTOR_ASSETS_URL . 'js/admin-settings.min.js',
+			array( 'jquery', 'pickr' ),
+			CMSMASTERS_ELEMENTOR_VERSION,
+			true
+		);
 
-		// Inline CSS for color swatches UI + number inputs
-		wp_add_inline_style( 'wp-admin', '
-			/* Limit number input width for radius fields */
-			input[name="elementor_custom_cursor_dot_size"],
-			input[name="elementor_custom_cursor_dot_hover_size"] {
-				width: 80px !important;
-			}
-
-			/* Hide original select but keep it for form submission */
-			select[name="elementor_custom_cursor_color_source"] {
-				position: absolute !important;
-				width: 1px !important;
-				height: 1px !important;
-				padding: 0 !important;
-				margin: -1px !important;
-				overflow: hidden !important;
-				clip: rect(0, 0, 0, 0) !important;
-				white-space: nowrap !important;
-				border: 0 !important;
-			}
-
-			/* Color swatches container */
-			.cmsm-color-swatches {
-				display: flex;
-				flex-wrap: wrap;
-				gap: 8px;
-				align-items: center;
-			}
-
-			/* Individual swatch button */
-			.cmsm-color-swatch-btn {
-				display: inline-flex;
-				align-items: center;
-				gap: 6px;
-				padding: 6px 12px;
-				border: 2px solid #ddd;
-				border-radius: 4px;
-				background: #fff;
-				cursor: pointer;
-				transition: all 0.15s ease;
-				font-size: 13px;
-				line-height: 1.4;
-			}
-
-			.cmsm-color-swatch-btn:hover {
-				border-color: #0073aa;
-				background: #f0f7fc;
-			}
-
-			.cmsm-color-swatch-btn.active {
-				border-color: #0073aa;
-				background: #e5f3ff;
-				box-shadow: 0 0 0 1px #0073aa;
-			}
-
-			/* Color circle inside button */
-			.cmsm-swatch-circle {
-				width: 20px;
-				height: 20px;
-				border-radius: 50%;
-				border: 1px solid rgba(0,0,0,0.15);
-				box-shadow: inset 0 0 0 1px rgba(255,255,255,0.3);
-				flex-shrink: 0;
-			}
-
-			/* Custom color button - rainbow gradient (default) */
-			.cmsm-color-swatch-btn.cmsm-custom-color-btn .cmsm-swatch-circle {
-				background: conic-gradient(
-					red, yellow, lime, aqua, blue, magenta, red
-				);
-			}
-
-			/* When custom color is set, inline style overrides rainbow */
-
-			/* Hide Pickr button completely - we trigger it programmatically */
-			.cmsm-pickr-inline,
-			.cmsm-pickr-inline + .pickr,
-			.cmsm-color-swatch-btn .pickr {
-				position: absolute !important;
-				width: 0 !important;
-				height: 0 !important;
-				overflow: hidden !important;
-				pointer-events: none !important;
-				opacity: 0 !important;
-			}
-
-			/* Pickr popup dark theme tweaks */
-			.pcr-app {
-				border-radius: 8px !important;
-				box-shadow: 0 8px 32px rgba(0,0,0,0.3) !important;
-			}
-
-			.pcr-app[data-theme="monolith"] {
-				width: 260px;
-				max-width: 95vw;
-			}
-
-			/* Color preview in picker */
-			.pcr-app .pcr-result {
-				border-radius: 4px;
-				font-family: monospace;
-				font-size: 13px;
-			}
-		' );
-
-		// Inline JS for custom color swatches UI
-		wp_add_inline_script( 'pickr', '
-			jQuery(function($) {
-				var $colorSource = $("select[name=\"elementor_custom_cursor_color_source\"]");
-				var $colorInput = $("input[name=\"elementor_custom_cursor_color\"]");
-				var $colorRow = $colorInput.closest("tr");
-
-				// Kit colors from PHP
-				var kitColors = ' . wp_json_encode( $kit_colors ) . ';
-
-				// Color options with labels
-				var colorOptions = {
-					"primary": "' . esc_js( __( 'Primary', 'cmsmasters-elementor' ) ) . '",
-					"secondary": "' . esc_js( __( 'Secondary', 'cmsmasters-elementor' ) ) . '",
-					"text": "' . esc_js( __( 'Text', 'cmsmasters-elementor' ) ) . '",
-					"accent": "' . esc_js( __( 'Accent', 'cmsmasters-elementor' ) ) . '",
-					"custom": "' . esc_js( __( 'Custom', 'cmsmasters-elementor' ) ) . '"
-				};
-
-				// Build custom swatches UI
-				var $swatchesContainer = $("<div class=\"cmsm-color-swatches\"></div>");
-				var currentValue = $colorSource.val();
-				var customColorValue = $colorInput.val() || "#222222";
-				var $customBtn = null;
-
-				$.each(colorOptions, function(value, label) {
-					var $btn = $("<button type=\"button\" class=\"cmsm-color-swatch-btn\" data-value=\"" + value + "\"></button>");
-
-					if (value === "custom") {
-						$btn.addClass("cmsm-custom-color-btn");
-						// Add hidden element for Pickr + visible circle
-						$btn.html("<span class=\"cmsm-pickr-inline\"></span><span class=\"cmsm-swatch-circle\"></span><span>" + label + "</span>");
-						$customBtn = $btn;
-
-						// If custom is selected, show actual color
-						if (currentValue === "custom" && customColorValue) {
-							$btn.addClass("has-color");
-							$btn.find(".cmsm-swatch-circle").css("background", customColorValue);
-						}
-					} else {
-						var color = kitColors[value] || "#ccc";
-						$btn.html("<span class=\"cmsm-swatch-circle\" style=\"background-color: " + color + "\"></span><span>" + label + "</span>");
-					}
-
-					if (value === currentValue) {
-						$btn.addClass("active");
-					}
-
-					$swatchesContainer.append($btn);
-				});
-
-				// Insert after hidden select
-				$colorSource.after($swatchesContainer);
-
-				// Initialize Pickr attached to hidden element inside Custom button
-				var $pickerEl = $customBtn.find(".cmsm-pickr-inline");
-				var pickr = Pickr.create({
-					el: $pickerEl[0],
-					theme: "monolith",
-					default: customColorValue,
-					swatches: [
-						"#F44336", "#E91E63", "#9C27B0", "#673AB7",
-						"#3F51B5", "#2196F3", "#03A9F4", "#00BCD4",
-						"#009688", "#4CAF50", "#8BC34A", "#CDDC39",
-						"#FFEB3B", "#FFC107", "#FF9800", "#FF5722",
-						"#795548", "#9E9E9E", "#607D8B", "#000000"
-					],
-					components: {
-						preview: true,
-						opacity: true,
-						hue: true,
-						interaction: {
-							hex: true,
-							rgba: true,
-							hsla: true,
-							input: true,
-							clear: false,
-							save: false
-						}
-					}
-				});
-
-				// Helper: update custom button color display
-				function updateCustomButtonColor(hex) {
-					$colorInput.val(hex);
-					$customBtn.addClass("has-color");
-					$customBtn.find(".cmsm-swatch-circle").css("background", hex);
-				}
-
-				// Pickr events
-				pickr.on("save", function(color) {
-					if (color) {
-						updateCustomButtonColor(color.toHEXA().toString());
-					}
-					pickr.hide();
-				});
-
-				pickr.on("change", function(color) {
-					if (color) {
-						updateCustomButtonColor(color.toHEXA().toString());
-					}
-				});
-
-				// Handle swatch button clicks
-				$swatchesContainer.on("click", ".cmsm-color-swatch-btn", function(e) {
-					var $btn = $(this);
-					var value = $btn.data("value");
-
-					// Update hidden select
-					$colorSource.val(value);
-
-					// Update active state
-					$swatchesContainer.find(".cmsm-color-swatch-btn").removeClass("active");
-					$btn.addClass("active");
-
-					if (value === "custom") {
-						$colorInput.prop("disabled", false);
-						// Sync picker with current input value and open immediately
-						var currentColor = $colorInput.val() || "#222222";
-						pickr.setColor(currentColor);
-						pickr.show();
-					} else {
-						$colorInput.prop("disabled", true);
-						pickr.hide();
-					}
-				});
-
-				// Initial state
-				if (currentValue !== "custom") {
-					$colorInput.prop("disabled", true);
-				}
-
-				// Hide original color input row (we use our own)
-				$colorRow.hide();
-			});
-		' );
+		wp_localize_script( 'cmsmasters-admin-settings', 'cmsmAdminSettings', array(
+			'kitColors'   => $this->get_kit_colors_for_cursor(),
+			'colorLabels' => array(
+				'primary'   => __( 'Primary', 'cmsmasters-elementor' ),
+				'secondary' => __( 'Secondary', 'cmsmasters-elementor' ),
+				'text'      => __( 'Text', 'cmsmasters-elementor' ),
+				'accent'    => __( 'Accent', 'cmsmasters-elementor' ),
+				'custom'    => __( 'Custom', 'cmsmasters-elementor' ),
+			),
+		) );
 	}
 
 	/**
@@ -353,6 +115,9 @@ class Settings_Page extends ElementorSettingsPage {
 	 * @return array Associative array of color_id => hex_value.
 	 */
 	private function get_kit_colors_for_cursor() {
+		// Fallback colors = Elementor Kit defaults (Hello Elementor theme).
+		// Used only when Kit is unavailable. Overwritten by actual
+		// Kit system_colors on lines below (foreach loop).
 		$colors = array(
 			'primary'   => '#6EC1E4',
 			'secondary' => '#54595F',
