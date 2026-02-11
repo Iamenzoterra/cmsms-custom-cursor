@@ -1168,10 +1168,16 @@
     function showDefaultCursor() {
         dot.style.opacity = '';
         dot.style.transform = dot.style.transform.replace(/ scale\([^)]+\)/, '') || dot.style.transform;
-        // Snap ring position to mouse to prevent trail/ghost on reappear
+        // Snap ring to mouse position and show instantly to prevent trail/ghost
         rx = mx;
         ry = my;
+        ring.style.transition = 'none';
+        ring.style.transform = 'translate3d(' + rx + 'px,' + ry + 'px,0)';
         ring.style.opacity = '';
+        // Re-enable transitions next frame
+        requestAnimationFrame(function() {
+            ring.style.transition = '';
+        });
     }
 
     function hideDefaultCursor() {
