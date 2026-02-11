@@ -1251,10 +1251,6 @@
 	/**
 	 * Check if current document is a Theme Builder template (cmsmasters_ prefix)
 	 * Entry, Popup, Archive, Singular, Header, Footer, etc. don't support cursor in editor preview
-	 */
-	/**
-	 * Check if current document is a Theme Builder template (cmsmasters_ prefix)
-	 * Entry, Popup, Archive, Singular, Header, Footer, etc. don't support cursor in editor preview
 	 * Uses two methods: Elementor JS API + preview iframe DOM fallback
 	 */
 	function isThemeBuilderTemplate() {
@@ -1266,11 +1262,17 @@
 			}
 
 			// Method 2: Preview iframe data-elementor-type attribute (more reliable on document switch)
+			// IMPORTANT: Must find the MAIN document by elementor-preview ID, not just first match
+			// (header/footer templates are also in DOM with cmsmasters_ type)
 			var previewIframe = document.getElementById('elementor-preview-iframe');
 			if (previewIframe && previewIframe.contentDocument) {
-				var root = previewIframe.contentDocument.querySelector('.elementor[data-elementor-type]');
-				if (root && (root.getAttribute('data-elementor-type') || '').indexOf('cmsmasters_') === 0) {
-					return true;
+				var iframeUrl = previewIframe.contentWindow.location.search || '';
+				var match = iframeUrl.match(/elementor-preview=(\d+)/);
+				if (match) {
+					var root = previewIframe.contentDocument.querySelector('.elementor[data-elementor-id="' + match[1] + '"]');
+					if (root && (root.getAttribute('data-elementor-type') || '').indexOf('cmsmasters_') === 0) {
+						return true;
+					}
 				}
 			}
 
@@ -1356,7 +1358,6 @@
 	function sendDeviceMode(mode) {
 		lastDeviceMode = mode;
 		var previewIframe = document.getElementById('elementor-preview-iframe');
-		console.log('[DeviceMode] sendDeviceMode:', mode, 'iframe:', !!previewIframe); // TEMP DEBUG
 		if (previewIframe && previewIframe.contentWindow) {
 			previewIframe.contentWindow.postMessage({
 				type: 'cmsmasters:cursor:device-mode',
@@ -1382,27 +1383,21 @@
 			}, INIT_DELAY_MS + 200);
 		});
 
-		// Primary: Elementor Backbone Radio channel for device mode changes
+		// Secondary: Elementor Backbone Radio channel for device mode changes
 		try {
 			if (elementor.channels && elementor.channels.deviceMode) {
-				console.log('[DeviceMode] Backbone Radio channel registered'); // TEMP DEBUG
 				elementor.channels.deviceMode.on('change', function() {
 					var mode = elementor.channels.deviceMode.request('currentMode');
-					console.log('[DeviceMode] Backbone Radio change:', mode); // TEMP DEBUG
 					notifyDeviceMode(mode || getDeviceModeFromBody());
 				});
-			} else {
-				console.log('[DeviceMode] No Backbone Radio channel available'); // TEMP DEBUG
 			}
 		} catch (e) {
-			console.warn('[DeviceMode] channels.deviceMode error:', e); // TEMP DEBUG
+			if (window.CMSM_DEBUG) console.warn('[NavigatorIndicator] channels.deviceMode not available:', e);
 		}
 
-		// Fallback: MutationObserver on editor body class changes
+		// Tertiary: MutationObserver on editor body class changes
 		new MutationObserver(function() {
-			var mode = getDeviceModeFromBody();
-			console.log('[DeviceMode] MutationObserver fired, body mode:', mode); // TEMP DEBUG
-			notifyDeviceMode(mode);
+			notifyDeviceMode(getDeviceModeFromBody());
 		}).observe(document.body, { attributes: true, attributeFilter: ['class'] });
 
 		// MEM-001 + MEM-002: Cleanup on preview destroyed

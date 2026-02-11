@@ -12,8 +12,13 @@
 
     // Skip on Theme Builder templates (Entry, Popup, Archive, Header, Footer, etc.)
     // These don't support cursor in editor preview - no panel needed
-    var _elRoot = document.querySelector('.elementor[data-elementor-type]');
-    if (_elRoot && (_elRoot.getAttribute('data-elementor-type') || '').indexOf('cmsmasters_') === 0) return;
+    // IMPORTANT: Must check the MAIN document (by elementor-preview ID), not just first
+    // .elementor element — header/footer templates are also in DOM with cmsmasters_ type
+    var _previewId = new URLSearchParams(window.location.search).get('elementor-preview');
+    if (_previewId) {
+        var _elRoot = document.querySelector('.elementor[data-elementor-id="' + _previewId + '"]');
+        if (_elRoot && (_elRoot.getAttribute('data-elementor-type') || '').indexOf('cmsmasters_') === 0) return;
+    }
 
     // === SEC-002 FIX: Origin validation for postMessage ===
     // Only accept messages from same origin (WordPress site)
@@ -28,6 +33,7 @@
     // Responsive mode - hide cursor on tablet/mobile preview
     var isResponsiveHidden = false;
     var wasEnabledBeforeResponsive = false;
+    var TABLET_MAX_WIDTH = 1024; // Hide cursor at or below this width (touch devices)
 
     // Preloader config
     var PRELOAD_DURATION = 15000; // 15 seconds
@@ -300,10 +306,8 @@
         }
 
         if (event.data.type === 'cmsmasters:cursor:device-mode') {
-            // Hide cursor only on touch-screen modes (tablet/mobile)
-            // Keep visible on mouse-driven modes (desktop/widescreen/laptop)
+            // Backup: postMessage from editor (in case resize doesn't fire)
             var isTouchMode = /tablet|mobile/i.test(event.data.mode);
-            console.log('[DeviceMode] RECEIVED in preview:', event.data.mode, 'isTouchMode:', isTouchMode); // TEMP DEBUG
             setResponsiveHidden(isTouchMode);
             return;
         }
@@ -717,6 +721,13 @@
             if (wasEnabledBeforeResponsive) enableCursor();
         }
     }
+
+    // Primary: detect viewport width to hide cursor on tablet/mobile
+    // Elementor resizes preview iframe when switching responsive modes
+    function checkResponsiveWidth() {
+        setResponsiveHidden(window.innerWidth <= TABLET_MAX_WIDTH);
+    }
+    window.addEventListener('resize', checkResponsiveWidth);
 
     function init() {
         createPanel();
