@@ -918,27 +918,41 @@
     function isFormZone(el) {
         if (!el || !el.tagName) return false;
 
-        var tag = el.tagName;
         var reason = '';
 
-        // Submit/button inputs and <button> elements — NOT form zones (user expects custom cursor)
-        if (tag === 'BUTTON') return false;
-        if (tag === 'INPUT' && (el.type === 'submit' || el.type === 'button')) return false;
-
-        // Direct form input elements only (not containers)
-        if (tag === 'SELECT' || tag === 'TEXTAREA') {
-            reason = tag;
-        } else if (tag === 'INPUT') {
-            reason = 'INPUT[' + el.type + ']';
-        } else if (el.closest && (
-            el.closest('[role="listbox"]') ||
-            el.closest('[role="combobox"]') ||
-            el.closest('.air-datepicker') ||
-            el.closest('.flatpickr-calendar') ||
-            el.closest('.daterangepicker') ||
-            el.closest('.ui-datepicker')
+        // Popups/modals: ALWAYS hide custom cursor on ALL elements (including buttons).
+        // moveCursorToPopup() is unreliable — custom cursor stays behind popup z-index.
+        // Graceful degradation: system cursor via CSS fallback (cursor:default!important).
+        if (el.closest && (
+            el.closest('.elementor-popup-modal') ||
+            el.closest('[role="dialog"]') ||
+            el.closest('[aria-modal="true"]')
         )) {
-            reason = 'widget';
+            reason = 'popup/modal';
+        }
+
+        if (!reason) {
+            var tag = el.tagName;
+
+            // Submit/button inputs and <button> elements — NOT form zones (outside popups)
+            if (tag === 'BUTTON') return false;
+            if (tag === 'INPUT' && (el.type === 'submit' || el.type === 'button')) return false;
+
+            // Direct form input elements only
+            if (tag === 'SELECT' || tag === 'TEXTAREA') {
+                reason = tag;
+            } else if (tag === 'INPUT') {
+                reason = 'INPUT[' + el.type + ']';
+            } else if (el.closest && (
+                el.closest('[role="listbox"]') ||
+                el.closest('[role="combobox"]') ||
+                el.closest('.air-datepicker') ||
+                el.closest('.flatpickr-calendar') ||
+                el.closest('.daterangepicker') ||
+                el.closest('.ui-datepicker')
+            )) {
+                reason = 'widget';
+            }
         }
 
         if (reason) {
