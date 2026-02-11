@@ -1341,6 +1341,52 @@
             }
         }
 
+        // Inline SVGs (frontend: Icons_Manager renders uploaded SVGs inline)
+        // Strip explicit fill/stroke so they inherit currentColor from CSS
+        if (!imgEl && !styles.preserveColors) {
+            var svgEl = iconCursorInner.querySelector('svg');
+            if (svgEl) {
+                var shouldPreserve = function(val) {
+                    if (!val) return true;
+                    var v = val.trim().toLowerCase();
+                    return v === 'none' || v === 'currentcolor' || v === 'transparent' ||
+                           v.indexOf('url(') === 0 || v === 'inherit';
+                };
+
+                // Strip fill attributes
+                var fillEls = svgEl.querySelectorAll('[fill]');
+                for (var fi = 0; fi < fillEls.length; fi++) {
+                    if (!shouldPreserve(fillEls[fi].getAttribute('fill'))) {
+                        fillEls[fi].removeAttribute('fill');
+                    }
+                }
+
+                // Strip stroke attributes (for stroke-based / line-art SVGs)
+                var strokeEls = svgEl.querySelectorAll('[stroke]');
+                for (var si = 0; si < strokeEls.length; si++) {
+                    if (!shouldPreserve(strokeEls[si].getAttribute('stroke'))) {
+                        strokeEls[si].removeAttribute('stroke');
+                    }
+                }
+
+                // Handle inline style fill/stroke
+                var styledEls = svgEl.querySelectorAll('[style]');
+                for (var sti = 0; sti < styledEls.length; sti++) {
+                    var stEl = styledEls[sti];
+                    if (stEl.style.fill && !shouldPreserve(stEl.style.fill)) {
+                        stEl.style.fill = '';
+                    }
+                    if (stEl.style.stroke && !shouldPreserve(stEl.style.stroke)) {
+                        stEl.style.stroke = '';
+                    }
+                }
+
+                // Set stroke to currentColor on SVG root for stroke-based icons
+                // (fill: currentColor already set via CSS rule .cmsm-cursor-icon-el svg)
+                svgEl.style.stroke = 'currentColor';
+            }
+        }
+
         // Fit in Circle mode
         if (styles.fitCircle) {
             iconCursorEl.style.padding = '0';
