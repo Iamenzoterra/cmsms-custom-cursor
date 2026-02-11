@@ -251,7 +251,10 @@
         '/* Responsive mode: hide everything on tablet/mobile */',
         '#cmsms-cursor-panel.is-responsive-hidden { display: none !important; }',
         'body.cmsms-responsive-hidden #cmsm-cursor-container { display: none !important; }',
-        'body.cmsms-responsive-hidden .cmsm-cursor { display: none !important; }'
+        'body.cmsms-responsive-hidden .cmsm-cursor { display: none !important; }',
+        '',
+        '/* Theme Builder template: hide panel when editing Entry/Popup/Archive/etc. */',
+        '#cmsms-cursor-panel.is-template-hidden { display: none !important; }'
     ].join('\n');
     document.head.appendChild(styleEl);
 
@@ -278,6 +281,17 @@
         if (!preloaderStarted && (event.data.type === 'cmsmasters:cursor:update' || event.data.type === 'cmsmasters:cursor:init')) {
             preloaderStarted = true;
             startPreloader();
+        }
+
+        // Hide/show panel when switching between regular pages and Theme Builder templates
+        if (event.data.type === 'cmsmasters:cursor:template-check') {
+            if (event.data.isThemeBuilder) {
+                if (panelElement) panelElement.classList.add('is-template-hidden');
+                disableCursor();
+            } else {
+                if (panelElement) panelElement.classList.remove('is-template-hidden');
+            }
+            return;
         }
 
         if (event.data.type === 'cmsmasters:cursor:device-mode') {

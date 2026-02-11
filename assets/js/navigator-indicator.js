@@ -1249,9 +1249,41 @@
 
 
 	/**
+	 * Check if current document is a Theme Builder template (cmsmasters_ prefix)
+	 * Entry, Popup, Archive, Singular, Header, Footer, etc. don't support cursor in editor preview
+	 */
+	function isThemeBuilderTemplate() {
+		try {
+			var doc = elementor.documents.getCurrent();
+			if (!doc || !doc.config) return false;
+			return (doc.config.type || '').indexOf('cmsmasters_') === 0;
+		} catch(e) { return false; }
+	}
+
+	/**
 	 * Main initialization
 	 */
 	function init() {
+		// Check if current document is a Theme Builder template
+		var isThemeBuilder = isThemeBuilderTemplate();
+
+		// Notify preview iframe to hide/show cursor panel on document switch
+		setTimeout(function() {
+			var previewIframe = document.getElementById('elementor-preview-iframe');
+			if (previewIframe && previewIframe.contentWindow) {
+				previewIframe.contentWindow.postMessage({
+					type: 'cmsmasters:cursor:template-check',
+					isThemeBuilder: isThemeBuilder
+				}, TRUSTED_ORIGIN);
+			}
+		}, INIT_DELAY_MS);
+
+		// Skip cursor initialization for Theme Builder templates
+		if (isThemeBuilder) {
+			if (window.CMSM_DEBUG) console.log('[NavigatorIndicator] Theme Builder template, skipping cursor init');
+			return;
+		}
+
 		// Load typography cache FIRST - wait for it before sending initial settings
 		// This is CRITICAL because resolveGlobalTypography needs the cache
 		loadTypographyCache(function() {
@@ -1292,12 +1324,24 @@
 	}
 
 	// === Device mode: notify preview iframe on responsive switch ===
-	// Editor body gets CLASS elementor-device-{mode} (desktop/tablet/mobile)
+	// Editor body gets CLASS elementor-device-{mode} (desktop/tablet/mobile/widescreen)
 	// Preview iframe viewport does NOT resize, so detection must happen here
 	var lastDeviceMode = 'desktop';
 
+	/**
+	 * Send device mode to preview iframe (with deduplication).
+	 * @param {string} mode - 'desktop' | 'tablet' | 'mobile' | 'widescreen' etc.
+	 */
 	function notifyDeviceMode(mode) {
 		if (mode === lastDeviceMode) return;
+		sendDeviceMode(mode);
+	}
+
+	/**
+	 * Force-send device mode to preview iframe (no deduplication).
+	 * Used on preview:loaded to re-sync new iframe with current mode.
+	 */
+	function sendDeviceMode(mode) {
 		lastDeviceMode = mode;
 		var previewIframe = document.getElementById('elementor-preview-iframe');
 		if (previewIframe && previewIframe.contentWindow) {
@@ -1306,6 +1350,7 @@
 				mode: mode
 			}, TRUSTED_ORIGIN);
 		}
+		if (window.CMSM_DEBUG) console.log('[NavigatorIndicator] Device mode sent:', mode);
 	}
 
 	function getDeviceModeFromBody() {
@@ -1315,12 +1360,27 @@
 
 	// Initialize when Elementor preview is loaded
 	if (typeof elementor !== 'undefined') {
-		elementor.on('preview:loaded', init);
+		elementor.on('preview:loaded', function() {
+			init();
 
-		// Listen for device mode changes via CustomEvent (Elementor 3.x+)
-		window.addEventListener('elementor/device-mode/change', function(e) {
-			notifyDeviceMode(e.detail && e.detail.activeMode || getDeviceModeFromBody());
+			// Re-sync device mode to new preview iframe after short delay
+			// (wait for cursor-editor-sync.js message listener to be ready)
+			setTimeout(function() {
+				sendDeviceMode(getDeviceModeFromBody());
+			}, INIT_DELAY_MS + 200);
 		});
+
+		// Primary: Elementor Backbone Radio channel for device mode changes
+		try {
+			if (elementor.channels && elementor.channels.deviceMode) {
+				elementor.channels.deviceMode.on('change', function() {
+					var mode = elementor.channels.deviceMode.request('currentMode');
+					notifyDeviceMode(mode || getDeviceModeFromBody());
+				});
+			}
+		} catch (e) {
+			if (window.CMSM_DEBUG) console.warn('[NavigatorIndicator] channels.deviceMode not available:', e);
+		}
 
 		// Fallback: MutationObserver on editor body class changes
 		new MutationObserver(function() {
@@ -1341,8 +1401,27 @@
 		// Fallback: wait for elementor to be available
 		$(window).on('elementor:init', function() {
 			if (typeof elementor !== 'undefined') {
-				elementor.on('preview:loaded', init);
+				elementor.on('preview:loaded', function() {
+					init();
+					setTimeout(function() {
+						sendDeviceMode(getDeviceModeFromBody());
+					}, INIT_DELAY_MS + 200);
+				});
 				elementor.on('preview:destroyed', cleanup); // MEM-001 + MEM-002
+
+				// Device mode detection
+				try {
+					if (elementor.channels && elementor.channels.deviceMode) {
+						elementor.channels.deviceMode.on('change', function() {
+							var mode = elementor.channels.deviceMode.request('currentMode');
+							notifyDeviceMode(mode || getDeviceModeFromBody());
+						});
+					}
+				} catch (e) {}
+
+				new MutationObserver(function() {
+					notifyDeviceMode(getDeviceModeFromBody());
+				}).observe(document.body, { attributes: true, attributeFilter: ['class'] });
 			}
 		});
 	}
