@@ -948,8 +948,25 @@
                 // Buttons excluded above; popups handled by popup-first check.
                 reason = 'inside <form>';
             } else if (el.closest && (
+                // ARIA roles (catches accessible custom selects)
                 el.closest('[role="listbox"]') ||
                 el.closest('[role="combobox"]') ||
+                el.closest('[role="option"]') ||
+                // Custom select widgets (often appended to body, outside form)
+                el.closest('.select2-dropdown') ||
+                el.closest('.select2-results') ||
+                el.closest('.chosen-drop') ||
+                el.closest('.chosen-results') ||
+                el.closest('.choices__list--dropdown') ||
+                el.closest('.nice-select-dropdown') ||
+                el.closest('.nice-select .list') ||
+                el.closest('.ts-dropdown') ||
+                el.closest('.ss-content') ||
+                el.closest('.selectize-dropdown') ||
+                el.closest('.ui-selectmenu-menu') ||
+                el.closest('.k-animation-container') ||
+                el.closest('.k-list-container') ||
+                // Datepicker widgets
                 el.closest('.air-datepicker') ||
                 el.closest('.flatpickr-calendar') ||
                 el.closest('.daterangepicker') ||

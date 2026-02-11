@@ -60,7 +60,18 @@ body.cmsm-cursor-on-light {
 .air-datepicker,
 .daterangepicker,
 .flatpickr-calendar,
-.ui-datepicker {
+.ui-datepicker,
+.select2-dropdown,
+.chosen-drop,
+.choices__list--dropdown,
+.nice-select-dropdown,
+.nice-select .list,
+.ts-dropdown,
+.ss-content,
+.selectize-dropdown,
+.ui-selectmenu-menu,
+.k-animation-container,
+.k-list-container {
     cursor:default!important
 }
 
