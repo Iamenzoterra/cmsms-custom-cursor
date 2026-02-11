@@ -1,7 +1,7 @@
 # Custom Cursor Addon - Context for Claude
 
 **Version:** 5.6
-**Date:** February 5, 2026
+**Date:** February 11, 2026
 **Status:** Production
 
 ---
@@ -157,6 +157,9 @@ version-5.6/
 - `17-SEC-SVG-SANITIZER.md` - XSS prevention implementation
 - `18-SEC-TEST-CHECKLIST.md` - Testing procedures
 
+### Development
+- `DEVLOG.md` - **Living document** — session log with decisions, iterations, and lessons learned
+
 ---
 
 ## Implementation Guidelines
@@ -237,4 +240,40 @@ Key tests:
 
 ---
 
-*This documentation package prepared for Claude Desktop - February 5, 2026*
+## Key Code Locations
+
+**Note:** Line numbers approximate due to v5.6 refactor which added CONSTANTS (~96 lines) and CursorState (~122 lines) sections.
+
+### custom-cursor.js
+
+| Lines | Section | Key Changes (Feb 11, 2026) |
+|-------|---------|----------------------------|
+| ~918-984 | `isFormZone()` | Restored form container check (line 946), added 9 custom select library detectors (lines 950-970) |
+| ~1493-1900 | `detectCursorMode()` | Native SELECT activeElement check (line 1526) prevents false restoration |
+| ~2356+ | `mouseout` handler | Native SELECT activeElement check (line 2367) prevents false restoration |
+
+### custom-cursor.css
+
+| Lines | Section | Key Changes (Feb 11, 2026) |
+|-------|---------|----------------------------|
+| 60-75 | Widget rules | Added custom select/dropdown CSS fallback for 9 libraries (Select2, Chosen, Choices, Nice Select, Tom Select, Slim Select, Selectize, jQuery UI, Kendo UI) |
+
+### Third-Party Widget Support (Feb 11, 2026)
+
+**JavaScript Detection:** Lines 950-970 in `isFormZone()`
+**CSS Fallback:** Lines 60-75 in `custom-cursor.css`
+
+Supported libraries:
+- Select2 / SelectWoo
+- Chosen.js
+- Choices.js
+- Nice Select v1/v2
+- Tom Select
+- Slim Select
+- Selectize
+- jQuery UI Selectmenu
+- Kendo UI
+
+---
+
+*This documentation package prepared for Claude Desktop - Last updated: February 11, 2026*

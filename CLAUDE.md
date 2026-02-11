@@ -57,7 +57,8 @@ repo-root/
 │   ├── 15-REF-SETTINGS.md
 │   ├── 16-SEC-CODE-REVIEW.md
 │   ├── 17-SEC-SVG-SANITIZER.md
-│   └── 18-SEC-TEST-CHECKLIST.md
+│   ├── 18-SEC-TEST-CHECKLIST.md
+│   └── DEVLOG.md              # ★ Living dev log — sessions, iterations, decisions
 │
 ├── .claude/
 │   ├── agents/              ← 10 sub-agents

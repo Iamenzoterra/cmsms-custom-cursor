@@ -938,7 +938,7 @@ Checks if wobble effect is globally enabled.
 
 #### isFormZone(el)
 
-**Line:** 902
+**Line:** ~918
 
 ```javascript
 isFormZone(element) // Returns true if custom cursor should hide
@@ -954,50 +954,80 @@ Checks if element is inside a "form zone" where custom cursor should hide for us
 
 **Returns:** `boolean` - True if cursor should hide
 
-**Detection Logic:**
+**Detection Logic (in order):**
 
-1. **Direct form elements:**
+1. **Popups/modals (checked FIRST, BEFORE button exclusion):**
+   - `.elementor-popup-modal` (Elementor popups)
+   - `[role="dialog"]` (ARIA dialogs)
+   - `[aria-modal="true"]` (modal dialogs)
+   - **All elements** inside popups/modals hide custom cursor, including buttons and close buttons
+   - Graceful degradation: system cursor via CSS fallback (`body.cmsm-cursor-hidden { cursor:default!important }`)
+
+2. **Button exclusions (checked AFTER popup detection):**
+   - `<button>` elements NOT hidden (users expect custom cursor on buttons)
+   - `<input type="submit">` NOT hidden (treated as button)
+   - `<input type="button">` NOT hidden (treated as button)
+   - **Exception:** Buttons INSIDE popups ARE hidden (popup check comes first)
+
+3. **Direct form elements:**
    - `<select>` (always)
    - `<textarea>` (always)
    - `<input>` (except `type="submit"` and `type="button"`)
 
-2. **Form container:**
-   - Any element inside a `<form>` element
+4. **Form container check (line 946, restored February 11, 2026):**
+   - `el.closest('form')` — catches custom dropdown widgets that stay inside form, gaps between form fields
+   - **Why it's safe now:** Popup detection runs BEFORE this check, so popup close buttons and links are unaffected
+   - **What it catches:** Empty space between form fields, custom dropdown widgets rendered inside `<form>`
 
-3. **ARIA role widgets:**
-   - `[role="listbox"]`
-   - `[role="combobox"]`
-   - `[role="menu"]`
-   - `[role="dialog"]`
-   - `[aria-modal="true"]`
+5. **ARIA role widgets and custom select libraries (lines 950-970):**
+   - `[role="listbox"]` — ARIA accessible listbox
+   - `[role="combobox"]` — ARIA accessible combobox
+   - `[role="option"]` — ARIA option elements
+   - **Select2 / SelectWoo:** `.select2-dropdown`, `.select2-results` (appended to body)
+   - **Chosen.js:** `.chosen-drop`, `.chosen-results` (inside parent)
+   - **Choices.js:** `.choices__list--dropdown` (inside parent)
+   - **Nice Select v1/v2:** `.nice-select-dropdown`, `.nice-select .list` (inside parent)
+   - **Tom Select:** `.ts-dropdown` (inside parent)
+   - **Slim Select:** `.ss-content` (appended to body in v2+)
+   - **Selectize:** `.selectize-dropdown` (appended to body)
+   - **jQuery UI Selectmenu:** `.ui-selectmenu-menu` (inside parent)
+   - **Kendo UI:** `.k-animation-container`, `.k-list-container` (appended to body)
 
-4. **Datepicker widgets:**
+6. **Datepicker widgets:**
    - `.air-datepicker`
    - `.flatpickr-calendar`
    - `.daterangepicker`
    - `.ui-datepicker`
 
-**Exclusions (cursor NOT hidden):**
+**Native `<select>` Dropdown Handling:**
 
-- `<button>` elements (users expect custom cursor on buttons)
-- `<input type="submit">` (treated as button)
-- `<input type="button">` (treated as button)
+The function detects `<select>` elements, but native dropdown restoration requires additional checks:
+- **In `detectCursorMode()` (line 1526):** Checks `document.activeElement.tagName === 'SELECT'` before restoring cursor
+- **In `mouseout` handler (line 2367):** Checks `document.activeElement.tagName === 'SELECT'` before restoring cursor
+- **Why needed:** Native `<select>` dropdowns render in OS-level UI that blocks mouse events. When mouse enters dropdown, `elementsFromPoint()` returns elements *behind* the dropdown, causing false positives.
+
+**Dual vs Solo Mode:**
+
+- **Previously:** The function had a dual-mode bypass (`if (!body.classList.contains('cmsm-cursor-dual')) return false`)
+- **Now (February 11, 2026):** Auto-hide works in BOTH dual and solo modes
+- CSS fallback ensures system cursor visible in both modes
 
 **Usage:**
 
 Used internally by P4 v2 auto-hide feature in three locations:
-1. `detectCursorMode()` (line ~1473)
+1. `detectCursorMode()` (line ~1518)
 2. `mouseover` handler (line ~2280)
-3. `mouseout` handler (line ~2311)
+3. `mouseout` handler (line ~2356)
 
 **Debug Output:**
 
 When `debugMode` is enabled, logs detected form zones with reason:
+- `"Form zone hit: popup/modal"`
 - `"Form zone hit: SELECT"`
 - `"Form zone hit: TEXTAREA"`
 - `"Form zone hit: INPUT[text]"`
 - `"Form zone hit: inside <form>"`
-- `"Form zone hit: role/datepicker"`
+- `"Form zone hit: widget"` (ARIA roles, custom select libraries, datepickers)
 
 ---
 

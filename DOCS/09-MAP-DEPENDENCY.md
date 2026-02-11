@@ -120,23 +120,32 @@ DOMContentLoaded / initCursor() [line 6]
 ### Detection Flow
 
 ```
-detectCursorMode(x, y) [line 645]
+detectCursorMode(x, y) [line ~1493-1900]
 │
-├─▶ Get element at point [line 647-656]
+├─▶ Get element at point [line 1497-1502]
 │   └─ document.elementsFromPoint(x, y)
 │
-├─▶ Skip popup overlays [line 661-666]
+├─▶ Skip popup overlays [line 1504-1509]
 │
-├─▶ Check data-cursor="hide" [line 670-673]
+├─▶ Check data-cursor="hide" [line 1511-1516]
 │   └─ Return early if hidden
 │
-├─▶ P4 v2: Forms/popups detection [line 678-689]
-│   ├─ SELECT element?
-│   ├─ INPUT element (not submit/button)?
-│   ├─ role="listbox/combobox/menu/dialog"?
-│   └─ aria-modal="true"?
+├─▶ P4 v2: Forms/popups detection [line 1518-1549]
+│   ├─ isFormZone(el) [line 918-984]
+│   │   ├─ Popups/modals (FIRST, before button exclusion)
+│   │   ├─ Button exclusions (buttons NOT hidden)
+│   │   ├─ SELECT, TEXTAREA, INPUT elements
+│   │   ├─ Form container check (catches gaps, widgets)
+│   │   ├─ ARIA roles (listbox, combobox, option)
+│   │   ├─ 9 custom select libraries (Select2, Chosen, Choices, etc.)
+│   │   └─ Datepicker widgets
+│   │
+│   ├─ Native SELECT activeElement check (line 1526)
+│   │   └─ If SELECT has focus, don't restore cursor
+│   │
+│   └─ CursorState.transition({ hidden: true })
 │
-├─▶ P5: Video/iframe detection [line 693-697]
+├─▶ P5: Video/iframe detection [line ~1551-1555]
 │
 ├─▶ Find special cursor (Image/Text/Icon) [line 752-784]
 │   ├─▶ findWithBoundary(el, 'data-cursor-image') [line 716]
@@ -812,12 +821,88 @@ sendInitialCursorSettings()                │
 
 ---
 
+## Third-Party Widget Compatibility
+
+**Added:** February 11, 2026 (P4 v2 Enhancement)
+
+The cursor system now detects and gracefully handles 9 popular custom select/dropdown libraries:
+
+### Supported Libraries
+
+| Library | Detection | CSS Fallback | Notes |
+|---------|-----------|--------------|-------|
+| **Select2 / SelectWoo** | `.select2-dropdown`, `.select2-results` | Line 64 | Appends to body |
+| **Chosen.js** | `.chosen-drop`, `.chosen-results` | Line 66 | Stays inside parent |
+| **Choices.js** | `.choices__list--dropdown` | Line 67 | Stays inside parent |
+| **Nice Select v1/v2** | `.nice-select-dropdown`, `.nice-select .list` | Lines 68-69 | Stays inside parent |
+| **Tom Select** | `.ts-dropdown` | Line 70 | Stays inside parent |
+| **Slim Select** | `.ss-content` | Line 71 | Appends to body (v2+) |
+| **Selectize** | `.selectize-dropdown` | Line 72 | Appends to body |
+| **jQuery UI Selectmenu** | `.ui-selectmenu-menu` | Line 73 | Stays inside parent |
+| **Kendo UI** | `.k-animation-container`, `.k-list-container` | Lines 74-75 | Appends to body |
+
+### Detection Strategy
+
+**Dual Detection Method:**
+
+1. **JavaScript detection** in `isFormZone()` (lines 950-970):
+   - Uses `el.closest()` to traverse up the DOM tree
+   - Detects widgets appended to `<body>` (outside form context)
+   - Detects widgets inside form containers
+   - Logs detection to console when debug mode enabled
+
+2. **CSS fallback** in `custom-cursor.css` (lines 60-75):
+   - Forces `cursor: default !important` on widget containers
+   - Ensures system cursor visible even if JavaScript detection fails
+   - Works for widgets appended to `<body>` where parent cursor rules don't apply
+
+### Native `<select>` Handling
+
+**Problem:** Native `<select>` dropdowns render in OS-level UI that blocks mouse events.
+
+**Solution:** Two-part activeElement check:
+
+1. **In `detectCursorMode()` (line 1526):**
+   ```javascript
+   if (document.activeElement && document.activeElement.tagName === 'SELECT') {
+       return; // Don't restore cursor while SELECT focused
+   }
+   ```
+
+2. **In `mouseout` handler (line 2367):**
+   ```javascript
+   if (document.activeElement && document.activeElement.tagName === 'SELECT') {
+       return; // Don't restore cursor while SELECT focused
+   }
+   ```
+
+**Why it works:**
+- When native dropdown opens, `<select>` element retains focus
+- Mouse events inside dropdown fire with incorrect `elementsFromPoint()` results (returns elements *behind* dropdown)
+- ActiveElement check prevents false restoration until user closes dropdown
+
+### ARIA Widget Detection
+
+**Lines:** 952-954
+
+```javascript
+el.closest('[role="listbox"]') ||
+el.closest('[role="combobox"]') ||
+el.closest('[role="option"]')
+```
+
+Detects accessible custom select widgets that follow ARIA authoring practices.
+
+---
+
 ## See Also
 
 - [DATA-FLOW.md](DATA-FLOW.md) - Complete data pipeline
 - [EDITOR-SYNC.md](EDITOR-SYNC.md) - Editor communication
 - [EVENT-FLOW.md](EVENT-FLOW.md) - Event handling
+- [06-API-CSS.md](06-API-CSS.md) - CSS widget rules
+- [05-API-JAVASCRIPT.md](05-API-JAVASCRIPT.md) - isFormZone() function
 
 ---
 
-*Last Updated: February 6, 2026 | Version: 5.6*
+*Last Updated: February 11, 2026 | Version: 5.6*

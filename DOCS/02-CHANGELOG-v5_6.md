@@ -290,37 +290,89 @@ window.CMSM_DEBUG = true;                      // Legacy flag
 
 #### 7. Form Cursor Detection Fix (P4 v2 Enhancement)
 
-Enhanced P4 v2 form zone detection to fix cursor restoration issues and improve reliability.
+Enhanced P4 v2 form zone detection to fix cursor restoration issues, improve reliability, support native `<select>` dropdowns, and enable graceful degradation in both dual and solo modes.
 
 **Changes:**
 
-1. **Added `isFormZone()` helper function (line ~902):**
+1. **Added `isFormZone()` helper function (line ~918):**
    - Centralizes form zone detection logic
+   - **Popup-first ordering:** Popup/modal detection BEFORE button exclusion — ALL elements inside popups/dialogs now hide custom cursor
    - Detects: SELECT, TEXTAREA, INPUT (except submit/button)
-   - Detects elements inside `<form>` container
-   - Detects ARIA role widgets: `[role="listbox"]`, `[role="combobox"]`, `[role="menu"]`, `[role="dialog"]`, `[aria-modal="true"]`
-   - Detects datepicker widgets: `.air-datepicker`, `.flatpickr-calendar`, `.daterangepicker`, `.ui-datepicker`
+   - **Restored `<form>` container check (line 946):** Re-added after popup/button checks — now safe because popup detection runs first, so popup close buttons/links unaffected. Catches custom dropdown widgets that stay inside form, gaps between form fields.
+   - Detects ARIA role widgets: `[role="listbox"]`, `[role="combobox"]`, `[role="option"]`
+   - **Comprehensive custom select/dropdown detection (lines 950-970):** Detects 9 popular libraries:
 
-2. **Added `formZoneActive` tracking variable (line ~953):**
+   | Library | Selector | Appended to body? |
+   |---------|----------|-------------------|
+   | Select2 / SelectWoo | `.select2-dropdown`, `.select2-results` | Yes |
+   | Chosen.js | `.chosen-drop`, `.chosen-results` | No |
+   | Choices.js | `.choices__list--dropdown` | No |
+   | Nice Select v1/v2 | `.nice-select-dropdown`, `.nice-select .list` | No |
+   | Tom Select | `.ts-dropdown` | No |
+   | Slim Select | `.ss-content` | Yes (v2+) |
+   | Selectize | `.selectize-dropdown` | Yes |
+   | jQuery UI Selectmenu | `.ui-selectmenu-menu` | No |
+   | Kendo UI | `.k-animation-container`, `.k-list-container` | Yes |
+
+   - Detects datepicker widgets: `.air-datepicker`, `.flatpickr-calendar`, `.daterangepicker`, `.ui-datepicker`
+   - **Dual-mode bypass removed:** Auto-hide now works in BOTH dual and solo modes
+
+2. **Native `<select>` dropdown fix (lines 1526, 2367):**
+   - Added `document.activeElement.tagName === 'SELECT'` check in TWO places to prevent premature cursor restore when native select dropdown is open:
+   - **In `detectCursorMode()` form-zone restore branch (line 1526):** If a SELECT has focus, don't restore cursor (native dropdown blocks `elementsFromPoint`)
+   - **In `mouseout` handler form-zone restore (line 2367):** If a SELECT has focus, don't restore (mouseout fires with null `relatedTarget` when mouse enters native dropdown)
+   - **Why needed:** Native `<select>` dropdowns render in OS-level UI that blocks mouse events. When mouse enters dropdown, `elementsFromPoint()` returns elements *behind* the dropdown, triggering false restoration.
+
+3. **CSS fallback added (custom-cursor.css line 181-185):**
+   ```css
+   body.cmsm-cursor-hidden,
+   body.cmsm-cursor-hidden * {
+       cursor: default !important
+   }
+   ```
+   - Ensures system cursor visible when custom cursor hides
+   - Specificity (0,1,2) beats `.cmsm-cursor-enabled *` (0,1,1)
+   - Works in both dual and solo modes
+
+4. **CSS widget rules added (custom-cursor.css lines 60-75):**
+   - Added `cursor: default !important` for all custom select/dropdown widget containers (alongside existing datepicker rules)
+   - Ensures system cursor visible inside widgets even if parent has `cursor:none`
+
+5. **Instant opacity restore in solo mode (_applyToDOM, line 486-500):**
+   - When `hidden` transitions from true→false in solo mode, forces instant opacity=1 on `.cmsm-cursor` elements
+   - Bypasses 300ms CSS transition to prevent gap where neither cursor is visible
+   - Uses `style.transition='none'` + forced reflow + RAF cleanup
+
+6. **Added `formZoneActive` tracking variable (line ~999):**
    - Enables cursor restore when leaving form zones via continuous mouse movement
    - Works in addition to mouseout events
 
-3. **Refactored P4 v2 detection in 3 places:**
-   - `detectCursorMode()` (line ~1473) — now has else branch for restore
+7. **Refactored P4 v2 detection in 3 places:**
+   - `detectCursorMode()` (line ~1518) — now has else branch for restore
    - `mouseover` handler (line ~2280) — uses `isFormZone()`
-   - `mouseout` handler (line ~2311) — symmetric with mouseover, checks `relatedTarget`
+   - `mouseout` handler (line ~2356) — symmetric with mouseover, checks `relatedTarget`
 
 **Bugs Fixed:**
 
 | Bug | Before | After |
 |-----|--------|-------|
 | Cursor not restoring when moving UP from form | `mouseout` only triggered when leaving downward | Checks `relatedTarget` in `mouseout` handler |
-| Cursor flickering between form fields | Individual INPUT elements detected separately | Detects `<form>` container, stable for all children |
 | TEXTAREA not hiding cursor | Missing from detection | Now explicitly detected |
+| System cursor not visible in solo mode | CSS fallback only worked in dual mode | CSS fallback now works in both modes |
+| Cursor visible on popup close buttons | Buttons excluded before popup check | Popup detection BEFORE button exclusion |
+| **Native `<select>` dropdown causes cursor flicker** | Cursor restored when mouse enters native dropdown | ActiveElement check prevents restoration while SELECT focused |
+| **Custom dropdowns not detected** | Only native form elements detected | 9 popular custom select libraries now detected |
+| **Gaps between form fields show cursor** | No form container check | Form container check catches gaps (after button/popup exclusions) |
 
 **Why These Changes:**
 
-- **Container detection** prevents flickering when moving between form fields (one form = one zone)
+- **Popup-first ordering** ensures ALL elements in popups/dialogs hide custom cursor, including close buttons and clickable elements
+- **Restored form container check** catches gaps between fields and widgets inside forms — safe because buttons/popup elements already excluded
+- **Native SELECT activeElement check** prevents false positives when native dropdown blocks mouse events
+- **Comprehensive widget detection** supports popular third-party select/dropdown libraries that append to `<body>` or stay inside forms
+- **CSS widget rules** ensure system cursor visible inside widget dropdowns (graceful degradation)
+- **CSS fallback specificity** ensures system cursor always visible when custom cursor hides, regardless of dual/solo mode
+- **Instant opacity restore** prevents 300ms gap with no visible cursor when exiting form zones in solo mode
 - **formZoneActive flag** enables restore when cursor moves continuously from form to non-form (not just on mouseout events)
 - **Symmetric mouseout check** fixes asymmetry where cursor would hide on enter but not restore on exit in certain mouse movement patterns
 

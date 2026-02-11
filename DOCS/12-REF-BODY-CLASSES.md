@@ -353,23 +353,25 @@ Hides the custom cursor and shows system cursor.
 
 **Triggers:**
 1. `data-cursor="hide"` or `data-cursor="none"` on element or ancestor
-2. `<select>` elements
-3. `<input>` elements (except type="submit" and type="button")
-4. `[role="listbox"]`
-5. `[role="combobox"]`
-6. `[role="menu"]`
-7. `[role="dialog"]`
-8. `[aria-modal="true"]`
+2. Popups/modals: `.elementor-popup-modal`, `[role="dialog"]`, `[aria-modal="true"]` — ALL elements inside (including buttons)
+3. `<select>` elements
+4. `<textarea>` elements
+5. `<input>` elements (except type="submit" and type="button")
+6. `[role="listbox"]`
+7. `[role="combobox"]`
+8. Datepicker widgets (`.air-datepicker`, `.flatpickr-calendar`, etc.)
 9. `<video>` elements
 10. `<iframe>` elements
 11. Mouse leaves document (`mouseleave` on `documentElement`)
+
+**Note:** As of February 11, 2026, popup/modal detection occurs BEFORE button exclusion in `isFormZone()`, so ALL elements inside popups/dialogs hide the custom cursor (graceful degradation to system cursor).
 
 ```javascript
 // custom-cursor.js - via CursorState (v5.6)
 if (hideEl) {
     CursorState.transition({ hidden: true }, 'hide-element');
 }
-if (t.tagName === 'SELECT' || ...) {
+if (isFormZone(t)) {
     CursorState.transition({ hidden: true }, 'form-element');
 }
 // mouseleave
@@ -381,7 +383,15 @@ CursorState.transition({ hidden: true }, 'mouseleave');
 body.cmsm-cursor-hidden .cmsm-cursor {
     opacity: 0 !important;
 }
+
+/* System cursor fallback (added Feb 2026) */
+body.cmsm-cursor-hidden,
+body.cmsm-cursor-hidden * {
+    cursor: default !important;
+}
 ```
+
+**CSS Fallback:** The `cursor:default!important` rule ensures system cursor is visible when custom cursor hides. Specificity (0,1,2) beats `.cmsm-cursor-enabled *` (0,1,1). This works in BOTH dual and solo modes, fixing the previous issue where solo mode users had no visible cursor in form zones.
 
 ---
 

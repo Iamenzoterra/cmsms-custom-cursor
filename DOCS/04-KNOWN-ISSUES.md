@@ -138,15 +138,16 @@ Users can override via custom CSS: `#cmsm-cursor-container { --cmsm-cursor-z-def
 
 ---
 
-### P3: Custom Cursor Not Working in CMSMasters Popups
+### UX-003: Custom Cursor Not Working in CMSMasters Popups
 
 | Field | Value |
 |-------|-------|
-| **Location** | `custom-cursor.js` (detectCursorMode, moveCursorToPopup, setInterval) |
+| **Location** | `custom-cursor.js` (isFormZone line 918, detectCursorMode, moveCursorToPopup, setInterval) |
 | **Type** | UX Limitation |
-| **Status** | ⚠️ WON'T FIX (complexity too high) |
+| **Status** | ⚠️ GRACEFUL DEGRADATION (system cursor works in both modes) |
 | **Since** | v5.5 |
 | **Investigated** | February 6, 2026 |
+| **Updated** | February 11, 2026 (CSS fallback fix) |
 
 **Description:**
 Custom cursor shows system cursor inside CMSMasters Elementor popups. Cursor falls back to system cursor which is functional but not styled.
@@ -165,12 +166,23 @@ Three systems conflict:
 - **CSS class/inline style detection** — popup has identical classes and no inline styles in both open and closed states. No CSS-based detection possible
 - **Blend + popup specificity fix** — higher specificity rule for blend inside popup. Fixed z-index but cursor still hidden by P4 v2
 
-**Why won't fix:**
+**Why graceful degradation instead of full fix:**
 CMSMasters popup uses non-standard open/close mechanism with no JavaScript events, no CSS class changes, and nested visibility control. Reliably detecting popup state would require reverse-engineering CMSMasters popup internals, which is fragile and maintenance-heavy.
 
-**Current behavior:** System cursor works normally in popups. All popup functionality (forms, buttons, links) works correctly with system cursor.
+**Current behavior (as of February 11, 2026):**
+- **isFormZone()** detects popups/modals BEFORE button exclusion — ALL elements inside popups now hide custom cursor
+- **CSS fallback** ensures system cursor visible in BOTH dual and solo modes:
+  ```css
+  body.cmsm-cursor-hidden,
+  body.cmsm-cursor-hidden * {
+      cursor: default !important
+  }
+  ```
+- **System cursor works normally** in popups. All popup functionality (forms, buttons, links, close buttons) works correctly with system cursor.
+- **Previously:** CSS fallback only worked in dual mode, leaving users with no cursor in solo mode
+- **Now:** CSS fallback works in both modes, ensuring usable cursor at all times
 
-**Possible future fix:** If CMSMasters adds standard popup events or Elementor popup API support, revisit this issue.
+**Possible future fix:** If CMSMasters adds standard popup events or Elementor popup API support, revisit custom cursor inside popups.
 
 ---
 

@@ -281,7 +281,15 @@ body.cmsm-cursor-text .cmsm-cursor-dot {
 body.cmsm-cursor-hidden .cmsm-cursor {
     opacity: 0 !important;
 }
+
+/* System cursor fallback when custom cursor hides (form zones, video/iframe) */
+body.cmsm-cursor-hidden,
+body.cmsm-cursor-hidden * {
+    cursor: default !important;
+}
 ```
+
+**Note:** The CSS fallback `body.cmsm-cursor-hidden { cursor:default!important }` has specificity (0,1,2) which beats `.cmsm-cursor-enabled *` (0,1,1), ensuring system cursor is visible when custom cursor hides in both dual and solo modes. Added in February 2026 to fix UX-003 graceful degradation.
 
 ---
 
@@ -552,13 +560,27 @@ body.cmsm-cursor-blend-strong #cmsm-cursor-container {
 
 ## Exclusions (Native Cursor Restored)
 
-### Date Pickers
+### Date Pickers & Custom Select Widgets
+
+**Lines:** 60-96 in `custom-cursor.css`
 
 ```css
+/* Widget containers - restore system cursor */
 .air-datepicker,
 .daterangepicker,
 .flatpickr-calendar,
-.ui-datepicker {
+.ui-datepicker,
+.select2-dropdown,
+.chosen-drop,
+.choices__list--dropdown,
+.nice-select-dropdown,
+.nice-select .list,
+.ts-dropdown,
+.ss-content,
+.selectize-dropdown,
+.ui-selectmenu-menu,
+.k-animation-container,
+.k-list-container {
     cursor: default !important;
 }
 
@@ -580,6 +602,27 @@ body.cmsm-cursor-blend-strong #cmsm-cursor-container {
     cursor: pointer !important;
 }
 ```
+
+**Custom Select/Dropdown Libraries Supported:**
+
+| Library | Container Selector | Appended to body? |
+|---------|-------------------|-------------------|
+| Select2 / SelectWoo | `.select2-dropdown` | Yes |
+| Chosen.js | `.chosen-drop` | No |
+| Choices.js | `.choices__list--dropdown` | No |
+| Nice Select v1/v2 | `.nice-select-dropdown`, `.nice-select .list` | No |
+| Tom Select | `.ts-dropdown` | No |
+| Slim Select | `.ss-content` | Yes (v2+) |
+| Selectize | `.selectize-dropdown` | Yes |
+| jQuery UI Selectmenu | `.ui-selectmenu-menu` | No |
+| Kendo UI | `.k-animation-container`, `.k-list-container` | Yes |
+
+**Why These Rules Are Needed:**
+
+- Custom cursor hides on form zones (P4 v2 feature)
+- These CSS rules ensure system cursor is visible inside widgets even if parent has `cursor:none`
+- Graceful degradation: If JavaScript detection fails, CSS fallback still works
+- Widgets that append to `<body>` need explicit rules because they're outside the form context
 
 ### WordPress Admin Bar
 
