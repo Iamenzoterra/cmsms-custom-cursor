@@ -938,11 +938,15 @@
             if (tag === 'BUTTON') return false;
             if (tag === 'INPUT' && (el.type === 'submit' || el.type === 'button')) return false;
 
-            // Direct form input elements only
+            // Direct form input elements
             if (tag === 'SELECT' || tag === 'TEXTAREA') {
                 reason = tag;
             } else if (tag === 'INPUT') {
                 reason = 'INPUT[' + el.type + ']';
+            } else if (el.closest && el.closest('form')) {
+                // Inside <form> container — catches custom dropdown widgets, gaps between fields.
+                // Buttons excluded above; popups handled by popup-first check.
+                reason = 'inside <form>';
             } else if (el.closest && (
                 el.closest('[role="listbox"]') ||
                 el.closest('[role="combobox"]') ||
