@@ -216,7 +216,7 @@ class Module extends Base_Module {
 				'label'     => __( 'Size', 'cmsmasters-elementor' ),
 				'type'      => Controls_Manager::SLIDER,
 				'range'     => array( 'px' => array( 'min' => 16, 'max' => 128, 'step' => 1 ) ),
-				'default'   => array( 'size' => 32, 'unit' => 'px' ),
+				'default'   => array( 'size' => 96, 'unit' => 'px' ),
 				'condition' => array(
 					'cmsmasters_cursor_hide'           => '',
 					'cmsmasters_cursor_special_active' => 'yes',
@@ -261,7 +261,7 @@ class Module extends Base_Module {
 				'label'     => __( 'Size', 'cmsmasters-elementor' ),
 				'type'      => Controls_Manager::SLIDER,
 				'range'     => array( 'px' => array( 'min' => 16, 'max' => 128, 'step' => 1 ) ),
-				'default'   => array( 'size' => 48, 'unit' => 'px' ),
+				'default'   => array( 'size' => 80, 'unit' => 'px' ),
 				'condition' => array(
 					'cmsmasters_cursor_hide'           => '',
 					'cmsmasters_cursor_special_active' => 'yes',
