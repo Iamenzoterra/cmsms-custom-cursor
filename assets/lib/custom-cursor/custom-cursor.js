@@ -1181,9 +1181,14 @@
     }
 
     function hideDefaultCursor() {
-        // Smooth fade out instead of display:none
         dot.style.opacity = '0';
+        // Prevent ring trail: remove opacity transition for a single frame
+        var prevTransition = ring.style.transition;
+        ring.style.transition = 'none';
         ring.style.opacity = '0';
+        requestAnimationFrame(function() {
+            ring.style.transition = prevTransition;
+        });
     }
 
     // === TEXT CURSOR FUNCTIONS ===
@@ -2552,7 +2557,12 @@
     }
 
     // === CLEANUP ON PAGE UNLOAD ===
+    function hideCursorOnNav() {
+        if (container) container.style.visibility = 'hidden';
+    }
+
     window.addEventListener('beforeunload', function() {
+        hideCursorOnNav();
         // Reset singleton guard to allow reinit after real page reload
         window.cmsmCursorInstanceActive = false;
         // Cancel RAF
@@ -2573,6 +2583,8 @@
         // Remove debug overlay
         removeDebugOverlay();
     });
+
+    window.addEventListener('pagehide', hideCursorOnNav);
 
 
 })();
