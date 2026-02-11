@@ -48,12 +48,61 @@ Determines if custom cursor should be enabled on current page.
 **Checks (in order):**
 1. `elementor_custom_cursor_enabled` option must be `'yes'`
 2. If in Elementor preview iframe, checks `elementor_custom_cursor_editor_preview`
-2.5. If in Elementor preview iframe, blocks on Theme Builder template types (cmsmasters_* document types)
-   - Detects CMSMasters Theme Builder templates: Entry, Popup, Archive, Singular, Header, Footer, Tribe Events, WooCommerce product templates
-   - Uses document name prefix detection: `strpos($document->get_name(), 'cmsmasters_') === 0`
-   - Prevents cursor from loading on these template types where it doesn't render in editor preview
-3. Blocks on admin pages, customizer, and edit mode
-4. Returns `true` for frontend
+3. If in Elementor preview iframe, blocks on excluded Theme Builder template types:
+   - **Excluded:** Entry templates and Popup templates where cursor doesn't render
+   - **Enabled:** Archive, Singular, Header, Footer templates where cursor works normally
+4. Blocks on admin pages, customizer, and edit mode
+5. Returns `true` for frontend
+
+**Template Type Detection (lines 1164-1180):**
+
+```php
+// Skip cursor for Entry + Popup templates where it doesn't render in editor preview
+if ( class_exists( '\Elementor\Plugin' ) ) {
+    $preview_id = isset( $_GET['elementor-preview'] ) ? absint( $_GET['elementor-preview'] ) : 0;
+
+    if ( $preview_id ) {
+        $document = \Elementor\Plugin::$instance->documents->get( $preview_id );
+
+        if ( $document ) {
+            $doc_name = $document->get_name();
+
+            // Exclude: cmsmasters_popup and any type ending with _entry
+            if ( $doc_name === 'cmsmasters_popup' || substr( $doc_name, -6 ) === '_entry' ) {
+                return false;
+            }
+        }
+    }
+}
+```
+
+**Excluded Template Types:**
+
+| Document Type | Reason |
+|---|---|
+| `cmsmasters_popup` | Popup overlay, cursor doesn't render in preview |
+| `cmsmasters_entry` | Blog entry card, cursor doesn't apply in card context |
+| `cmsmasters_product_entry` | Product card, cursor doesn't apply |
+| `cmsmasters_tribe_events_entry` | Event card, cursor doesn't apply |
+
+**Enabled Template Types:**
+
+| Document Type | Cursor Behavior |
+|---|---|
+| `cmsmasters_header` | Works — full-page header |
+| `cmsmasters_footer` | Works — full-page footer |
+| `cmsmasters_archive` | Works — archive page |
+| `cmsmasters_singular` | Works — single post/page |
+| `cmsmasters_product_archive` | Works — product archive |
+| `cmsmasters_product_singular` | Works — single product |
+| `cmsmasters_tribe_events_archive` | Works — events archive |
+| `cmsmasters_tribe_events_singular` | Works — single event |
+
+**Why This Approach:**
+- Archive/Singular templates render full pages with normal cursor behavior
+- Entry templates render as cards in loops where cursor doesn't apply
+- Popup templates are overlays where cursor preview doesn't work correctly
+- Header/Footer templates are full-page contexts where cursor works
 
 ---
 

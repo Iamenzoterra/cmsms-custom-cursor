@@ -727,6 +727,44 @@ Heavy use of inline styles instead of CSS classes.
 
 ---
 
+### ICON-002: SVG Icons with Internal `<style>` Blocks
+
+| Field | Value |
+|-------|-------|
+| **Location** | `custom-cursor.js:1344-1388` (createIconCursor) |
+| **Type** | Limitation |
+| **Status** | Known Limitation |
+| **Since** | v5.6 |
+
+**Description:**
+Uploaded SVG icons that use internal `<style>` blocks with class-based fills won't be recolored by the icon cursor color setting.
+
+**Example SVG that won't recolor:**
+```xml
+<svg>
+  <style>
+    .cls-1 { fill: #FF0000; }
+    .cls-2 { fill: #00FF00; }
+  </style>
+  <path class="cls-1" d="..."/>
+  <path class="cls-2" d="..."/>
+</svg>
+```
+
+**Why:**
+The current color fix (v5.6.11, lines 1344-1388) only strips inline `fill` and `stroke` attributes:
+- ✅ Works: `<path fill="#FF0000">` → color removed, inherits `currentColor`
+- ✅ Works: `<path style="fill:#FF0000">` → inline style cleared
+- ❌ Doesn't work: `<path class="cls-1">` with internal stylesheet → class selector not detected
+
+**Workaround:**
+Users should upload SVG icons with inline fill attributes (not CSS classes) or enable "Preserve Colors" to keep original multicolor.
+
+**Possible Future Fix:**
+Parse and modify internal `<style>` blocks, but this requires CSS parser and is complex.
+
+---
+
 ## Resolved Issues (v5.5-SEC)
 
 These issues were resolved in the current version but tracked for reference.

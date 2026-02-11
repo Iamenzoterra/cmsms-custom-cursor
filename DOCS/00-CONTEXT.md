@@ -114,6 +114,7 @@ version-5.6/
 | 230, 791-800 | Sticky mode | Prevents adaptive mode flicker |
 | 428-708 | Special cursors | Image/text/icon cursor logic |
 | 1328-1365 | `detectCursorMode()` | Background luminance detection |
+| 1344-1388 | Icon SVG color fix | Inline SVG attribute stripping for icon color |
 | 1387-1887 | `render()` | RAF animation loop |
 | 1891-2131 | Event listeners | Mouse, scroll, visibility handlers |
 | 2050-2080 | Touch detection | Hide on touch devices |

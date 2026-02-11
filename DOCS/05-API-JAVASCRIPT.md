@@ -837,6 +837,30 @@ createIconCursor('<i class="fa fa-arrow"></i>', {
 
 **Returns:** `void`
 
+**SVG Icon Color Handling (Lines 1344-1388):**
+
+Supports two rendering modes for uploaded SVG icons:
+
+1. **Editor Mode (`<img>` element):**
+   - Elementor renders uploaded SVG as `<img src="library.svg">`
+   - Uses CSS mask technique with `background-color: currentColor`
+   - Icon color applied via mask (lines 1325-1341)
+
+2. **Frontend Mode (inline `<svg>` element):**
+   - Elementor's `Icons_Manager::render_icon()` renders inline `<svg>` with child elements
+   - Strips explicit `fill` and `stroke` attributes from SVG children (lines 1357-1370)
+   - Preserves special values: `none`, `currentColor`, `transparent`, `url(...)`, `inherit`
+   - Handles inline `style.fill` and `style.stroke` (lines 1373-1382)
+   - Sets `svgEl.style.stroke = 'currentColor'` for stroke-based icons (line 1386)
+   - Only runs when `!styles.preserveColors` (respects user's multicolor preference)
+
+**Known Limitation:**
+SVGs with internal `<style>` blocks containing class-based fills won't be recolored. This requires CSS parsing which is not implemented.
+
+**Why Two Modes:**
+- Editor and frontend use different icon rendering methods
+- Dual-mode support ensures consistent icon color in both environments
+
 ---
 
 #### removeIconCursor()
@@ -1398,6 +1422,69 @@ Checks preview iframe viewport width and hides cursor on touch-screen sizes.
 
 ---
 
+### Template Hiding Functions (cursor-editor-sync.js)
+
+#### Early Guard on Init
+
+**Line:** 13-21
+
+```javascript
+// Check data-elementor-type attribute to detect excluded template types
+var docType = '';
+var previewUrl = new URLSearchParams(window.location.search);
+var previewId = previewUrl.get('elementor-preview');
+if (previewId) {
+    var docEl = document.querySelector('[data-elementor-id="' + previewId + '"]');
+    if (docEl) docType = docEl.getAttribute('data-elementor-type') || '';
+}
+if (docType === 'cmsmasters_popup' || docType.endsWith('_entry')) return;
+```
+
+Prevents cursor panel creation on Entry and Popup template types.
+
+**Detection Method:** Checks `data-elementor-type` attribute on main document element (from `elementor-preview` URL param)
+
+**Excluded Types:**
+- `cmsmasters_popup`
+- Any type ending with `_entry` (e.g., `cmsmasters_entry`, `cmsmasters_product_entry`)
+
+**Returns:** Early function return — no panel created
+
+---
+
+#### postMessage Handler (template-check)
+
+**Added to existing message handler**
+
+```javascript
+window.addEventListener('message', function(e) {
+    // ... existing handlers ...
+
+    if (e.data.type === 'cmsmasters:cursor:template-check') {
+        var isHidden = e.data.isThemeBuilder;
+        var panel = document.getElementById('cmsms-cursor-panel');
+        if (panel) {
+            if (isHidden) panel.classList.add('is-template-hidden');
+            else panel.classList.remove('is-template-hidden');
+        }
+    }
+});
+```
+
+Hides/shows cursor panel based on template type changes (soft document switches).
+
+**Message Payload:**
+```javascript
+{
+    type: 'cmsmasters:cursor:template-check',
+    isThemeBuilder: boolean  // true = hide panel, false = show panel
+}
+```
+
+**Side Effect:** Adds/removes `.is-template-hidden` class to panel element
+
+---
+
 #### getSize(v, d)
 
 **Line:** 519
@@ -1917,6 +2004,84 @@ Sends device mode change message to preview iframe when responsive mode changes 
 - MutationObserver on editor body class changes (fallback)
 
 **Side Effects:** Sends postMessage to preview iframe
+
+---
+
+#### isCursorExcludedTemplate(type)
+
+**Line:** ~1350 (navigator-indicator.js)
+
+```javascript
+isCursorExcludedTemplate('cmsmasters_popup')  // Returns: true
+isCursorExcludedTemplate('cmsmasters_entry')  // Returns: true
+isCursorExcludedTemplate('cmsmasters_header') // Returns: false
+```
+
+Checks if template type should exclude cursor preview panel.
+
+**Parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| type | string | Elementor document type name |
+
+**Returns:** `boolean` - true if panel should be hidden
+
+**Excluded Types:**
+- Exact match: `cmsmasters_popup`
+- Ends with: `_entry` (matches `cmsmasters_entry`, `cmsmasters_product_entry`, `cmsmasters_tribe_events_entry`)
+
+---
+
+#### isHiddenTemplate()
+
+**Line:** ~1360 (navigator-indicator.js)
+
+```javascript
+isHiddenTemplate()  // Returns: true if current document is excluded type
+```
+
+Checks if the current Elementor document is an excluded template type.
+
+**Returns:** `boolean`
+
+**Detection Methods (in order):**
+1. **Elementor API:** `elementor.documents.getCurrent().config.type`
+2. **Preview iframe DOM:** `iframe.contentDocument.querySelector('[data-elementor-type]').getAttribute('data-elementor-type')`
+
+**Fallback:** Returns `false` if both methods fail
+
+**Usage:** Called in `init()` and `document:loaded` event handler to sync panel visibility
+
+---
+
+#### document:loaded Event Handler
+
+**Line:** 1403-1420 (navigator-indicator.js)
+
+```javascript
+elementor.on('document:loaded', function(loadedDoc) {
+    // Detect template type change
+    var excludedType = isCursorExcludedTemplate(loadedDoc.config.type);
+
+    // Send postMessage to preview iframe
+    var previewIframe = document.getElementById('elementor-preview-iframe');
+    if (previewIframe && previewIframe.contentWindow) {
+        previewIframe.contentWindow.postMessage({
+            type: 'cmsmasters:cursor:template-check',
+            isThemeBuilder: excludedType
+        }, '*');
+    }
+});
+```
+
+Listens for Elementor document changes (including soft-switches between templates) and syncs panel visibility.
+
+**Triggered By:** `elementor.on('document:loaded')` — fires when user switches between documents in editor
+
+**Purpose:** Handles soft document switches (e.g., switching from Page to Entry template without iframe reload)
+
+**Message Sent:** `cmsmasters:cursor:template-check` with `{ isThemeBuilder: boolean }`
 
 ---
 

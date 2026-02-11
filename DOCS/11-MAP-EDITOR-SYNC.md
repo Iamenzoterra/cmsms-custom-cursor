@@ -57,6 +57,7 @@ The editor sync system enables real-time cursor preview in Elementor editor. It 
 | `cmsmasters:cursor:update` | Editor → Preview | Send single element update |
 | `cmsmasters:cursor:request-init` | Preview → Editor | Request settings resend |
 | `cmsmasters:cursor:device-mode` | Editor → Preview | Notify responsive mode change |
+| `cmsmasters:cursor:template-check` | Editor → Preview | Hide/show panel on template type change |
 
 ---
 
@@ -290,6 +291,79 @@ if (event.data.type === 'cmsmasters:cursor:device-mode') {
 | ❌ MutationObserver on editor body class (v1) | Detection code didn't execute reliably |
 | ✅ `window.resize` in preview iframe (v2) | **Works** — Elementor does resize the iframe |
 | ✅ `elementor.channels.deviceMode` (backup) | Works as backup detection |
+
+---
+
+### cmsmasters:cursor:template-check
+
+**Direction:** Editor → Preview
+
+**Triggered By:** Elementor document changes (including soft-switches between templates)
+
+**Purpose:** Hide cursor panel on Entry and Popup template types where cursor doesn't render
+
+**Source:** `navigator-indicator.js` - `isHiddenTemplate()` in `init()` and `document:loaded` event
+
+**Payload:**
+```javascript
+{
+    type: 'cmsmasters:cursor:template-check',
+    isThemeBuilder: boolean  // true = hide panel, false = show panel
+}
+```
+
+**Handler (cursor-editor-sync.js):**
+```javascript
+window.addEventListener('message', function(event) {
+    if (!event.data || !event.data.type) return;
+
+    if (event.data.type === 'cmsmasters:cursor:template-check') {
+        var isHidden = event.data.isThemeBuilder;
+        var panel = document.getElementById('cmsms-cursor-panel');
+        if (panel) {
+            if (isHidden) panel.classList.add('is-template-hidden');
+            else panel.classList.remove('is-template-hidden');
+        }
+    }
+});
+```
+
+**CSS (cursor-editor-sync.js inline styles):**
+```css
+#cmsms-cursor-panel.is-template-hidden { display: none !important; }
+```
+
+**Excluded Template Types:**
+- `cmsmasters_popup` — Popup overlays
+- `cmsmasters_entry` — Blog entry cards
+- `cmsmasters_product_entry` — Product cards
+- `cmsmasters_tribe_events_entry` — Event cards
+
+**Enabled Template Types:**
+- `cmsmasters_header`, `cmsmasters_footer` — Headers/footers
+- `cmsmasters_archive`, `cmsmasters_singular` — Archive/single pages
+- `cmsmasters_product_archive`, `cmsmasters_product_singular` — Product pages
+- `cmsmasters_tribe_events_archive`, `cmsmasters_tribe_events_singular` — Event pages
+
+**Detection Methods (navigator-indicator.js):**
+
+1. **isCursorExcludedTemplate(type):**
+   - Returns `true` if `type === 'cmsmasters_popup'` OR `type.endsWith('_entry')`
+
+2. **isHiddenTemplate():**
+   - Primary: `elementor.documents.getCurrent().config.type`
+   - Fallback: Preview iframe DOM `data-elementor-type` attribute
+
+**Event Listeners:**
+
+1. **On init():** Checks current document type and sends initial state
+2. **On document:loaded:** Fires when user switches between documents (soft-switch), re-checks type
+
+**Why This Approach:**
+- Entry templates render in loop contexts where cursor doesn't apply
+- Popup templates are overlays where cursor preview doesn't work correctly
+- Archive/Singular templates render full pages with normal cursor behavior
+- Header/Footer templates are full-page contexts where cursor works
 
 ---
 

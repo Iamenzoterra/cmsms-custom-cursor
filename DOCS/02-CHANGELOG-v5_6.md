@@ -500,20 +500,119 @@ body.cmsms-responsive-hidden .cmsm-cursor { display: none !important; }
 
 ---
 
+#### 11. Icon Cursor SVG Color Fix (createIconCursor)
+
+Added inline SVG color recoloring for uploaded SVG icons from media library.
+
+**Problem:**
+Uploaded SVG icons showed correct icon color in Elementor editor (uses `<img>` mask technique) but reverted to original SVG fill colors on frontend (Elementor's `Icons_Manager::render_icon()` renders inline `<svg>`). Child elements like `<path fill="#FF0000">` overrode CSS `fill: currentColor` rule.
+
+**Solution (lines 1344-1388):**
+Added `else` branch in `createIconCursor()` after existing `<img>` mask technique:
+
+1. **Detection:** Only runs when `querySelector('img')` returns null (inline SVG case)
+2. **Attribute stripping:** Removes explicit `fill` and `stroke` attributes from SVG child elements
+3. **Preserve special values:** Keeps `none`, `currentColor`, `transparent`, `url(...)`, `inherit` (case-insensitive)
+4. **Inline style handling:** Also clears `style.fill` and `style.stroke` if not special values
+5. **Stroke-based icon support:** Sets `svgEl.style.stroke = 'currentColor'` on SVG root for line-art icons
+6. **Respects preserveColors:** Gated by `!styles.preserveColors` — skipped when user wants original multicolor SVG
+
+**Known Limitation:**
+SVGs with internal `<style>` blocks containing class-based fills (e.g., `.cls-1{fill:#FF0000}`) won't be recolored. This requires CSS parsing which is not implemented.
+
+**Why This Approach:**
+- **Editor:** Elementor renders uploaded SVG icons via `<img src="library.svg">` → mask technique applies icon color
+- **Frontend:** Elementor renders same icons via inline `<svg>` from `Icons_Manager::render_icon()` → needs attribute stripping
+- Dual-mode support ensures both rendering methods produce consistent colored icons
+
+**Files Changed:**
+- `assets/lib/custom-cursor/custom-cursor.js` (lines 1344-1388)
+
+---
+
+#### 12. Entry + Popup Template Panel Hiding
+
+Added cursor panel hiding for unsupported Elementor Theme Builder template types where cursor doesn't render in editor preview.
+
+**Problem:**
+Cursor preview panel (switcher) showed on Entry and Popup template types in Elementor editor, but cursor doesn't actually render on these templates, creating confusion.
+
+**Template Types That HIDE Panel:**
+- `cmsmasters_entry` — Blog/archive entry cards
+- `cmsmasters_product_entry` — WooCommerce product cards
+- `cmsmasters_tribe_events_entry` — Tribe Events entry cards
+- `cmsmasters_popup` — Popup overlays
+
+**Template Types That SHOW Panel Normally:**
+- `cmsmasters_header`, `cmsmasters_footer`
+- `cmsmasters_archive`, `cmsmasters_singular`
+- `cmsmasters_product_archive`, `cmsmasters_product_singular`
+- `cmsmasters_tribe_events_archive`, `cmsmasters_tribe_events_singular`
+
+**Implementation (4 Layers):**
+
+1. **PHP Guard (frontend.php:1164-1180):**
+   - `should_enable_custom_cursor()` checks `$document->get_name()`
+   - Returns `false` if name equals `cmsmasters_popup` OR ends with `_entry`
+   - No `cmsm-cursor-enabled` class → no cursor JS/CSS loaded
+
+2. **JS Early Guard (cursor-editor-sync.js:13-21):**
+   - Checks `data-elementor-type` attribute on document element (from `elementor-preview` URL param)
+   - Returns early if popup or *_entry — no panel created
+
+3. **PostMessage from init() (navigator-indicator.js):**
+   - New `isHiddenTemplate()` function uses `isCursorExcludedTemplate(type)` helper
+   - Checks via Elementor JS API (`doc.config.type`) + preview iframe DOM fallback
+   - Sends `cmsmasters:cursor:template-check` postMessage to hide/show panel
+
+4. **document:loaded Event (navigator-indicator.js:1403-1420):**
+   - Listens for `elementor.on('document:loaded')` — fires on every document change including soft-switches
+   - Uses `isCursorExcludedTemplate(loadedDoc.config.type)`
+   - Sends postMessage to sync panel visibility
+
+**New postMessage Type:**
+- `cmsmasters:cursor:template-check` with `{ isThemeBuilder: boolean }` — sent from editor to preview iframe
+
+**New CSS Class:**
+- `.is-template-hidden { display: none !important; }` — hides cursor panel on excluded templates
+
+**New JS Functions:**
+- `isCursorExcludedTemplate(type)` — returns true if type is popup or ends with _entry
+- `isHiddenTemplate()` — checks current document via 2 methods (Elementor API + iframe DOM)
+
+**Why Narrow to Entry + Popup:**
+- Archive/Singular templates render full pages → cursor works normally
+- Entry templates render in loops → cursor doesn't render in card context
+- Popup templates are overlays → cursor doesn't render on popup preview
+
+**Commits:**
+- `4394407` — Initial implementation with cmsmasters_ prefix check
+- `63c96f1` — Fix to use DOM check instead of timing-dependent API
+- `4e96648` — Fix to check main document only (not header/footer in DOM)
+- `bc90915` — Add document:loaded listener for soft document switches
+- `473f214` — Narrow to Entry + Popup only (not all cmsmasters_ types)
+
+**Files Changed:**
+- `includes/frontend.php` (lines 1164-1180)
+- `assets/js/cursor-editor-sync.js` (lines 13-21, postMessage handler)
+- `assets/js/navigator-indicator.js` (new functions + document:loaded listener)
+
+---
+
 ### Files Changed (v5.6 Complete)
 
 | File | Changes |
 |------|---------|
 | `assets/lib/custom-cursor/custom-cursor.css` | Z-index CSS custom properties (CSS-001 fix) |
-| `assets/lib/custom-cursor/custom-cursor.js` | Added CONSTANTS, CursorState, SpecialCursorManager, Pure Effect Functions, Debug Mode, Form Detection Fix |
-| `assets/js/cursor-editor-sync.js` | Console cleanup (CMSM_DEBUG guard), responsive mode hiding |
-| `assets/js/navigator-indicator.js` | Empty catch blocks now log errors, device mode detection |
-| `includes/frontend.php` | Clean rewrite from original + cursor methods only (DEPLOY-001 fix) + Theme Builder template detection |
+| `assets/lib/custom-cursor/custom-cursor.js` | Added CONSTANTS, CursorState, SpecialCursorManager, Pure Effect Functions, Debug Mode, Form Detection Fix, Icon SVG Color Fix |
+| `assets/js/cursor-editor-sync.js` | Console cleanup (CMSM_DEBUG guard), responsive mode hiding, entry/popup template hiding |
+| `assets/js/navigator-indicator.js` | Empty catch blocks now log errors, device mode detection, template-check postMessage |
+| `includes/frontend.php` | Clean rewrite from original + cursor methods only (DEPLOY-001 fix) + Entry/Popup template detection |
 | `modules/settings/settings-page.php` | Removed performance tab (font preload not part of cursor) |
 | `DOCS/02-CHANGELOG-v5_6.md` | Updated (this file) |
 | `DOCS/03-BACKLOG.md` | Marked P4-004, P4-005, P4-006 resolved |
 | `DOCS/04-KNOWN-ISSUES.md` | Marked CSS-001, MEM-004, CODE-002, CODE-003, P4-004, P4-005, P4-006 resolved |
-| `DOCS/05-API-JAVASCRIPT.md` | Documented CONSTANTS, CursorState, SpecialCursorManager, Pure Functions, debug() API, isFormZone(), device mode functions |
+| `DOCS/05-API-JAVASCRIPT.md` | Documented CONSTANTS, CursorState, SpecialCursorManager, Pure Functions, debug() API, isFormZone(), device mode functions, createIconCursor() SVG fix |
 | `DOCS/06-API-CSS.md` | Updated z-index documentation, added new CSS variables |
 | `DOCS/08-API-PHP.md` | Updated should_enable_custom_cursor() with Theme Builder template detection |
 | `DOCS/09-MAP-DEPENDENCY.md` | Updated with SpecialCursorManager and pure function dependencies |

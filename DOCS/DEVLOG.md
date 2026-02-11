@@ -48,6 +48,77 @@ Living document tracking development sessions, decisions, and iterations.
 
 **Fix (`2607bac`):** Added widget-specific class selectors + `role="option"` ARIA detection in both JS (`isFormZone()`) and CSS (cursor fallback rules).
 
+---
+
+## 2026-02-11 — Entry + Popup Template Panel Hiding
+
+**Problem:** Cursor preview panel (switcher) shows on Entry and Popup template types in Elementor editor, but cursor doesn't actually render on these templates.
+
+**Why cursor doesn't render:**
+- Entry templates are rendered in loop contexts (archive cards) — cursor doesn't apply to card elements
+- Popup templates are overlays — cursor preview mechanism doesn't work correctly
+- Archive/Singular templates render full pages with normal cursor behavior
+
+**Implementation (4 layers):**
+
+1. **PHP (frontend.php:1164-1180):**
+   - `should_enable_custom_cursor()` checks document name
+   - Returns `false` if name equals `cmsmasters_popup` OR ends with `_entry`
+   - Prevents cursor JS/CSS from loading
+
+2. **JS Early Guard (cursor-editor-sync.js:13-21):**
+   - Checks `data-elementor-type` attribute on main document element
+   - Returns early if popup or *_entry — no panel created
+
+3. **PostMessage from init() (navigator-indicator.js):**
+   - `isHiddenTemplate()` function checks current document via Elementor API + DOM fallback
+   - Sends `cmsmasters:cursor:template-check` postMessage
+
+4. **document:loaded Event (navigator-indicator.js:1403-1420):**
+   - Fires on soft document switches (user changes template type without reload)
+   - Re-checks template type and sends postMessage
+
+**New JS functions:**
+- `isCursorExcludedTemplate(type)` — returns true if type is popup or ends with _entry
+- `isHiddenTemplate()` — checks current document via 2 methods
+
+**Commits:**
+- `4394407` — Initial implementation with cmsmasters_ prefix check
+- `63c96f1` — Fix to use DOM check instead of timing-dependent API
+- `4e96648` — Fix to check main document only (not header/footer in DOM)
+- `bc90915` — Add document:loaded listener for soft document switches
+- `473f214` — Narrow to Entry + Popup only (not all cmsmasters_ types)
+
+---
+
+## 2026-02-11 — Icon Cursor SVG Color Fix (Uploaded Icons)
+
+**Problem:** Uploaded SVG icons from media library showed correct icon color in Elementor editor (uses `<img>` with mask technique) but reverted to original SVG colors on frontend (Elementor's `Icons_Manager` renders inline `<svg>`). Child `<path fill="#FF0000">` overrode CSS `fill: currentColor` rule.
+
+**Root cause:** Editor vs frontend rendering difference:
+- **Editor:** Elementor renders uploaded SVG as `<img src="library.svg">` → existing mask technique works
+- **Frontend:** Elementor renders inline `<svg>` via `Icons_Manager::render_icon()` → explicit fill attributes override CSS
+
+**Fix (lines 1344-1388):** Added `else` branch in `createIconCursor()` for inline SVG case:
+- Detects inline `<svg>` element (when `<img>` not found)
+- Strips explicit `fill` and `stroke` attributes from all SVG child elements
+- Preserves special values: `none`, `currentColor`, `transparent`, `url(...)`, `inherit` (case-insensitive)
+- Handles inline `style.fill` / `style.stroke` too
+- Sets `svgEl.style.stroke = 'currentColor'` on SVG root for stroke-based icons
+- Gated by `!styles.preserveColors` — respects user's multicolor preference
+
+**Known limitation:** SVGs with class-based fills via internal `<style>` blocks won't be recolored. This requires CSS parsing which is not implemented. Example:
+```xml
+<svg>
+  <style>.cls-1{fill:#FF0000}</style>
+  <path class="cls-1" d="..."/>
+</svg>
+```
+
+**Workaround:** Users should upload SVG icons with inline fill attributes (not CSS classes) or enable "Preserve Colors".
+
+**Files changed:** `custom-cursor.js` lines 1344-1388
+
 **Limitation:** Custom/unknown widgets without ARIA roles or known classes won't be detected. Escape hatch: `data-cursor="hide"` on the dropdown container.
 
 ---

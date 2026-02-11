@@ -144,13 +144,28 @@ Without it, the cursor controls won't appear in Elementor editor's Advanced tab.
 | Component | Loads when | Controls |
 |---|---|---|
 | `editor.php` | Always in editor | Script enqueue |
-| `navigator-indicator.js` | Always in editor | Indicators + legend in Navigator panel |
-| `cursor-editor-sync.js` | `cursor_enabled=yes` AND `editor_preview=yes` AND NOT on cmsmasters_* template types | Live cursor in preview |
+| `navigator-indicator.js` | Always in editor | Indicators + legend in Navigator panel + template detection |
+| `cursor-editor-sync.js` | `cursor_enabled=yes` AND `editor_preview=yes` AND NOT on excluded template types | Live cursor in preview |
 | `module.php` | `'cursor-controls'` in `modules.php` | Advanced tab controls |
 | `frontend.php` | Always on frontend | Cursor engine enqueue |
-| `custom-cursor.js` | `should_enable()` = true AND NOT on cmsmasters_* template types in preview | Cursor rendering |
+| `custom-cursor.js` | `should_enable()` = true AND NOT on excluded template types in preview | Cursor rendering |
 
-**Note:** Theme Builder template types (Entry, Popup, Archive, Singular, Header, Footer, Tribe Events, WooCommerce product templates) are detected via document name prefix `cmsmasters_` and excluded from cursor loading in editor preview because the cursor doesn't render on these template types.
+**Excluded Template Types:**
+
+Cursor doesn't render on certain Theme Builder template types and is automatically hidden:
+
+| Template Type | Status | Reason |
+|---|---|---|
+| `cmsmasters_entry` | EXCLUDED | Entry card rendered in loops, cursor doesn't apply |
+| `cmsmasters_product_entry` | EXCLUDED | Product card rendered in loops |
+| `cmsmasters_tribe_events_entry` | EXCLUDED | Event card rendered in loops |
+| `cmsmasters_popup` | EXCLUDED | Popup overlay, cursor doesn't render |
+| `cmsmasters_header` | ENABLED | Full-page header, cursor works |
+| `cmsmasters_footer` | ENABLED | Full-page footer, cursor works |
+| `cmsmasters_archive` | ENABLED | Archive page, cursor works |
+| `cmsmasters_singular` | ENABLED | Single post/page, cursor works |
+
+**Detection Method:** PHP checks `$document->get_name()` — if equals `cmsmasters_popup` OR ends with `_entry`, cursor is disabled. JS performs parallel check via `data-elementor-type` attribute + postMessage protocol for panel hiding.
 
 ---
 
