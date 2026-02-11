@@ -33,7 +33,6 @@
     // Responsive mode - hide cursor on tablet/mobile preview
     var isResponsiveHidden = false;
     var wasEnabledBeforeResponsive = false;
-    var TABLET_MAX_WIDTH = 1024; // Hide cursor at or below this width (touch devices)
 
     // Preloader config
     var PRELOAD_DURATION = 15000; // 15 seconds
@@ -722,12 +721,23 @@
         }
     }
 
-    // Primary: detect viewport width to hide cursor on tablet/mobile
-    // Elementor resizes preview iframe when switching responsive modes
-    function checkResponsiveWidth() {
-        setResponsiveHidden(window.innerWidth <= TABLET_MAX_WIDTH);
+    // Primary: read editor body class directly (same-origin iframe)
+    // Elementor adds elementor-device-{mode} class to editor body
+    // Hide cursor on touch modes (tablet/mobile), show on mouse modes (desktop/widescreen/laptop)
+    try {
+        var parentBody = window.parent.document.body;
+        function checkEditorDeviceMode() {
+            var match = parentBody.className.match(/elementor-device-(\w+)/);
+            var mode = match ? match[1] : 'desktop';
+            setResponsiveHidden(/tablet|mobile/i.test(mode));
+        }
+        new MutationObserver(checkEditorDeviceMode)
+            .observe(parentBody, { attributes: true, attributeFilter: ['class'] });
+        // Initial check (editor might already be in non-desktop mode)
+        checkEditorDeviceMode();
+    } catch (e) {
+        // Cross-origin fallback: rely on postMessage backup from navigator-indicator.js
     }
-    window.addEventListener('resize', checkResponsiveWidth);
 
     function init() {
         createPanel();

@@ -1,6 +1,6 @@
 # Custom Cursor v5.6 - Changelog
 
-**Last Updated:** February 9, 2026
+**Last Updated:** February 11, 2026
 
 ---
 
@@ -440,53 +440,63 @@ Prevents unnecessary script loading and cursor initialization attempts on templa
 
 Added automatic cursor preview hiding when user switches to tablet/mobile responsive mode in Elementor editor toolbar.
 
-**Problem:**
-Cursor preview remained visible when switching to tablet/mobile responsive view, but the responsive CSS wrapper doesn't resize the iframe viewport - only changes the visible area via CSS. This made the cursor appear "stuck" and not properly testable in responsive mode.
+**Rule:** Hide cursor on touch-screen modes (tablet/mobile), keep visible on mouse-driven modes (desktop/widescreen/laptop).
 
-**Solution:**
-Implemented device mode detection in editor frame that communicates to preview iframe via postMessage.
+| Elementor Mode | Cursor | Reason |
+|---|---|---|
+| desktop | visible | mouse |
+| widescreen | visible | mouse |
+| laptop | visible | mouse |
+| tablet | hidden | touchscreen |
+| tablet_extra | hidden | touchscreen |
+| mobile | hidden | touchscreen |
+| mobile_extra | hidden | touchscreen |
+
+**Problem:**
+Cursor preview remained visible when switching to tablet/mobile responsive view.
+
+**Solution (v2 — February 11, 2026):**
+Primary detection via `window.resize` in the preview iframe. Elementor DOES resize the preview iframe when switching responsive modes. The previous postMessage-based approach was unreliable — the `elementor/device-mode/change` CustomEvent doesn't exist, and MutationObserver on body classes proved fragile.
 
 **Technical Implementation:**
 
-**Editor Frame (navigator-indicator.js):**
-- Added `notifyDeviceMode(mode)` function (line 1299) that sends `cmsmasters:cursor:device-mode` postMessage
-- Added `getDeviceModeFromBody()` (line 1311) that parses `elementor-device-{mode}` class from editor body
-- Detection via two methods:
-  1. `window.addEventListener('elementor/device-mode/change')` - CustomEvent from Elementor 3.x+ (line 1321)
-  2. `MutationObserver` on editor body class - fallback for body class changes (line 1326)
-- `lastDeviceMode` variable prevents duplicate messages
+**Primary: Viewport Width Detection (cursor-editor-sync.js):**
+- `TABLET_MAX_WIDTH = 1024` — threshold for touch vs mouse modes
+- `checkResponsiveWidth()` function checks `window.innerWidth <= TABLET_MAX_WIDTH`
+- `window.addEventListener('resize', checkResponsiveWidth)` — fires when Elementor resizes preview iframe
+- Simple, reliable, no cross-frame communication needed
 
-**Preview Iframe (cursor-editor-sync.js):**
-- Added `isResponsiveHidden` and `wasEnabledBeforeResponsive` state variables (lines 23-25)
-- Added `setResponsiveHidden(hidden)` function (line 683)
-- Message handler listens for `cmsmasters:cursor:device-mode` (line 283)
-- When tablet/mobile detected:
-  - Panel gets `is-responsive-hidden` class → CSS `display: none !important`
-  - Body gets `cmsms-responsive-hidden` class → CSS hides `#cmsm-cursor-container`
-  - Current cursor state saved, cursor disabled
-- When desktop restored:
-  - Classes removed, cursor state restored if it was enabled before
+**Backup: postMessage from Editor (navigator-indicator.js):**
+- `sendDeviceMode(mode)` — force-sends device mode (no deduplication), used on `preview:loaded` to re-sync new iframe
+- `notifyDeviceMode(mode)` — sends with deduplication (skips if mode unchanged)
+- Detection via `elementor.channels.deviceMode` Backbone Radio + MutationObserver on body class
+- On each `preview:loaded`, re-sends current device mode after 700ms delay
+- Touch mode check: `/tablet|mobile/i.test(mode)` — matches tablet, mobile, tablet_extra, mobile_extra
+
+**Hiding Logic (cursor-editor-sync.js):**
+- `setResponsiveHidden(hidden)` — saves cursor state, disables cursor, adds CSS classes
+- `isResponsiveHidden` + `wasEnabledBeforeResponsive` state variables
+- Panel gets `is-responsive-hidden` class → CSS `display: none !important`
+- Body gets `cmsms-responsive-hidden` class → CSS hides cursor container
 
 **CSS (cursor-editor-sync.js inline styles):**
 ```css
-/* Responsive mode: hide everything on tablet/mobile */
 #cmsms-cursor-panel.is-responsive-hidden { display: none !important; }
 body.cmsms-responsive-hidden #cmsm-cursor-container { display: none !important; }
 body.cmsms-responsive-hidden .cmsm-cursor { display: none !important; }
 ```
 
-**Why Previous Approaches Failed:**
-- **window.resize** in preview iframe: Elementor doesn't resize the iframe viewport, only the CSS wrapper
-- **data-elementor-device-mode** attribute in preview body: Doesn't update because CSS media queries don't fire (viewport unchanged)
-- **data-elementor-device-mode** on editor body: This attribute doesn't exist on editor body, only on preview body
-- **elementor.channels.deviceMode** Backbone Radio: API unreliable
-- **style.display='none'** on panel: Overridden by panel CSS `display: flex !important`
+**Why Previous v1 Approach Failed:**
+- ❌ `elementor/device-mode/change` CustomEvent — Elementor never dispatches this native DOM event
+- ❌ MutationObserver on editor body — detection code in navigator-indicator.js didn't execute reliably
+- ❌ `data-elementor-device-mode` attribute — doesn't update on editor body
+- ❌ Original assumption that Elementor doesn't resize iframe — **incorrect**, it does resize
 
-**Correct Approach:** Editor frame body CLASS `elementor-device-desktop/tablet/mobile` detected via CustomEvent + MutationObserver, communicated to preview via postMessage.
+**Correct Approach (v2):** Direct `window.resize` in preview iframe with `innerWidth <= 1024` threshold, backed by postMessage for edge cases.
 
 **Files Changed:**
-- `assets/js/navigator-indicator.js` - Device mode detection and notification
-- `assets/js/cursor-editor-sync.js` - Responsive hiding logic and CSS
+- `assets/js/cursor-editor-sync.js` - Width-based detection (primary) + postMessage handler (backup)
+- `assets/js/navigator-indicator.js` - Backbone Radio + MutationObserver + preview:loaded re-sync
 
 ---
 

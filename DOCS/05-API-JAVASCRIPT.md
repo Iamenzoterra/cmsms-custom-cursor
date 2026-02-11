@@ -1350,11 +1350,11 @@ Removes all data-cursor-* attributes from element.
 
 #### setResponsiveHidden(hidden)
 
-**Line:** 683
+**Line:** ~705
 
 ```javascript
 setResponsiveHidden(true)   // Hide cursor on tablet/mobile
-setResponsiveHidden(false)  // Restore cursor on desktop
+setResponsiveHidden(false)  // Restore cursor on desktop/widescreen/laptop
 ```
 
 Controls cursor visibility based on responsive mode.
@@ -1376,7 +1376,25 @@ Controls cursor visibility based on responsive mode.
 - `isResponsiveHidden` - Current responsive hidden state
 - `wasEnabledBeforeResponsive` - Cursor state before hiding
 
-**Triggered By:** `cmsmasters:cursor:device-mode` postMessage from editor
+**Triggered By:**
+1. **Primary:** `checkResponsiveWidth()` on `window.resize` — hides when `innerWidth <= 1024` (touch modes)
+2. **Backup:** `cmsmasters:cursor:device-mode` postMessage from editor — hides when mode matches `/tablet|mobile/`
+
+#### checkResponsiveWidth()
+
+**Line:** ~720
+
+```javascript
+function checkResponsiveWidth() {
+    setResponsiveHidden(window.innerWidth <= TABLET_MAX_WIDTH);
+}
+```
+
+Checks preview iframe viewport width and hides cursor on touch-screen sizes.
+
+**Constant:** `TABLET_MAX_WIDTH = 1024`
+
+**Triggered By:** `window.addEventListener('resize', checkResponsiveWidth)`
 
 ---
 

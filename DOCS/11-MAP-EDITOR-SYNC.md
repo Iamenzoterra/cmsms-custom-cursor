@@ -231,67 +231,65 @@ function initPreviewMessageListener() {
 
 ### cmsmasters:cursor:device-mode
 
-**Direction:** Editor → Preview
+**Direction:** Editor → Preview (backup method)
 
-**Triggered By:** Responsive mode toolbar changes in Elementor editor (desktop/tablet/mobile)
+**Triggered By:** Responsive mode toolbar changes in Elementor editor
 
-**Purpose:** Hide cursor preview when user switches to tablet/mobile responsive view
+**Purpose:** Hide cursor preview on touch-screen modes (tablet/mobile), keep on mouse modes (desktop/widescreen/laptop)
 
-**Source:** `navigator-indicator.js` - `notifyDeviceMode()`
+**Rule:** Cursor visible when `innerWidth > 1024px`, hidden when `≤ 1024px`
+
+#### Primary Detection: Viewport Width (cursor-editor-sync.js)
+
+The preview iframe directly monitors its own width via `window.resize`. When Elementor switches responsive modes, it resizes the preview iframe.
+
+```javascript
+var TABLET_MAX_WIDTH = 1024;
+function checkResponsiveWidth() {
+    setResponsiveHidden(window.innerWidth <= TABLET_MAX_WIDTH);
+}
+window.addEventListener('resize', checkResponsiveWidth);
+```
+
+#### Backup Detection: postMessage (navigator-indicator.js → cursor-editor-sync.js)
+
+**Source:** `navigator-indicator.js` - `sendDeviceMode()` / `notifyDeviceMode()`
 
 **Payload:**
 ```javascript
 {
     type: 'cmsmasters:cursor:device-mode',
-    mode: 'tablet'  // 'desktop' | 'tablet' | 'mobile'
+    mode: 'tablet'  // 'desktop' | 'tablet' | 'mobile' | 'widescreen' | 'laptop'
 }
 ```
 
-**Handler (cursor-editor-sync.js line 283):**
+**Handler (cursor-editor-sync.js):**
 ```javascript
-window.addEventListener('message', function(event) {
-    if (event.data.type === 'cmsmasters:cursor:device-mode') {
-        setResponsiveHidden(event.data.mode !== 'desktop');
-        return;
-    }
-});
+if (event.data.type === 'cmsmasters:cursor:device-mode') {
+    var isTouchMode = /tablet|mobile/i.test(event.data.mode);
+    setResponsiveHidden(isTouchMode);
+}
 ```
 
-**Detection Methods (navigator-indicator.js):**
+**Editor Detection Methods (navigator-indicator.js):**
 
-1. **Primary (Elementor 3.x+):** CustomEvent listener (line 1321)
-```javascript
-window.addEventListener('elementor/device-mode/change', function(e) {
-    notifyDeviceMode(e.detail && e.detail.activeMode || getDeviceModeFromBody());
-});
-```
-
-2. **Fallback:** MutationObserver on editor body class (line 1326)
-```javascript
-new MutationObserver(function() {
-    notifyDeviceMode(getDeviceModeFromBody());
-}).observe(document.body, { attributes: true, attributeFilter: ['class'] });
-```
-
-**Body Class Pattern:**
-- Desktop: `<body class="... elementor-device-desktop ...">`
-- Tablet: `<body class="... elementor-device-tablet ...">`
-- Mobile: `<body class="... elementor-device-mobile ...">`
+1. **Elementor Backbone Radio:** `elementor.channels.deviceMode.on('change', ...)`
+2. **MutationObserver:** Watches editor body class `elementor-device-{mode}`
+3. **preview:loaded re-sync:** Force-sends current mode 700ms after each preview load
 
 **Behavior in Preview (cursor-editor-sync.js):**
-- Tablet/Mobile: Panel gets `is-responsive-hidden` class → `display: none !important`
-- Tablet/Mobile: Body gets `cmsms-responsive-hidden` class → hides cursor container
-- Desktop: Classes removed, cursor state restored if it was enabled before
+- Touch modes (tablet/mobile): Panel gets `is-responsive-hidden`, body gets `cmsms-responsive-hidden` → CSS hides all cursor elements
+- Mouse modes (desktop/widescreen/laptop): Classes removed, cursor state restored
 
-**Why This Approach:**
+**History of Approaches:**
 
-Previous failed attempts:
-- ❌ `window.resize` in preview iframe - Elementor doesn't resize iframe viewport
-- ❌ `data-elementor-device-mode` in preview body - attribute doesn't update (CSS media queries don't fire)
-- ❌ `data-elementor-device-mode` on editor body - attribute doesn't exist on editor body
-- ❌ `elementor.channels.deviceMode` Backbone Radio - API unreliable
-
-✅ **Correct approach:** Editor body CLASS `elementor-device-*` detected via CustomEvent + MutationObserver
+| Approach | Result |
+|---|---|
+| ❌ `elementor/device-mode/change` CustomEvent | Elementor never dispatches this native DOM event |
+| ❌ `data-elementor-device-mode` on editor body | Attribute doesn't exist on editor body |
+| ❌ MutationObserver on editor body class (v1) | Detection code didn't execute reliably |
+| ✅ `window.resize` in preview iframe (v2) | **Works** — Elementor does resize the iframe |
+| ✅ `elementor.channels.deviceMode` (backup) | Works as backup detection |
 
 ---
 
