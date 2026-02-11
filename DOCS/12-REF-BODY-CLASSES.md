@@ -19,9 +19,9 @@ Direct `classList.add/remove` calls have been replaced with `CursorState.transit
 
 ```javascript
 // OLD (pre-v5.6): Direct classList manipulation
-body.classList.add('cmsm-cursor-hover');
-body.classList.remove('cmsm-cursor-on-light');
-body.classList.add('cmsm-cursor-on-dark');
+body.classList.add('cmsmasters-cursor-hover');
+body.classList.remove('cmsmasters-cursor-on-light');
+body.classList.add('cmsmasters-cursor-on-dark');
 
 // NEW (v5.6): CursorState.transition()
 CursorState.transition({ hover: true, mode: 'on-dark' }, 'mouseover');
@@ -42,7 +42,7 @@ CursorState.transition({ hover: true, mode: 'on-dark' }, 'mouseover');
 +-----------------------------------------------------------------------+
 |                                                                       |
 |                          CURSOR ENABLED                               |
-|                     cmsm-cursor-enabled                               |
+|                     cmsmasters-cursor-enabled                               |
 |                             |                                         |
 |             +---------------+----------------+                        |
 |             |               |                |                        |
@@ -76,7 +76,7 @@ CursorState.transition({ hover: true, mode: 'on-dark' }, 'mouseover');
 
 These classes are added by PHP in `frontend.php` via the `body_class` filter.
 
-### cmsm-cursor-enabled
+### cmsmasters-cursor-enabled
 
 **Required for cursor to work.** The JS script checks for this class before initializing.
 
@@ -87,32 +87,32 @@ These classes are added by PHP in `frontend.php` via the `body_class` filter.
 ```php
 // frontend.php add_cursor_body_class()
 if ( $this->should_enable_custom_cursor() ) {
-    $classes[] = 'cmsm-cursor-enabled';
+    $classes[] = 'cmsmasters-cursor-enabled';
 }
 ```
 
 **CSS Effect:**
 ```css
-.cmsm-cursor-enabled .cmsm-cursor {
+.cmsmasters-cursor-enabled .cmsmasters-cursor {
     opacity: 1;
 }
 
-.cmsm-cursor-enabled,
-.cmsm-cursor-enabled * {
+.cmsmasters-cursor-enabled,
+.cmsmasters-cursor-enabled * {
     cursor: none !important;
 }
 ```
 
 ---
 
-### cmsm-cursor-theme-{theme}
+### cmsmasters-cursor-theme-{theme}
 
 Theme classes control which cursor elements are visible.
 
 | Class | Description |
 |-------|-------------|
-| `cmsm-cursor-theme-classic` | Ring + Dot cursor (default) |
-| `cmsm-cursor-theme-dot` | Dot only cursor |
+| `cmsmasters-cursor-theme-classic` | Ring + Dot cursor (default) |
+| `cmsmasters-cursor-theme-dot` | Dot only cursor |
 
 | Source | Location | Condition |
 |--------|----------|-----------|
@@ -122,30 +122,30 @@ Theme classes control which cursor elements are visible.
 ```php
 // PHP adds theme class
 $cursor_theme = get_option( 'elementor_custom_cursor_theme', 'classic' );
-$classes[] = 'cmsm-cursor-theme-' . sanitize_html_class( $cursor_theme );
+$classes[] = 'cmsmasters-cursor-theme-' . sanitize_html_class( $cursor_theme );
 ```
 
 ```javascript
 // JS also sets theme (for dynamic override)
 var theme = window.cmsmCursorTheme || 'classic';
-body.classList.add('cmsm-cursor-theme-' + theme);
+body.classList.add('cmsmasters-cursor-theme-' + theme);
 ```
 
 **CSS Effect:**
 ```css
-body.cmsm-cursor-theme-dot .cmsm-cursor-ring {
+body.cmsmasters-cursor-theme-dot .cmsmasters-cursor-ring {
     display: none !important;
 }
 
-body.cmsm-cursor-theme-dot {
-    --cmsm-cursor-dot-size: 10px;
-    --cmsm-cursor-dot-hover-size: 20px;
+body.cmsmasters-cursor-theme-dot {
+    --cmsmasters-cursor-dot-size: 10px;
+    --cmsmasters-cursor-dot-hover-size: 20px;
 }
 ```
 
 ---
 
-### cmsm-cursor-dual
+### cmsmasters-cursor-dual
 
 Shows system cursor alongside custom cursor. Useful for accessibility.
 
@@ -156,29 +156,29 @@ Shows system cursor alongside custom cursor. Useful for accessibility.
 ```php
 $dual_mode = get_option( 'elementor_custom_cursor_dual_mode', '' );
 if ( 'yes' === $dual_mode ) {
-    $classes[] = 'cmsm-cursor-dual';
+    $classes[] = 'cmsmasters-cursor-dual';
 }
 ```
 
 **CSS Effect:**
 ```css
-.cmsm-cursor-enabled.cmsm-cursor-dual,
-.cmsm-cursor-enabled.cmsm-cursor-dual * {
+.cmsmasters-cursor-enabled.cmsmasters-cursor-dual,
+.cmsmasters-cursor-enabled.cmsmasters-cursor-dual * {
     cursor: default !important;
 }
 ```
 
 ---
 
-### cmsm-cursor-blend / cmsm-cursor-blend-{intensity}
+### cmsmasters-cursor-blend / cmsmasters-cursor-blend-{intensity}
 
 Enables blend mode effect on cursor for contrast against backgrounds.
 
 | Class | Mix-Blend-Mode | Effect |
 |-------|----------------|--------|
-| `cmsm-cursor-blend-soft` | exclusion | Subtle inversion |
-| `cmsm-cursor-blend-medium` | difference | Standard inversion |
-| `cmsm-cursor-blend-strong` | difference + contrast(1.5) | High contrast |
+| `cmsmasters-cursor-blend-soft` | exclusion | Subtle inversion |
+| `cmsmasters-cursor-blend-medium` | difference | Standard inversion |
+| `cmsmasters-cursor-blend-strong` | difference + contrast(1.5) | High contrast |
 
 | Source | Location | Condition |
 |--------|----------|-----------|
@@ -192,28 +192,28 @@ if ( $blend_mode ) {
         $blend_mode = 'medium';  // Legacy support
     }
     if ( in_array( $blend_mode, array( 'soft', 'medium', 'strong' ), true ) ) {
-        $classes[] = 'cmsm-cursor-blend';
-        $classes[] = 'cmsm-cursor-blend-' . $blend_mode;
+        $classes[] = 'cmsmasters-cursor-blend';
+        $classes[] = 'cmsmasters-cursor-blend-' . $blend_mode;
     }
 }
 ```
 
 **CSS Effect:**
 ```css
-body.cmsm-cursor-blend-soft,
-body.cmsm-cursor-blend-medium,
-body.cmsm-cursor-blend-strong {
+body.cmsmasters-cursor-blend-soft,
+body.cmsmasters-cursor-blend-medium,
+body.cmsmasters-cursor-blend-strong {
     isolation: isolate;
 }
 
-body.cmsm-cursor-blend-medium #cmsm-cursor-container {
+body.cmsmasters-cursor-blend-medium #cmsmasters-cursor-container {
     mix-blend-mode: difference;
 }
 ```
 
 ---
 
-### cmsm-cursor-wobble
+### cmsmasters-cursor-wobble
 
 Enables directional stretch effect based on cursor velocity.
 
@@ -224,7 +224,7 @@ Enables directional stretch effect based on cursor velocity.
 ```php
 $wobble = get_option( 'elementor_custom_cursor_wobble', '' );
 if ( 'yes' === $wobble ) {
-    $classes[] = 'cmsm-cursor-wobble';
+    $classes[] = 'cmsmasters-cursor-wobble';
 }
 ```
 
@@ -238,7 +238,7 @@ These classes are added/removed by JavaScript during user interaction.
 
 **v5.6 Note:** All runtime class changes now go through `CursorState.transition()` instead of direct `classList` manipulation. The line numbers below refer to where the transition is triggered, not direct classList calls.
 
-### cmsm-cursor-hover
+### cmsmasters-cursor-hover
 
 Added when hovering over interactive elements.
 
@@ -263,19 +263,19 @@ CursorState.transition({ hover: true }, 'mouseover');
 
 **CSS Effect:**
 ```css
-body.cmsm-cursor-hover .cmsm-cursor-ring {
+body.cmsmasters-cursor-hover .cmsmasters-cursor-ring {
     width: 60px;
     height: 60px;
     margin-left: -30px;
     margin-top: -30px;
     opacity: 0.5;
-    background-color: color-mix(in srgb, var(--cmsm-cursor-color) 10%, transparent);
+    background-color: color-mix(in srgb, var(--cmsmasters-cursor-color) 10%, transparent);
 }
 ```
 
 ---
 
-### cmsm-cursor-down
+### cmsmasters-cursor-down
 
 Added during mouse button press.
 
@@ -293,22 +293,22 @@ CursorState.transition({ down: false }, 'mouseup');
 
 **CSS Effect:**
 ```css
-body.cmsm-cursor-down .cmsm-cursor-ring {
+body.cmsmasters-cursor-down .cmsmasters-cursor-ring {
     width: 30px;
     height: 30px;
     margin-left: -15px;
     margin-top: -15px;
-    background-color: color-mix(in srgb, var(--cmsm-cursor-color) 90%, transparent);
+    background-color: color-mix(in srgb, var(--cmsmasters-cursor-color) 90%, transparent);
 }
 
-body.cmsm-cursor-down .cmsm-cursor-dot {
+body.cmsmasters-cursor-down .cmsmasters-cursor-dot {
     opacity: 0.5;
 }
 ```
 
 ---
 
-### cmsm-cursor-text
+### cmsmasters-cursor-text
 
 Added when hovering elements with `data-cursor="text"`.
 
@@ -325,25 +325,25 @@ if (type === 'text') {
 
 **CSS Effect:**
 ```css
-body.cmsm-cursor-text .cmsm-cursor-ring {
+body.cmsmasters-cursor-text .cmsmasters-cursor-ring {
     width: 4px;
     height: 24px;
     border-radius: 2px;
     margin-left: -2px;
     margin-top: -12px;
-    background-color: var(--cmsm-cursor-color);
+    background-color: var(--cmsmasters-cursor-color);
     border: none;
     opacity: 1;
 }
 
-body.cmsm-cursor-text .cmsm-cursor-dot {
+body.cmsmasters-cursor-text .cmsmasters-cursor-dot {
     opacity: 0;
 }
 ```
 
 ---
 
-### cmsm-cursor-hidden
+### cmsmasters-cursor-hidden
 
 Hides the custom cursor and shows system cursor.
 
@@ -380,29 +380,29 @@ CursorState.transition({ hidden: true }, 'mouseleave');
 
 **CSS Effect:**
 ```css
-body.cmsm-cursor-hidden .cmsm-cursor {
+body.cmsmasters-cursor-hidden .cmsmasters-cursor {
     opacity: 0 !important;
 }
 
 /* System cursor fallback (added Feb 2026) */
-body.cmsm-cursor-hidden,
-body.cmsm-cursor-hidden * {
+body.cmsmasters-cursor-hidden,
+body.cmsmasters-cursor-hidden * {
     cursor: default !important;
 }
 ```
 
-**CSS Fallback:** The `cursor:default!important` rule ensures system cursor is visible when custom cursor hides. Specificity (0,1,2) beats `.cmsm-cursor-enabled *` (0,1,1). This works in BOTH dual and solo modes, fixing the previous issue where solo mode users had no visible cursor in form zones.
+**CSS Fallback:** The `cursor:default!important` rule ensures system cursor is visible when custom cursor hides. Specificity (0,1,2) beats `.cmsmasters-cursor-enabled *` (0,1,1). This works in BOTH dual and solo modes, fixing the previous issue where solo mode users had no visible cursor in form zones.
 
 ---
 
-### cmsm-cursor-on-light / cmsm-cursor-on-dark
+### cmsmasters-cursor-on-light / cmsmasters-cursor-on-dark
 
 Added by adaptive mode based on background luminance.
 
 | Class | Condition |
 |-------|-----------|
-| `cmsm-cursor-on-light` | Background luminance > 0.5 |
-| `cmsm-cursor-on-dark` | Background luminance <= 0.5 |
+| `cmsmasters-cursor-on-light` | Background luminance > 0.5 |
+| `cmsmasters-cursor-on-dark` | Background luminance <= 0.5 |
 
 | Added | Removed |
 |-------|---------|
@@ -418,27 +418,27 @@ CursorState.transition({ mode: 'on-dark' }, 'detectCursorMode');
 
 **CSS Effect:**
 ```css
-body.cmsm-cursor-on-dark {
-    --cmsm-cursor-color: var(--cmsm-cursor-color-light) !important;
+body.cmsmasters-cursor-on-dark {
+    --cmsmasters-cursor-color: var(--cmsmasters-cursor-color-light) !important;
 }
 
-body.cmsm-cursor-on-light {
-    --cmsm-cursor-color: var(--cmsm-cursor-color-dark) !important;
+body.cmsmasters-cursor-on-light {
+    --cmsmasters-cursor-color: var(--cmsmasters-cursor-color-dark) !important;
 }
 ```
 
 ---
 
-### cmsm-cursor-size-{size}
+### cmsmasters-cursor-size-{size}
 
 Size modifier classes for cursor ring.
 
 | Class | Ring Size |
 |-------|-----------|
-| `cmsm-cursor-size-sm` | 20px |
-| `cmsm-cursor-size-lg` | 80px |
+| `cmsmasters-cursor-size-sm` | 20px |
+| `cmsmasters-cursor-size-lg` | 80px |
 
-**Note:** `cmsm-cursor-size-md` is tracked in JS but not defined in CSS (uses default 40px).
+**Note:** `cmsmasters-cursor-size-md` is tracked in JS but not defined in CSS (uses default 40px).
 
 | Added | Removed |
 |-------|---------|
@@ -452,14 +452,14 @@ if (size) CursorState.transition({ size: size }, 'mouseover');
 
 **CSS Effect:**
 ```css
-body.cmsm-cursor-size-sm .cmsm-cursor-ring {
+body.cmsmasters-cursor-size-sm .cmsmasters-cursor-ring {
     width: 20px;
     height: 20px;
     margin-left: -10px;
     margin-top: -10px;
 }
 
-body.cmsm-cursor-size-lg .cmsm-cursor-ring {
+body.cmsmasters-cursor-size-lg .cmsmasters-cursor-ring {
     width: 80px;
     height: 80px;
     margin-left: -40px;
@@ -473,68 +473,68 @@ body.cmsm-cursor-size-lg .cmsm-cursor-ring {
 
 These classes are added to special cursor elements (image/text/icon), not body.
 
-### cmsm-cursor-image-{effect}
+### cmsmasters-cursor-image-{effect}
 
 Effect animation class on image cursor element.
 
 | Class | Effect |
 |-------|--------|
-| `cmsm-cursor-image-wobble` | Directional stretch |
-| `cmsm-cursor-image-pulse` | Scale pulsing |
-| `cmsm-cursor-image-shake` | Random position shake |
-| `cmsm-cursor-image-buzz` | Vibration effect |
+| `cmsmasters-cursor-image-wobble` | Directional stretch |
+| `cmsmasters-cursor-image-pulse` | Scale pulsing |
+| `cmsmasters-cursor-image-shake` | Random position shake |
+| `cmsmasters-cursor-image-buzz` | Vibration effect |
 
 ```javascript
 // custom-cursor.js:855
-imageCursorEl.classList.add('cmsm-cursor-image-' + effectiveEffect);
+imageCursorEl.classList.add('cmsmasters-cursor-image-' + effectiveEffect);
 ```
 
 ---
 
-### cmsm-cursor-text-{effect}
+### cmsmasters-cursor-text-{effect}
 
 Effect animation class on text cursor element.
 
 | Class | Effect |
 |-------|--------|
-| `cmsm-cursor-text-wobble` | Directional stretch |
-| `cmsm-cursor-text-pulse` | Scale pulsing |
-| `cmsm-cursor-text-shake` | Random position shake |
-| `cmsm-cursor-text-buzz` | Vibration effect |
+| `cmsmasters-cursor-text-wobble` | Directional stretch |
+| `cmsmasters-cursor-text-pulse` | Scale pulsing |
+| `cmsmasters-cursor-text-shake` | Random position shake |
+| `cmsmasters-cursor-text-buzz` | Vibration effect |
 
 ```javascript
 // custom-cursor.js:939
-textCursorEl.classList.add('cmsm-cursor-text-' + effectiveEffect);
+textCursorEl.classList.add('cmsmasters-cursor-text-' + effectiveEffect);
 ```
 
 ---
 
-### cmsm-cursor-icon-{effect}
+### cmsmasters-cursor-icon-{effect}
 
 Effect animation class on icon cursor element.
 
 | Class | Effect |
 |-------|--------|
-| `cmsm-cursor-icon-wobble` | Directional stretch |
-| `cmsm-cursor-icon-pulse` | Scale pulsing |
-| `cmsm-cursor-icon-shake` | Random position shake |
-| `cmsm-cursor-icon-buzz` | Vibration effect |
+| `cmsmasters-cursor-icon-wobble` | Directional stretch |
+| `cmsmasters-cursor-icon-pulse` | Scale pulsing |
+| `cmsmasters-cursor-icon-shake` | Random position shake |
+| `cmsmasters-cursor-icon-buzz` | Vibration effect |
 
 ```javascript
 // custom-cursor.js:1018
-iconCursorEl.classList.add('cmsm-cursor-icon-' + effectiveEffect);
+iconCursorEl.classList.add('cmsmasters-cursor-icon-' + effectiveEffect);
 ```
 
 ---
 
-### cmsm-cursor-icon-preserve
+### cmsmasters-cursor-icon-preserve
 
 Prevents icon from resetting when hovering clickable elements inside icon zone.
 
 ```javascript
 // custom-cursor.js:472,475
-iconCursorEl.classList.remove('cmsm-cursor-icon-preserve');
-iconCursorEl.classList.add('cmsm-cursor-icon-preserve');
+iconCursorEl.classList.remove('cmsmasters-cursor-icon-preserve');
+iconCursorEl.classList.add('cmsmasters-cursor-icon-preserve');
 ```
 
 ---
@@ -545,34 +545,34 @@ iconCursorEl.classList.add('cmsm-cursor-icon-preserve');
 
 ```html
 <!-- Default enabled state (classic theme) -->
-<body class="cmsm-cursor-enabled cmsm-cursor-theme-classic">
+<body class="cmsmasters-cursor-enabled cmsmasters-cursor-theme-classic">
 
 <!-- Dot theme -->
-<body class="cmsm-cursor-enabled cmsm-cursor-theme-dot">
+<body class="cmsmasters-cursor-enabled cmsmasters-cursor-theme-dot">
 
 <!-- Classic theme with dual mode (system cursor visible) -->
-<body class="cmsm-cursor-enabled cmsm-cursor-theme-classic cmsm-cursor-dual">
+<body class="cmsmasters-cursor-enabled cmsmasters-cursor-theme-classic cmsmasters-cursor-dual">
 
 <!-- Hovering interactive element -->
-<body class="cmsm-cursor-enabled cmsm-cursor-theme-classic cmsm-cursor-hover">
+<body class="cmsmasters-cursor-enabled cmsmasters-cursor-theme-classic cmsmasters-cursor-hover">
 
 <!-- Clicking (mousedown) -->
-<body class="cmsm-cursor-enabled cmsm-cursor-theme-classic cmsm-cursor-hover cmsm-cursor-down">
+<body class="cmsmasters-cursor-enabled cmsmasters-cursor-theme-classic cmsmasters-cursor-hover cmsmasters-cursor-down">
 
 <!-- Over form element (hidden state) -->
-<body class="cmsm-cursor-enabled cmsm-cursor-theme-classic cmsm-cursor-hidden">
+<body class="cmsmasters-cursor-enabled cmsmasters-cursor-theme-classic cmsmasters-cursor-hidden">
 
 <!-- With wobble effect and blend mode -->
-<body class="cmsm-cursor-enabled cmsm-cursor-theme-dot cmsm-cursor-wobble cmsm-cursor-blend cmsm-cursor-blend-medium">
+<body class="cmsmasters-cursor-enabled cmsmasters-cursor-theme-dot cmsmasters-cursor-wobble cmsmasters-cursor-blend cmsmasters-cursor-blend-medium">
 
 <!-- Adaptive mode on light background -->
-<body class="cmsm-cursor-enabled cmsm-cursor-theme-classic cmsm-cursor-on-light">
+<body class="cmsmasters-cursor-enabled cmsmasters-cursor-theme-classic cmsmasters-cursor-on-light">
 
 <!-- Adaptive mode on dark background -->
-<body class="cmsm-cursor-enabled cmsm-cursor-theme-classic cmsm-cursor-on-dark">
+<body class="cmsmasters-cursor-enabled cmsmasters-cursor-theme-classic cmsmasters-cursor-on-dark">
 
 <!-- Hover with size modifier -->
-<body class="cmsm-cursor-enabled cmsm-cursor-theme-classic cmsm-cursor-hover cmsm-cursor-size-lg">
+<body class="cmsmasters-cursor-enabled cmsmasters-cursor-theme-classic cmsmasters-cursor-hover cmsmasters-cursor-size-lg">
 ```
 
 ---
@@ -581,41 +581,41 @@ iconCursorEl.classList.add('cmsm-cursor-icon-preserve');
 
 | Class | Source | Trigger | Purpose |
 |-------|--------|---------|---------|
-| `cmsm-cursor-enabled` | PHP | Option enabled | Enable custom cursor |
-| `cmsm-cursor-theme-classic` | PHP+JS | Option/config | Classic ring+dot style |
-| `cmsm-cursor-theme-dot` | PHP+JS | Option/config | Dot-only style |
-| `cmsm-cursor-dual` | PHP | Option | Show system cursor too |
-| `cmsm-cursor-blend` | PHP+JS | Option | Enable blend mode |
-| `cmsm-cursor-blend-soft` | PHP+JS | Option | Soft blend (exclusion) |
-| `cmsm-cursor-blend-medium` | PHP+JS | Option | Medium blend (difference) |
-| `cmsm-cursor-blend-strong` | PHP+JS | Option | Strong blend (contrast) |
-| `cmsm-cursor-wobble` | PHP | Option | Enable wobble effect |
-| `cmsm-cursor-hover` | JS | mouseover interactive | Hover state |
-| `cmsm-cursor-down` | JS | mousedown | Click/press state |
-| `cmsm-cursor-text` | JS | data-cursor="text" | Text input cursor |
-| `cmsm-cursor-hidden` | JS | form/video/iframe/hide | Hide cursor |
-| `cmsm-cursor-on-light` | JS | adaptive detection | Light background mode |
-| `cmsm-cursor-on-dark` | JS | adaptive detection | Dark background mode |
-| `cmsm-cursor-size-sm` | JS | data-cursor-size="sm" | Small ring (20px) |
-| `cmsm-cursor-size-lg` | JS | data-cursor-size="lg" | Large ring (80px) |
+| `cmsmasters-cursor-enabled` | PHP | Option enabled | Enable custom cursor |
+| `cmsmasters-cursor-theme-classic` | PHP+JS | Option/config | Classic ring+dot style |
+| `cmsmasters-cursor-theme-dot` | PHP+JS | Option/config | Dot-only style |
+| `cmsmasters-cursor-dual` | PHP | Option | Show system cursor too |
+| `cmsmasters-cursor-blend` | PHP+JS | Option | Enable blend mode |
+| `cmsmasters-cursor-blend-soft` | PHP+JS | Option | Soft blend (exclusion) |
+| `cmsmasters-cursor-blend-medium` | PHP+JS | Option | Medium blend (difference) |
+| `cmsmasters-cursor-blend-strong` | PHP+JS | Option | Strong blend (contrast) |
+| `cmsmasters-cursor-wobble` | PHP | Option | Enable wobble effect |
+| `cmsmasters-cursor-hover` | JS | mouseover interactive | Hover state |
+| `cmsmasters-cursor-down` | JS | mousedown | Click/press state |
+| `cmsmasters-cursor-text` | JS | data-cursor="text" | Text input cursor |
+| `cmsmasters-cursor-hidden` | JS | form/video/iframe/hide | Hide cursor |
+| `cmsmasters-cursor-on-light` | JS | adaptive detection | Light background mode |
+| `cmsmasters-cursor-on-dark` | JS | adaptive detection | Dark background mode |
+| `cmsmasters-cursor-size-sm` | JS | data-cursor-size="sm" | Small ring (20px) |
+| `cmsmasters-cursor-size-lg` | JS | data-cursor-size="lg" | Large ring (80px) |
 
 ### Element Classes (not on body)
 
 | Class | Element | Purpose |
 |-------|---------|---------|
-| `cmsm-cursor-image-wobble` | `.cmsm-cursor-image` | Wobble effect |
-| `cmsm-cursor-image-pulse` | `.cmsm-cursor-image` | Pulse effect |
-| `cmsm-cursor-image-shake` | `.cmsm-cursor-image` | Shake effect |
-| `cmsm-cursor-image-buzz` | `.cmsm-cursor-image` | Buzz effect |
-| `cmsm-cursor-text-wobble` | `.cmsm-cursor-text-el` | Wobble effect |
-| `cmsm-cursor-text-pulse` | `.cmsm-cursor-text-el` | Pulse effect |
-| `cmsm-cursor-text-shake` | `.cmsm-cursor-text-el` | Shake effect |
-| `cmsm-cursor-text-buzz` | `.cmsm-cursor-text-el` | Buzz effect |
-| `cmsm-cursor-icon-wobble` | `.cmsm-cursor-icon-el` | Wobble effect |
-| `cmsm-cursor-icon-pulse` | `.cmsm-cursor-icon-el` | Pulse effect |
-| `cmsm-cursor-icon-shake` | `.cmsm-cursor-icon-el` | Shake effect |
-| `cmsm-cursor-icon-buzz` | `.cmsm-cursor-icon-el` | Buzz effect |
-| `cmsm-cursor-icon-preserve` | `.cmsm-cursor-icon-el` | Preserve on hover |
+| `cmsmasters-cursor-image-wobble` | `.cmsmasters-cursor-image` | Wobble effect |
+| `cmsmasters-cursor-image-pulse` | `.cmsmasters-cursor-image` | Pulse effect |
+| `cmsmasters-cursor-image-shake` | `.cmsmasters-cursor-image` | Shake effect |
+| `cmsmasters-cursor-image-buzz` | `.cmsmasters-cursor-image` | Buzz effect |
+| `cmsmasters-cursor-text-wobble` | `.cmsmasters-cursor-text-el` | Wobble effect |
+| `cmsmasters-cursor-text-pulse` | `.cmsmasters-cursor-text-el` | Pulse effect |
+| `cmsmasters-cursor-text-shake` | `.cmsmasters-cursor-text-el` | Shake effect |
+| `cmsmasters-cursor-text-buzz` | `.cmsmasters-cursor-text-el` | Buzz effect |
+| `cmsmasters-cursor-icon-wobble` | `.cmsmasters-cursor-icon-el` | Wobble effect |
+| `cmsmasters-cursor-icon-pulse` | `.cmsmasters-cursor-icon-el` | Pulse effect |
+| `cmsmasters-cursor-icon-shake` | `.cmsmasters-cursor-icon-el` | Shake effect |
+| `cmsmasters-cursor-icon-buzz` | `.cmsmasters-cursor-icon-el` | Buzz effect |
+| `cmsmasters-cursor-icon-preserve` | `.cmsmasters-cursor-icon-el` | Preserve on hover |
 
 ---
 

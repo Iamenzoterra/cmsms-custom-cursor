@@ -116,7 +116,7 @@ Data attributes are applied to HTML elements to configure cursor behavior. They 
 <div data-cursor-image="https://example.com/cursor.png">Image cursor</div>
 ```
 
-**Creates:** `<img class="cmsm-cursor-image-el">` element
+**Creates:** `<img class="cmsmasters-cursor-image-el">` element
 
 **Set by:** `module.php:913`
 **Read by:** `custom-cursor.js:704,752,828,1798`
@@ -230,7 +230,7 @@ Data attributes are applied to HTML elements to configure cursor behavior. They 
 <div data-cursor-text="Click me">Text cursor</div>
 ```
 
-**Creates:** `<span class="cmsm-cursor-text-el">` element with inner `<span class="cmsm-cursor-inner">`
+**Creates:** `<span class="cmsmasters-cursor-text-el">` element with inner `<span class="cmsmasters-cursor-inner">`
 
 **Set by:** `module.php:947`
 **Read by:** `custom-cursor.js:705,753,892`
@@ -428,7 +428,7 @@ For SVG icons:
 <div data-cursor-icon='<img src="icon.svg" alt="" />'>
 ```
 
-**Creates:** `<span class="cmsm-cursor-icon-el">` element
+**Creates:** `<span class="cmsmasters-cursor-icon-el">` element
 
 **Set by:** `module.php:1030-1038`
 **Read by:** `custom-cursor.js:706,754,973,1807`

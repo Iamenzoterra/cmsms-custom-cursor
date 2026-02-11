@@ -4,6 +4,40 @@ Living document tracking development sessions, decisions, and iterations.
 
 ---
 
+## 2026-02-12 — PR #144 Code Review (11 пунктів, 6 фаз)
+
+**Контекст:** CMSArchitect залишив 13 коментарів на PR #144. Пункт 12 (var→const/let в main JS) відкладено, пункт 13 (модулі/Class) відхилено. Решта 11 пунктів виконано в 6 фазах.
+
+**Фаза 1 — Критичні фікси:**
+- #8: image-accordion перевірено — вже на місці, змін не потрібно
+- #11: 9 error_log() в resolve_global_typography() обгорнуто в WP_DEBUG
+
+**Фаза 2 — frontend.php cleanup:**
+- #6: Константа DEFAULT_CURSOR_COLOR = '#222222' замінила 7 магічних рядків
+- #7: var → const/let в inline IIFE скрипті
+- #10: Консолідація inline calls — 2 wp_add_inline_style → 1, 3 wp_add_inline_script → 1
+
+**Фаза 3 — Settings page:**
+- #4: Pickr 1.9.1 з jsDelivr CDN → локально assets/lib/pickr/
+- #5: ~260 рядків inline CSS/JS → assets/css/admin-settings.css + assets/js/admin-settings.js, PHP-дані через wp_localize_script
+
+**Фаза 4 — CSS коментарі:**
+- #2: 12 секційних коментарів в custom-cursor.css
+
+**Фаза 5 — Обговорення:**
+- #3: Коментар до Kit Colors fallback (дефолти Elementor Hello theme)
+
+**Фаза 6 — Глобальний rename:**
+- #1+#9: cmsm-/cmsms- → cmsmasters- (~385 замін, 8 source файлів + 7 min файлів)
+
+**Bugfix (знайдено під час Фази 6):**
+- get_css_assets_url('custom-cursor', ..., false) завантажував non-minified CSS — видалено false
+
+**Файли змінено:** frontend.php, module.php, settings-page.php, custom-cursor.css/js, editor-navigator.css, navigator-indicator.js, cursor-editor-sync.js, admin-settings.css/js
+**Файли створено:** assets/lib/pickr/pickr.min.js, assets/lib/pickr/monolith.min.css, assets/css/admin-settings.css, assets/js/admin-settings.js
+
+---
+
 ## 2026-02-11 — Default Placeholder Image for Image Cursor Type
 
 **Request:** When selecting Special Cursor → Image type, nothing renders until the user uploads an image. Icon type has default `fas fa-hand-pointer`, Text type has default `"View"`, but Image type had `'url' => ''`.

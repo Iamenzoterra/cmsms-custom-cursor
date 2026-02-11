@@ -1,6 +1,6 @@
 # Custom Cursor v5.6 - Changelog
 
-**Last Updated:** February 11, 2026
+**Last Updated:** February 12, 2026
 
 ---
 
@@ -8,9 +8,91 @@
 
 | Version | Date | Type | Summary |
 |---------|------|------|---------|
+| PR #144 | 2026-02-12 | Cleanup + Vendor | Code review: prefix rename, extract inline assets, vendor Pickr |
 | v5.6 | 2026-02-06 | Refactor + Fix | Constants, CursorState, z-index consolidation |
 | v5.5 | 2026-02-05 | Feature | P4 v2 Forms/popups + P5 Video/iframe auto-hide |
 | v5.5-SEC | 2026-02-05 | Security | SVG sanitization for XSS prevention |
+
+---
+
+## PR #144 — Code Review Cleanup (February 12, 2026)
+
+### Type: Cleanup + Vendor Localization
+
+Code review by CMSArchitect (13 comments). 11 items implemented in 6 phases, 1 deferred (var→const/let in main JS), 1 declined (ES modules/Class refactor).
+
+### Changes
+
+#### 1. Global Prefix Rename (`cmsm-`/`cmsms-` → `cmsmasters-`)
+
+Unified all CSS class prefixes, CSS custom property prefixes, and JS string references to use the full `cmsmasters-` prefix.
+
+- ~385 replacements across 8 source files + 7 minified files
+- CSS classes: `cmsm-cursor-*` → `cmsmasters-cursor-*`
+- CSS variables: `--cmsm-cursor-*` → `--cmsmasters-cursor-*`
+- DOM IDs: `#cmsm-cursor-container` → `#cmsmasters-cursor-container`
+- Body classes: `cmsm-cursor-enabled` → `cmsmasters-cursor-enabled`, etc.
+- Responsive classes: `cmsms-responsive-hidden` → `cmsmasters-responsive-hidden`
+
+#### 2. Default Cursor Color Constant
+
+Replaced 7 magic `'#222222'` strings in `frontend.php` with `DEFAULT_CURSOR_COLOR` class constant.
+
+#### 3. Inline var → const/let (IIFE script)
+
+Converted `var` to `const`/`let` in the inline IIFE script output by `frontend.php`. (Main JS file deferred to future refactor.)
+
+#### 4. Inline Asset Consolidation
+
+Reduced inline calls in `frontend.php`:
+- 2 `wp_add_inline_style()` → 1
+- 3 `wp_add_inline_script()` → 1
+
+#### 5. Settings Page — Extract Inline CSS/JS
+
+Extracted ~260 lines of inline CSS/JS from `settings-page.php` into dedicated files:
+- `assets/css/admin-settings.css`
+- `assets/js/admin-settings.js`
+- PHP data passed via `wp_localize_script()`
+
+#### 6. Vendor Pickr Locally
+
+Replaced Pickr 1.9.1 CDN (jsDelivr) with local copies:
+- `assets/lib/pickr/pickr.min.js`
+- `assets/lib/pickr/monolith.min.css`
+- Zero external CDN requests on settings page
+
+#### 7. CSS Section Comments
+
+Added 12 sectional comments to `custom-cursor.css` for code navigation.
+
+#### 8. Kit Colors Fallback Comment
+
+Added explanatory comment for Elementor Hello theme Kit Colors fallback defaults in `frontend.php`.
+
+#### 9. Debug Logging Guard
+
+Wrapped 9 `error_log()` calls in `resolve_global_typography()` with `WP_DEBUG` check.
+
+#### 10. CSS Loading Bugfix
+
+Fixed `get_css_assets_url('custom-cursor', ..., false)` loading non-minified CSS on server. Removed the `false` third parameter.
+
+### Files Changed
+
+| File | Changes |
+|------|---------|
+| `includes/frontend.php` | DEFAULT_CURSOR_COLOR constant, var→const/let in IIFE, inline consolidation, Kit Colors comment, prefix rename |
+| `modules/settings/settings-page.php` | Extracted inline CSS/JS, Pickr local loading, prefix rename |
+| `assets/lib/custom-cursor/custom-cursor.css` | Section comments, prefix rename |
+| `assets/lib/custom-cursor/custom-cursor.js` | Prefix rename |
+| `assets/js/navigator-indicator.js` | WP_DEBUG guard, prefix rename |
+| `assets/js/cursor-editor-sync.js` | Prefix rename |
+| `assets/css/editor-navigator.css` | Prefix rename |
+| `assets/css/admin-settings.css` | **New** — extracted from settings-page.php |
+| `assets/js/admin-settings.js` | **New** — extracted from settings-page.php |
+| `assets/lib/pickr/pickr.min.js` | **New** — vendored from jsDelivr |
+| `assets/lib/pickr/monolith.min.css` | **New** — vendored from jsDelivr |
 
 ---
 
@@ -30,24 +112,24 @@ Resolved long-standing z-index conflict issue by replacing hardcoded maximum int
 
 **Before:**
 ```css
-#cmsm-cursor-container {
+#cmsmasters-cursor-container {
     z-index: 2147483647; /* max-int - conflicts with browser extensions */
 }
 ```
 
 **After:**
 ```css
-#cmsm-cursor-container {
-    --cmsm-cursor-z-default: 999999;
-    --cmsm-cursor-z-blend: 9999;
-    z-index: var(--cmsm-cursor-z-default);
+#cmsmasters-cursor-container {
+    --cmsmasters-cursor-z-default: 999999;
+    --cmsmasters-cursor-z-blend: 9999;
+    z-index: var(--cmsmasters-cursor-z-default);
 }
 ```
 
 **Changes:**
 - Default z-index reduced from `2147483647` to `999999`
-- Blend mode z-index now uses `var(--cmsm-cursor-z-blend)` instead of hardcoded `9999`
-- Popup/datepicker overrides now use `var(--cmsm-cursor-z-default)` (removed `!important`)
+- Blend mode z-index now uses `var(--cmsmasters-cursor-z-blend)` instead of hardcoded `9999`
+- Popup/datepicker overrides now use `var(--cmsmasters-cursor-z-default)` (removed `!important`)
 - Users can now override z-index via CSS custom properties if conflicts occur
 
 **Why 999999?** High enough to be above normal page content, low enough to not conflict with browser extensions that use max-int.
@@ -87,13 +169,13 @@ Introduced `CursorState` object to centralize all body class manipulation.
 
 ```javascript
 CursorState._state = {
-    hover: boolean,    // cmsm-cursor-hover
-    down: boolean,     // cmsm-cursor-down
-    hidden: boolean,   // cmsm-cursor-hidden
-    text: boolean,     // cmsm-cursor-text
-    mode: string|null, // cmsm-cursor-on-light | cmsm-cursor-on-dark
-    size: string|null, // cmsm-cursor-size-sm | -md | -lg
-    blend: string|null // cmsm-cursor-blend-soft | -medium | -strong
+    hover: boolean,    // cmsmasters-cursor-hover
+    down: boolean,     // cmsmasters-cursor-down
+    hidden: boolean,   // cmsmasters-cursor-hidden
+    text: boolean,     // cmsmasters-cursor-text
+    mode: string|null, // cmsmasters-cursor-on-light | cmsmasters-cursor-on-dark
+    size: string|null, // cmsmasters-cursor-size-sm | -md | -lg
+    blend: string|null // cmsmasters-cursor-blend-soft | -medium | -strong
 }
 ```
 
@@ -123,9 +205,9 @@ All direct `classList.add/remove` calls for cursor body classes have been replac
 
 ```javascript
 // BEFORE (v5.5)
-body.classList.add('cmsm-cursor-hover');
-body.classList.remove('cmsm-cursor-on-light');
-body.classList.add('cmsm-cursor-on-dark');
+body.classList.add('cmsmasters-cursor-hover');
+body.classList.remove('cmsmasters-cursor-on-light');
+body.classList.add('cmsmasters-cursor-on-dark');
 
 // AFTER (v5.6)
 CursorState.transition({ hover: true, mode: 'on-dark' }, 'mouseover');
@@ -325,13 +407,13 @@ Enhanced P4 v2 form zone detection to fix cursor restoration issues, improve rel
 
 3. **CSS fallback added (custom-cursor.css line 181-185):**
    ```css
-   body.cmsm-cursor-hidden,
-   body.cmsm-cursor-hidden * {
+   body.cmsmasters-cursor-hidden,
+   body.cmsmasters-cursor-hidden * {
        cursor: default !important
    }
    ```
    - Ensures system cursor visible when custom cursor hides
-   - Specificity (0,1,2) beats `.cmsm-cursor-enabled *` (0,1,1)
+   - Specificity (0,1,2) beats `.cmsmasters-cursor-enabled *` (0,1,1)
    - Works in both dual and solo modes
 
 4. **CSS widget rules added (custom-cursor.css lines 60-75):**
@@ -339,7 +421,7 @@ Enhanced P4 v2 form zone detection to fix cursor restoration issues, improve rel
    - Ensures system cursor visible inside widgets even if parent has `cursor:none`
 
 5. **Instant opacity restore in solo mode (_applyToDOM, line 486-500):**
-   - When `hidden` transitions from true→false in solo mode, forces instant opacity=1 on `.cmsm-cursor` elements
+   - When `hidden` transitions from true→false in solo mode, forces instant opacity=1 on `.cmsmasters-cursor` elements
    - Bypasses 300ms CSS transition to prevent gap where neither cursor is visible
    - Uses `style.transition='none'` + forced reflow + RAF cleanup
 
@@ -477,13 +559,13 @@ Primary detection via `window.resize` in the preview iframe. Elementor DOES resi
 - `setResponsiveHidden(hidden)` — saves cursor state, disables cursor, adds CSS classes
 - `isResponsiveHidden` + `wasEnabledBeforeResponsive` state variables
 - Panel gets `is-responsive-hidden` class → CSS `display: none !important`
-- Body gets `cmsms-responsive-hidden` class → CSS hides cursor container
+- Body gets `cmsmasters-responsive-hidden` class → CSS hides cursor container
 
 **CSS (cursor-editor-sync.js inline styles):**
 ```css
-#cmsms-cursor-panel.is-responsive-hidden { display: none !important; }
-body.cmsms-responsive-hidden #cmsm-cursor-container { display: none !important; }
-body.cmsms-responsive-hidden .cmsm-cursor { display: none !important; }
+#cmsmasters-cursor-panel.is-responsive-hidden { display: none !important; }
+body.cmsmasters-responsive-hidden #cmsmasters-cursor-container { display: none !important; }
+body.cmsmasters-responsive-hidden .cmsmasters-cursor { display: none !important; }
 ```
 
 **Why Previous v1 Approach Failed:**
@@ -554,7 +636,7 @@ Cursor preview panel (switcher) showed on Entry and Popup template types in Elem
 1. **PHP Guard (frontend.php:1164-1180):**
    - `should_enable_custom_cursor()` checks `$document->get_name()`
    - Returns `false` if name equals `cmsmasters_popup` OR ends with `_entry`
-   - No `cmsm-cursor-enabled` class → no cursor JS/CSS loaded
+   - No `cmsmasters-cursor-enabled` class → no cursor JS/CSS loaded
 
 2. **JS Early Guard (cursor-editor-sync.js:13-21):**
    - Checks `data-elementor-type` attribute on document element (from `elementor-preview` URL param)
@@ -698,4 +780,4 @@ CSS transitions cause animation from old value to new value. While ring opacity 
 
 ---
 
-*Last Updated: February 11, 2026 | Version: 5.6*
+*Last Updated: February 12, 2026 | Version: 5.6*

@@ -19,40 +19,40 @@
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `--cmsm-cursor-color` | #222 | Main cursor color |
-| `--cmsm-cursor-color-light` | #fff | Light mode color (adaptive) |
-| `--cmsm-cursor-color-dark` | #222 | Dark mode color (adaptive) |
-| `--cmsm-cursor-dot-size` | 8px | Dot diameter |
-| `--cmsm-cursor-dot-hover-size` | 8px | Dot hover diameter (default, theme-dot uses 20px) |
-| `--cmsm-cursor-z-default` | 999999 | Default z-index (high but not max-int) |
-| `--cmsm-cursor-z-blend` | 9999 | Z-index when blend modes active |
+| `--cmsmasters-cursor-color` | #222 | Main cursor color |
+| `--cmsmasters-cursor-color-light` | #fff | Light mode color (adaptive) |
+| `--cmsmasters-cursor-color-dark` | #222 | Dark mode color (adaptive) |
+| `--cmsmasters-cursor-dot-size` | 8px | Dot diameter |
+| `--cmsmasters-cursor-dot-hover-size` | 8px | Dot hover diameter (default, theme-dot uses 20px) |
+| `--cmsmasters-cursor-z-default` | 999999 | Default z-index (high but not max-int) |
+| `--cmsmasters-cursor-z-blend` | 9999 | Z-index when blend modes active |
 
 ### Editor Navigator Variables (editor-navigator.css)
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `--cmsm-indicator-core` | #b07cc5 | Purple indicator (dark mode) |
-| `--cmsm-indicator-special` | #5dade2 | Blue indicator (dark mode) |
-| `--cmsm-indicator-hidden` | #a0adb5 | Gray indicator (dark mode) |
-| `--cmsm-indicator-show` | #4caf50 | Green indicator (dark mode) |
-| `--cmsm-legend-border` | rgba(255, 255, 255, 0.1) | Legend border color |
+| `--cmsmasters-indicator-core` | #b07cc5 | Purple indicator (dark mode) |
+| `--cmsmasters-indicator-special` | #5dade2 | Blue indicator (dark mode) |
+| `--cmsmasters-indicator-hidden` | #a0adb5 | Gray indicator (dark mode) |
+| `--cmsmasters-indicator-show` | #4caf50 | Green indicator (dark mode) |
+| `--cmsmasters-legend-border` | rgba(255, 255, 255, 0.1) | Legend border color |
 
 ### Usage
 
 ```css
 /* Variables set in :root by PHP */
 :root {
-    --cmsm-cursor-color: #222;
-    --cmsm-cursor-color-light: #fff;
-    --cmsm-cursor-color-dark: #222;
-    --cmsm-cursor-dot-size: 8px;
-    --cmsm-cursor-dot-hover-size: 8px;
+    --cmsmasters-cursor-color: #222;
+    --cmsmasters-cursor-color-light: #fff;
+    --cmsmasters-cursor-color-dark: #222;
+    --cmsmasters-cursor-dot-size: 8px;
+    --cmsmasters-cursor-dot-hover-size: 8px;
 }
 
 /* Override in custom CSS */
 :root {
-    --cmsm-cursor-color: #ff0000;
-    --cmsm-cursor-dot-size: 10px;
+    --cmsmasters-cursor-color: #ff0000;
+    --cmsmasters-cursor-dot-size: 10px;
 }
 ```
 
@@ -60,44 +60,44 @@
 
 ## Container Classes
 
-### #cmsm-cursor-container
+### #cmsmasters-cursor-container
 
 Main container element. Z-index uses CSS custom properties for easy override.
 
 ```css
-#cmsm-cursor-container {
-    --cmsm-cursor-z-default: 999999;
-    --cmsm-cursor-z-blend: 9999;
-    z-index: var(--cmsm-cursor-z-default);
+#cmsmasters-cursor-container {
+    --cmsmasters-cursor-z-default: 999999;
+    --cmsmasters-cursor-z-blend: 9999;
+    z-index: var(--cmsmasters-cursor-z-default);
 }
 ```
 
 **Note:** When blend modes are active, z-index drops to blend value:
 
 ```css
-body.cmsm-cursor-blend-soft #cmsm-cursor-container,
-body.cmsm-cursor-blend-medium #cmsm-cursor-container,
-body.cmsm-cursor-blend-strong #cmsm-cursor-container {
-    z-index: var(--cmsm-cursor-z-blend);
+body.cmsmasters-cursor-blend-soft #cmsmasters-cursor-container,
+body.cmsmasters-cursor-blend-medium #cmsmasters-cursor-container,
+body.cmsmasters-cursor-blend-strong #cmsmasters-cursor-container {
+    z-index: var(--cmsmasters-cursor-z-blend);
 }
 ```
 
 **User Override:** If z-index conflicts occur with other UI elements, users can lower the value:
 
 ```css
-#cmsm-cursor-container {
-    --cmsm-cursor-z-default: 99999; /* lower if conflicts */
+#cmsmasters-cursor-container {
+    --cmsmasters-cursor-z-default: 99999; /* lower if conflicts */
 }
 ```
 
 ---
 
-### .cmsm-cursor
+### .cmsmasters-cursor
 
 Cursor wrapper. Positioned fixed with off-screen initial transform.
 
 ```css
-.cmsm-cursor {
+.cmsmasters-cursor {
     position: fixed;
     top: 0;
     left: 0;
@@ -108,25 +108,25 @@ Cursor wrapper. Positioned fixed with off-screen initial transform.
     transform: translate3d(-200px, -200px, 0);
 }
 
-.cmsm-cursor-enabled .cmsm-cursor {
+.cmsmasters-cursor-enabled .cmsmasters-cursor {
     opacity: 1;
 }
 ```
 
 ---
 
-### .cmsm-cursor-dot
+### .cmsmasters-cursor-dot
 
 Center dot element. Uses CSS variables for sizing.
 
 ```css
-.cmsm-cursor-dot {
-    width: var(--cmsm-cursor-dot-size);
-    height: var(--cmsm-cursor-dot-size);
-    background: var(--cmsm-cursor-color);
+.cmsmasters-cursor-dot {
+    width: var(--cmsmasters-cursor-dot-size);
+    height: var(--cmsmasters-cursor-dot-size);
+    background: var(--cmsmasters-cursor-color);
     border-radius: 50%;
-    margin-left: calc(var(--cmsm-cursor-dot-size) / -2);
-    margin-top: calc(var(--cmsm-cursor-dot-size) / -2);
+    margin-left: calc(var(--cmsmasters-cursor-dot-size) / -2);
+    margin-top: calc(var(--cmsmasters-cursor-dot-size) / -2);
     transition: background-color 0.15s ease-out,
                 width 0.2s cubic-bezier(0.25, 1, 0.5, 1),
                 height 0.2s cubic-bezier(0.25, 1, 0.5, 1),
@@ -136,15 +136,15 @@ Center dot element. Uses CSS variables for sizing.
 
 ---
 
-### .cmsm-cursor-ring
+### .cmsmasters-cursor-ring
 
 Outer ring element. **Hardcoded sizes** (not CSS variables).
 
 ```css
-.cmsm-cursor-ring {
+.cmsmasters-cursor-ring {
     width: 40px;                    /* Default size - hardcoded */
     height: 40px;
-    border: 2px solid var(--cmsm-cursor-color);
+    border: 2px solid var(--cmsmasters-cursor-color);
     border-radius: 50%;
     margin-left: -20px;
     margin-top: -20px;
@@ -176,15 +176,15 @@ Outer ring element. **Hardcoded sizes** (not CSS variables).
 
 | Class | Purpose |
 |-------|---------|
-| `cmsm-cursor-enabled` | Enables cursor system, hides native cursor |
+| `cmsmasters-cursor-enabled` | Enables cursor system, hides native cursor |
 
 ```css
-.cmsm-cursor-enabled,
-.cmsm-cursor-enabled * {
+.cmsmasters-cursor-enabled,
+.cmsmasters-cursor-enabled * {
     cursor: none !important;
 }
 
-.cmsm-cursor-enabled .cmsm-cursor {
+.cmsmasters-cursor-enabled .cmsmasters-cursor {
     opacity: 1;
 }
 ```
@@ -195,11 +195,11 @@ Outer ring element. **Hardcoded sizes** (not CSS variables).
 
 | Class | Purpose |
 |-------|---------|
-| `cmsm-cursor-dual` | Shows native cursor alongside custom cursor |
+| `cmsmasters-cursor-dual` | Shows native cursor alongside custom cursor |
 
 ```css
-.cmsm-cursor-enabled.cmsm-cursor-dual,
-.cmsm-cursor-enabled.cmsm-cursor-dual * {
+.cmsmasters-cursor-enabled.cmsmasters-cursor-dual,
+.cmsmasters-cursor-enabled.cmsmasters-cursor-dual * {
     cursor: default !important;
 }
 ```
@@ -210,23 +210,23 @@ Outer ring element. **Hardcoded sizes** (not CSS variables).
 
 | Class | Effect |
 |-------|--------|
-| `cmsm-cursor-theme-dot` | Dot only (ring hidden), larger hover effect |
+| `cmsmasters-cursor-theme-dot` | Dot only (ring hidden), larger hover effect |
 
 ```css
-body.cmsm-cursor-theme-dot {
-    --cmsm-cursor-dot-size: 10px;
-    --cmsm-cursor-dot-hover-size: 20px;
+body.cmsmasters-cursor-theme-dot {
+    --cmsmasters-cursor-dot-size: 10px;
+    --cmsmasters-cursor-dot-hover-size: 20px;
 }
 
-body.cmsm-cursor-theme-dot .cmsm-cursor-ring {
+body.cmsmasters-cursor-theme-dot .cmsmasters-cursor-ring {
     display: none !important;
 }
 
-body.cmsm-cursor-theme-dot.cmsm-cursor-hover .cmsm-cursor-dot {
-    width: var(--cmsm-cursor-dot-hover-size);
-    height: var(--cmsm-cursor-dot-hover-size);
-    margin-left: calc(var(--cmsm-cursor-dot-hover-size) / -2);
-    margin-top: calc(var(--cmsm-cursor-dot-hover-size) / -2);
+body.cmsmasters-cursor-theme-dot.cmsmasters-cursor-hover .cmsmasters-cursor-dot {
+    width: var(--cmsmasters-cursor-dot-hover-size);
+    height: var(--cmsmasters-cursor-dot-hover-size);
+    margin-left: calc(var(--cmsmasters-cursor-dot-hover-size) / -2);
+    margin-top: calc(var(--cmsmasters-cursor-dot-hover-size) / -2);
 }
 ```
 
@@ -236,60 +236,60 @@ body.cmsm-cursor-theme-dot.cmsm-cursor-hover .cmsm-cursor-dot {
 
 | Class | Trigger | Effect |
 |-------|---------|--------|
-| `cmsm-cursor-hover` | mouseover link/button | Ring expands to 60px, 50% opacity, 10% fill |
-| `cmsm-cursor-down` | mousedown | Ring shrinks to 30px, 90% fill |
-| `cmsm-cursor-text` | hover text input | I-beam style (4x24px bar) |
-| `cmsm-cursor-hidden` | forms/video/leave | Hide cursor |
+| `cmsmasters-cursor-hover` | mouseover link/button | Ring expands to 60px, 50% opacity, 10% fill |
+| `cmsmasters-cursor-down` | mousedown | Ring shrinks to 30px, 90% fill |
+| `cmsmasters-cursor-text` | hover text input | I-beam style (4x24px bar) |
+| `cmsmasters-cursor-hidden` | forms/video/leave | Hide cursor |
 
 ```css
-body.cmsm-cursor-hover .cmsm-cursor-ring {
+body.cmsmasters-cursor-hover .cmsmasters-cursor-ring {
     width: 60px;
     height: 60px;
     margin-left: -30px;
     margin-top: -30px;
     opacity: 0.5;
-    background-color: color-mix(in srgb, var(--cmsm-cursor-color) 10%, transparent);
+    background-color: color-mix(in srgb, var(--cmsmasters-cursor-color) 10%, transparent);
 }
 
-body.cmsm-cursor-down .cmsm-cursor-ring {
+body.cmsmasters-cursor-down .cmsmasters-cursor-ring {
     width: 30px;
     height: 30px;
     margin-left: -15px;
     margin-top: -15px;
-    background-color: color-mix(in srgb, var(--cmsm-cursor-color) 90%, transparent);
+    background-color: color-mix(in srgb, var(--cmsmasters-cursor-color) 90%, transparent);
 }
 
-body.cmsm-cursor-down .cmsm-cursor-dot {
+body.cmsmasters-cursor-down .cmsmasters-cursor-dot {
     opacity: 0.5;
 }
 
-body.cmsm-cursor-text .cmsm-cursor-ring {
+body.cmsmasters-cursor-text .cmsmasters-cursor-ring {
     width: 4px;
     height: 24px;
     border-radius: 2px;
     margin-left: -2px;
     margin-top: -12px;
-    background-color: var(--cmsm-cursor-color);
+    background-color: var(--cmsmasters-cursor-color);
     border: none;
     opacity: 1;
 }
 
-body.cmsm-cursor-text .cmsm-cursor-dot {
+body.cmsmasters-cursor-text .cmsmasters-cursor-dot {
     opacity: 0;
 }
 
-body.cmsm-cursor-hidden .cmsm-cursor {
+body.cmsmasters-cursor-hidden .cmsmasters-cursor {
     opacity: 0 !important;
 }
 
 /* System cursor fallback when custom cursor hides (form zones, video/iframe) */
-body.cmsm-cursor-hidden,
-body.cmsm-cursor-hidden * {
+body.cmsmasters-cursor-hidden,
+body.cmsmasters-cursor-hidden * {
     cursor: default !important;
 }
 ```
 
-**Note:** The CSS fallback `body.cmsm-cursor-hidden { cursor:default!important }` has specificity (0,1,2) which beats `.cmsm-cursor-enabled *` (0,1,1), ensuring system cursor is visible when custom cursor hides in both dual and solo modes. Added in February 2026 to fix UX-003 graceful degradation.
+**Note:** The CSS fallback `body.cmsmasters-cursor-hidden { cursor:default!important }` has specificity (0,1,2) which beats `.cmsmasters-cursor-enabled *` (0,1,1), ensuring system cursor is visible when custom cursor hides in both dual and solo modes. Added in February 2026 to fix UX-003 graceful degradation.
 
 ---
 
@@ -297,18 +297,18 @@ body.cmsm-cursor-hidden * {
 
 | Class | Ring Size |
 |-------|-----------|
-| `cmsm-cursor-size-sm` | 20px |
-| `cmsm-cursor-size-lg` | 80px |
+| `cmsmasters-cursor-size-sm` | 20px |
+| `cmsmasters-cursor-size-lg` | 80px |
 
 ```css
-body.cmsm-cursor-size-sm .cmsm-cursor-ring {
+body.cmsmasters-cursor-size-sm .cmsmasters-cursor-ring {
     width: 20px;
     height: 20px;
     margin-left: -10px;
     margin-top: -10px;
 }
 
-body.cmsm-cursor-size-lg .cmsm-cursor-ring {
+body.cmsmasters-cursor-size-lg .cmsmasters-cursor-ring {
     width: 80px;
     height: 80px;
     margin-left: -40px;
@@ -322,16 +322,16 @@ body.cmsm-cursor-size-lg .cmsm-cursor-ring {
 
 | Class | Effect |
 |-------|--------|
-| `cmsm-cursor-on-light` | Uses dark cursor color |
-| `cmsm-cursor-on-dark` | Uses light cursor color |
+| `cmsmasters-cursor-on-light` | Uses dark cursor color |
+| `cmsmasters-cursor-on-dark` | Uses light cursor color |
 
 ```css
-body.cmsm-cursor-on-dark {
-    --cmsm-cursor-color: var(--cmsm-cursor-color-light) !important;
+body.cmsmasters-cursor-on-dark {
+    --cmsmasters-cursor-color: var(--cmsmasters-cursor-color-light) !important;
 }
 
-body.cmsm-cursor-on-light {
-    --cmsm-cursor-color: var(--cmsm-cursor-color-dark) !important;
+body.cmsmasters-cursor-on-light {
+    --cmsmasters-cursor-color: var(--cmsmasters-cursor-color-dark) !important;
 }
 ```
 
@@ -341,28 +341,28 @@ body.cmsm-cursor-on-light {
 
 | Class | Mix Blend Mode | Filter | Z-Index |
 |-------|----------------|--------|---------|
-| `cmsm-cursor-blend-soft` | exclusion | none | 9999 |
-| `cmsm-cursor-blend-medium` | difference | none | 9999 |
-| `cmsm-cursor-blend-strong` | difference | contrast(1.5) | 9999 |
+| `cmsmasters-cursor-blend-soft` | exclusion | none | 9999 |
+| `cmsmasters-cursor-blend-medium` | difference | none | 9999 |
+| `cmsmasters-cursor-blend-strong` | difference | contrast(1.5) | 9999 |
 
 ```css
-body.cmsm-cursor-blend-soft,
-body.cmsm-cursor-blend-medium,
-body.cmsm-cursor-blend-strong {
+body.cmsmasters-cursor-blend-soft,
+body.cmsmasters-cursor-blend-medium,
+body.cmsmasters-cursor-blend-strong {
     isolation: isolate;
 }
 
-body.cmsm-cursor-blend-soft #cmsm-cursor-container {
+body.cmsmasters-cursor-blend-soft #cmsmasters-cursor-container {
     z-index: 9999;
     mix-blend-mode: exclusion;
 }
 
-body.cmsm-cursor-blend-medium #cmsm-cursor-container {
+body.cmsmasters-cursor-blend-medium #cmsmasters-cursor-container {
     z-index: 9999;
     mix-blend-mode: difference;
 }
 
-body.cmsm-cursor-blend-strong #cmsm-cursor-container {
+body.cmsmasters-cursor-blend-strong #cmsmasters-cursor-container {
     z-index: 9999;
     mix-blend-mode: difference;
     filter: contrast(1.5);
@@ -377,14 +377,14 @@ body.cmsm-cursor-blend-strong #cmsm-cursor-container {
 
 | Class | Purpose |
 |-------|---------|
-| `.cmsm-cursor-image` | Image cursor element |
-| `.cmsm-cursor-image-wobble` | Wobble effect (disables transition) |
-| `.cmsm-cursor-image-pulse` | Pulse effect |
-| `.cmsm-cursor-image-shake` | Shake effect |
-| `.cmsm-cursor-image-buzz` | Buzz effect |
+| `.cmsmasters-cursor-image` | Image cursor element |
+| `.cmsmasters-cursor-image-wobble` | Wobble effect (disables transition) |
+| `.cmsmasters-cursor-image-pulse` | Pulse effect |
+| `.cmsmasters-cursor-image-shake` | Shake effect |
+| `.cmsmasters-cursor-image-buzz` | Buzz effect |
 
 ```css
-.cmsm-cursor-image {
+.cmsmasters-cursor-image {
     position: fixed;
     top: 0;
     left: 0;
@@ -403,10 +403,10 @@ body.cmsm-cursor-blend-strong #cmsm-cursor-container {
 }
 
 /* Effects disable transitions for JS animation */
-.cmsm-cursor-image.cmsm-cursor-image-wobble,
-.cmsm-cursor-image.cmsm-cursor-image-pulse,
-.cmsm-cursor-image.cmsm-cursor-image-shake,
-.cmsm-cursor-image.cmsm-cursor-image-buzz {
+.cmsmasters-cursor-image.cmsmasters-cursor-image-wobble,
+.cmsmasters-cursor-image.cmsmasters-cursor-image-pulse,
+.cmsmasters-cursor-image.cmsmasters-cursor-image-shake,
+.cmsmasters-cursor-image.cmsmasters-cursor-image-buzz {
     transition: none;
 }
 ```
@@ -417,14 +417,14 @@ body.cmsm-cursor-blend-strong #cmsm-cursor-container {
 
 | Class | Purpose |
 |-------|---------|
-| `.cmsm-cursor-text-el` | Text cursor element |
-| `.cmsm-cursor-text-wobble` | Wobble effect |
-| `.cmsm-cursor-text-pulse` | Pulse effect |
-| `.cmsm-cursor-text-shake` | Shake effect |
-| `.cmsm-cursor-text-buzz` | Buzz effect |
+| `.cmsmasters-cursor-text-el` | Text cursor element |
+| `.cmsmasters-cursor-text-wobble` | Wobble effect |
+| `.cmsmasters-cursor-text-pulse` | Pulse effect |
+| `.cmsmasters-cursor-text-shake` | Shake effect |
+| `.cmsmasters-cursor-text-buzz` | Buzz effect |
 
 ```css
-.cmsm-cursor-text-el {
+.cmsmasters-cursor-text-el {
     position: fixed;
     top: 0;
     left: 0;
@@ -442,10 +442,10 @@ body.cmsm-cursor-blend-strong #cmsm-cursor-container {
     cursor: none !important;
 }
 
-.cmsm-cursor-text-el.cmsm-cursor-text-wobble,
-.cmsm-cursor-text-el.cmsm-cursor-text-pulse,
-.cmsm-cursor-text-el.cmsm-cursor-text-shake,
-.cmsm-cursor-text-el.cmsm-cursor-text-buzz {
+.cmsmasters-cursor-text-el.cmsmasters-cursor-text-wobble,
+.cmsmasters-cursor-text-el.cmsmasters-cursor-text-pulse,
+.cmsmasters-cursor-text-el.cmsmasters-cursor-text-shake,
+.cmsmasters-cursor-text-el.cmsmasters-cursor-text-buzz {
     transition: none;
 }
 ```
@@ -456,14 +456,14 @@ body.cmsm-cursor-blend-strong #cmsm-cursor-container {
 
 | Class | Purpose |
 |-------|---------|
-| `.cmsm-cursor-icon-el` | Icon cursor element |
-| `.cmsm-cursor-icon-wobble` | Wobble effect |
-| `.cmsm-cursor-icon-pulse` | Pulse effect |
-| `.cmsm-cursor-icon-shake` | Shake effect |
-| `.cmsm-cursor-icon-buzz` | Buzz effect |
+| `.cmsmasters-cursor-icon-el` | Icon cursor element |
+| `.cmsmasters-cursor-icon-wobble` | Wobble effect |
+| `.cmsmasters-cursor-icon-pulse` | Pulse effect |
+| `.cmsmasters-cursor-icon-shake` | Shake effect |
+| `.cmsmasters-cursor-icon-buzz` | Buzz effect |
 
 ```css
-.cmsm-cursor-icon-el {
+.cmsmasters-cursor-icon-el {
     position: fixed;
     top: 0;
     left: 0;
@@ -480,15 +480,15 @@ body.cmsm-cursor-blend-strong #cmsm-cursor-container {
     transform: translate3d(-200px, -200px, 0);
 }
 
-.cmsm-cursor-icon-el i,
-.cmsm-cursor-icon-el img,
-.cmsm-cursor-icon-el svg {
+.cmsmasters-cursor-icon-el i,
+.cmsmasters-cursor-icon-el img,
+.cmsmasters-cursor-icon-el svg {
     display: block;
     width: 1em;
     height: 1em;
 }
 
-.cmsm-cursor-icon-el svg {
+.cmsmasters-cursor-icon-el svg {
     fill: currentColor;
 }
 
@@ -497,10 +497,10 @@ body.cmsm-cursor-blend-strong #cmsm-cursor-container {
     cursor: none !important;
 }
 
-.cmsm-cursor-icon-el.cmsm-cursor-icon-wobble,
-.cmsm-cursor-icon-el.cmsm-cursor-icon-pulse,
-.cmsm-cursor-icon-el.cmsm-cursor-icon-shake,
-.cmsm-cursor-icon-el.cmsm-cursor-icon-buzz {
+.cmsmasters-cursor-icon-el.cmsmasters-cursor-icon-wobble,
+.cmsmasters-cursor-icon-el.cmsmasters-cursor-icon-pulse,
+.cmsmasters-cursor-icon-el.cmsmasters-cursor-icon-shake,
+.cmsmasters-cursor-icon-el.cmsmasters-cursor-icon-buzz {
     transition: none;
 }
 ```
@@ -511,26 +511,26 @@ body.cmsm-cursor-blend-strong #cmsm-cursor-container {
 
 | Class | Purpose |
 |-------|---------|
-| `.cmsm-cursor-inner` | Inner content wrapper for special cursors |
+| `.cmsmasters-cursor-inner` | Inner content wrapper for special cursors |
 
 ```css
-.cmsm-cursor-inner {
+.cmsmasters-cursor-inner {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     will-change: transform;
 }
 
-.cmsm-cursor-image .cmsm-cursor-inner {
+.cmsmasters-cursor-image .cmsmasters-cursor-inner {
     width: 100%;
     height: 100%;
 }
 
-.cmsm-cursor-text-el .cmsm-cursor-inner {
+.cmsmasters-cursor-text-el .cmsmasters-cursor-inner {
     white-space: nowrap;
 }
 
-.cmsm-cursor-icon-el .cmsm-cursor-inner {
+.cmsmasters-cursor-icon-el .cmsmasters-cursor-inner {
     line-height: 1;
 }
 ```
@@ -641,8 +641,8 @@ Cursor completely hidden on touch devices:
 
 ```css
 @media (hover: none) and (pointer: coarse) {
-    #cmsm-cursor-container,
-    .cmsm-cursor {
+    #cmsmasters-cursor-container,
+    .cmsmasters-cursor {
         display: none !important;
     }
 }
@@ -656,14 +656,14 @@ Cursor completely hidden on touch devices:
 
 | Class | Purpose |
 |-------|---------|
-| `.cmsm-nav-cursor-indicator` | Base indicator class |
-| `.cmsm-nav-cursor-core` | Purple dot - Core settings active |
-| `.cmsm-nav-cursor-special` | Blue dot - Special cursor active |
-| `.cmsm-nav-cursor-hidden` | Gray dot - Cursor hidden on element |
-| `.cmsm-nav-cursor-show` | Green dot - Cursor shown (when globally disabled) |
+| `.cmsmasters-nav-cursor-indicator` | Base indicator class |
+| `.cmsmasters-nav-cursor-core` | Purple dot - Core settings active |
+| `.cmsmasters-nav-cursor-special` | Blue dot - Special cursor active |
+| `.cmsmasters-nav-cursor-hidden` | Gray dot - Cursor hidden on element |
+| `.cmsmasters-nav-cursor-show` | Green dot - Cursor shown (when globally disabled) |
 
 ```css
-.cmsm-nav-cursor-indicator {
+.cmsmasters-nav-cursor-indicator {
     width: 8px !important;
     height: 8px !important;
     border-radius: 50% !important;
@@ -675,25 +675,25 @@ Cursor completely hidden on touch devices:
     transition: transform 0.15s ease, opacity 0.15s ease;
 }
 
-.cmsm-nav-cursor-indicator:hover {
+.cmsmasters-nav-cursor-indicator:hover {
     transform: scale(1.4);
 }
 
 /* Indicator colors (light mode) */
-.cmsm-nav-cursor-core {
+.cmsmasters-nav-cursor-core {
     background: #9b59b6 !important;
 }
 
-.cmsm-nav-cursor-special {
+.cmsmasters-nav-cursor-special {
     background: #3498db !important;
 }
 
-.cmsm-nav-cursor-hidden {
+.cmsmasters-nav-cursor-hidden {
     background: #95a5a6 !important;
     opacity: 0.8;
 }
 
-.cmsm-nav-cursor-show {
+.cmsmasters-nav-cursor-show {
     background: #27ae60 !important;
 }
 ```
@@ -704,14 +704,14 @@ Cursor completely hidden on touch devices:
 
 | Class | Purpose |
 |-------|---------|
-| `.cmsm-nav-cursor-legend-wrapper` | Legend container (hidden by default) |
-| `.cmsm-legend-visible` | Shows legend |
-| `.cmsm-nav-cursor-legend-header` | Legend header with help link |
-| `.cmsm-nav-cursor-legend` | Legend items row |
-| `.cmsm-legend-item` | Individual legend item |
+| `.cmsmasters-nav-cursor-legend-wrapper` | Legend container (hidden by default) |
+| `.cmsmasters-legend-visible` | Shows legend |
+| `.cmsmasters-nav-cursor-legend-header` | Legend header with help link |
+| `.cmsmasters-nav-cursor-legend` | Legend items row |
+| `.cmsmasters-legend-item` | Individual legend item |
 
 ```css
-.cmsm-nav-cursor-legend-wrapper {
+.cmsmasters-nav-cursor-legend-wrapper {
     display: none;
     flex-direction: column;
     border-top: 1px solid var(--e-a-border-color-bold, rgba(255, 255, 255, 0.1));
@@ -722,11 +722,11 @@ Cursor completely hidden on touch devices:
     z-index: 10;
 }
 
-.cmsm-nav-cursor-legend-wrapper.cmsm-legend-visible {
+.cmsmasters-nav-cursor-legend-wrapper.cmsmasters-legend-visible {
     display: flex !important;
 }
 
-.cmsm-nav-cursor-legend-header {
+.cmsmasters-nav-cursor-legend-header {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -736,7 +736,7 @@ Cursor completely hidden on touch devices:
     color: var(--e-a-color-txt-muted, #888);
 }
 
-.cmsm-nav-cursor-legend {
+.cmsmasters-nav-cursor-legend {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -746,14 +746,14 @@ Cursor completely hidden on touch devices:
     color: var(--e-a-color-txt-muted, #999);
 }
 
-.cmsm-legend-item {
+.cmsmasters-legend-item {
     display: inline-flex;
     align-items: center;
     gap: 5px;
     white-space: nowrap;
 }
 
-.cmsm-legend-item .cmsm-nav-cursor-indicator {
+.cmsmasters-legend-item .cmsmasters-nav-cursor-indicator {
     margin-left: 0;
     cursor: default;
     pointer-events: none;
@@ -800,22 +800,22 @@ Dark mode colors (applied via `.elementor-editor-dark` or auto dark mode):
 
 ```css
 .elementor-editor-dark,
-.elementor-editor-auto.cmsm-dark-mode-active {
-    --cmsm-indicator-core: #b07cc5;
-    --cmsm-indicator-special: #5dade2;
-    --cmsm-indicator-hidden: #a0adb5;
-    --cmsm-indicator-show: #4caf50;
-    --cmsm-legend-border: rgba(255, 255, 255, 0.1);
+.elementor-editor-auto.cmsmasters-dark-mode-active {
+    --cmsmasters-indicator-core: #b07cc5;
+    --cmsmasters-indicator-special: #5dade2;
+    --cmsmasters-indicator-hidden: #a0adb5;
+    --cmsmasters-indicator-show: #4caf50;
+    --cmsmasters-legend-border: rgba(255, 255, 255, 0.1);
 }
 
 /* Auto dark mode via media query */
 @media (prefers-color-scheme: dark) {
     .elementor-editor-auto {
-        --cmsm-indicator-core: #b07cc5;
-        --cmsm-indicator-special: #5dade2;
-        --cmsm-indicator-hidden: #a0adb5;
-        --cmsm-indicator-show: #4caf50;
-        --cmsm-legend-border: rgba(255, 255, 255, 0.1);
+        --cmsmasters-indicator-core: #b07cc5;
+        --cmsmasters-indicator-special: #5dade2;
+        --cmsmasters-indicator-hidden: #a0adb5;
+        --cmsmasters-indicator-show: #4caf50;
+        --cmsmasters-legend-border: rgba(255, 255, 255, 0.1);
     }
 }
 ```
@@ -826,9 +826,9 @@ Dark mode colors (applied via `.elementor-editor-dark` or auto dark mode):
 
 | Element | Z-Index | Condition |
 |---------|---------|-----------|
-| #cmsm-cursor-container | 999999 | Default (via `--cmsm-cursor-z-default`) |
-| #cmsm-cursor-container | 9999 | Blend modes active (via `--cmsm-cursor-z-blend`) |
-| .cmsm-nav-cursor-legend-wrapper | 10 | Navigator legend |
+| #cmsmasters-cursor-container | 999999 | Default (via `--cmsmasters-cursor-z-default`) |
+| #cmsmasters-cursor-container | 9999 | Blend modes active (via `--cmsmasters-cursor-z-blend`) |
+| .cmsmasters-nav-cursor-legend-wrapper | 10 | Navigator legend |
 | .elementor-navigator__element__indicators | 1 | Navigator indicators |
 
 **Why 999999?** High enough to be above normal page content, low enough to not conflict with browser extensions that use max-int (`2147483647`).
@@ -836,12 +836,12 @@ Dark mode colors (applied via `.elementor-editor-dark` or auto dark mode):
 **Popup/Date Picker Override:**
 
 ```css
-.air-datepicker #cmsm-cursor-container,
-.daterangepicker #cmsm-cursor-container,
-.elementor-popup-modal #cmsm-cursor-container,
-.flatpickr-calendar #cmsm-cursor-container,
-.ui-datepicker #cmsm-cursor-container {
-    z-index: var(--cmsm-cursor-z-default);
+.air-datepicker #cmsmasters-cursor-container,
+.daterangepicker #cmsmasters-cursor-container,
+.elementor-popup-modal #cmsmasters-cursor-container,
+.flatpickr-calendar #cmsmasters-cursor-container,
+.ui-datepicker #cmsmasters-cursor-container {
+    z-index: var(--cmsmasters-cursor-z-default);
 }
 ```
 
@@ -851,14 +851,14 @@ Dark mode colors (applied via `.elementor-editor-dark` or auto dark mode):
 
 | Prefix | Location | Purpose |
 |--------|----------|---------|
-| `cmsm-cursor-` | Body classes | Cursor state management |
-| `cmsm-cursor-` | Element classes | Cursor elements (.cmsm-cursor-dot, .cmsm-cursor-ring) |
-| `.cmsm-cursor-image` | Element | Image cursor element |
-| `.cmsm-cursor-text-el` | Element | Text cursor element |
-| `.cmsm-cursor-icon-el` | Element | Icon cursor element |
-| `.cmsm-cursor-inner` | Element | Inner wrapper for special cursors |
-| `.cmsm-nav-cursor-` | Editor | Navigator indicator classes |
-| `.cmsm-legend-` | Editor | Legend-related classes |
+| `cmsmasters-cursor-` | Body classes | Cursor state management |
+| `cmsmasters-cursor-` | Element classes | Cursor elements (.cmsmasters-cursor-dot, .cmsmasters-cursor-ring) |
+| `.cmsmasters-cursor-image` | Element | Image cursor element |
+| `.cmsmasters-cursor-text-el` | Element | Text cursor element |
+| `.cmsmasters-cursor-icon-el` | Element | Icon cursor element |
+| `.cmsmasters-cursor-inner` | Element | Inner wrapper for special cursors |
+| `.cmsmasters-nav-cursor-` | Editor | Navigator indicator classes |
+| `.cmsmasters-legend-` | Editor | Legend-related classes |
 
 ---
 
@@ -870,8 +870,8 @@ Dark mode colors (applied via `.elementor-editor-dark` or auto dark mode):
 // frontend.php outputs:
 <style>
 :root {
-    --cmsm-cursor-color: <?php echo $color; ?>;
-    --cmsm-cursor-dot-size: <?php echo $dot_size; ?>px;
+    --cmsmasters-cursor-color: <?php echo $color; ?>;
+    --cmsmasters-cursor-dot-size: <?php echo $dot_size; ?>px;
 }
 </style>
 ```
@@ -881,20 +881,20 @@ Dark mode colors (applied via `.elementor-editor-dark` or auto dark mode):
 ```css
 /* In theme CSS */
 :root {
-    --cmsm-cursor-color: #3366ff;
-    --cmsm-cursor-dot-size: 12px;
+    --cmsmasters-cursor-color: #3366ff;
+    --cmsmasters-cursor-dot-size: 12px;
 }
 
 /* Per-page override */
 .page-id-123 {
-    --cmsm-cursor-color: #ff0000;
+    --cmsmasters-cursor-color: #ff0000;
 }
 ```
 
 ### Override Inline
 
 ```html
-<div style="--cmsm-cursor-color: #00ff00;">
+<div style="--cmsmasters-cursor-color: #00ff00;">
     <!-- Elements inside use green cursor -->
 </div>
 ```
@@ -907,28 +907,28 @@ Dark mode colors (applied via `.elementor-editor-dark` or auto dark mode):
 
 ```css
 /* Enabled + Classic theme (default) */
-body.cmsm-cursor-enabled
+body.cmsmasters-cursor-enabled
 
 /* Enabled + Dot theme */
-body.cmsm-cursor-enabled.cmsm-cursor-theme-dot
+body.cmsmasters-cursor-enabled.cmsmasters-cursor-theme-dot
 
 /* Enabled + Hover state */
-body.cmsm-cursor-enabled.cmsm-cursor-hover
+body.cmsmasters-cursor-enabled.cmsmasters-cursor-hover
 
 /* Enabled + Blend mode */
-body.cmsm-cursor-enabled.cmsm-cursor-blend-medium
+body.cmsmasters-cursor-enabled.cmsmasters-cursor-blend-medium
 
 /* Enabled + Dual mode (native cursor visible) */
-body.cmsm-cursor-enabled.cmsm-cursor-dual
+body.cmsmasters-cursor-enabled.cmsmasters-cursor-dual
 
 /* Dot theme + Hover (larger dot) */
-body.cmsm-cursor-enabled.cmsm-cursor-theme-dot.cmsm-cursor-hover
+body.cmsmasters-cursor-enabled.cmsmasters-cursor-theme-dot.cmsmasters-cursor-hover
 
 /* Adaptive dark background */
-body.cmsm-cursor-enabled.cmsm-cursor-on-dark
+body.cmsmasters-cursor-enabled.cmsmasters-cursor-on-dark
 
 /* Hidden state */
-body.cmsm-cursor-enabled.cmsm-cursor-hidden
+body.cmsmasters-cursor-enabled.cmsmasters-cursor-hidden
 ```
 
 ---
