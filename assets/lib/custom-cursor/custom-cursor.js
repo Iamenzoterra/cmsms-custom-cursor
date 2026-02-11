@@ -1168,6 +1168,9 @@
     function showDefaultCursor() {
         dot.style.opacity = '';
         dot.style.transform = dot.style.transform.replace(/ scale\([^)]+\)/, '') || dot.style.transform;
+        // Snap ring position to mouse to prevent trail/ghost on reappear
+        rx = mx;
+        ry = my;
         ring.style.opacity = '';
     }
 
