@@ -1500,6 +1500,11 @@
             CursorState.transition({ hidden: true }, 'detectCursorMode:forms');
             return;
         } else if (formZoneActive) {
+            // Native <select> dropdowns block elementsFromPoint — don't restore
+            // while a select has focus (dropdown may still be open)
+            if (document.activeElement && document.activeElement.tagName === 'SELECT') {
+                return;
+            }
             formZoneActive = false;
             CursorState.transition({ hidden: false }, 'detectCursorMode:forms-restore');
         }
@@ -2336,6 +2341,11 @@
         if (isFormZone(t)) {
             var related = e.relatedTarget;
             if (!related || !isFormZone(related)) {
+                // Native <select> dropdowns fire mouseout with null relatedTarget
+                // Don't restore while select has focus (dropdown may be open)
+                if (document.activeElement && document.activeElement.tagName === 'SELECT') {
+                    return;
+                }
                 formZoneActive = false;
                 CursorState.transition({ hidden: false }, 'mouseout:forms');
             }
