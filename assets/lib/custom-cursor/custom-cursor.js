@@ -485,6 +485,22 @@
             }
             if ('hidden' in prev) {
                 body.classList.toggle('cmsm-cursor-hidden', this._state.hidden);
+                // In solo mode, force instant opacity restore to prevent no-cursor gap
+                // (CSS transition: opacity .3s would leave 300ms with neither cursor visible)
+                if (!this._state.hidden && !body.classList.contains('cmsm-cursor-dual')) {
+                    var cursors = container ? container.querySelectorAll('.cmsm-cursor') : [];
+                    for (var i = 0; i < cursors.length; i++) {
+                        cursors[i].style.transition = 'none';
+                        cursors[i].offsetHeight;
+                        cursors[i].style.opacity = '1';
+                    }
+                    requestAnimationFrame(function() {
+                        for (var j = 0; j < cursors.length; j++) {
+                            cursors[j].style.transition = '';
+                            cursors[j].style.opacity = '';
+                        }
+                    });
+                }
             }
             if ('text' in prev) {
                 body.classList.toggle('cmsm-cursor-text', this._state.text);
@@ -902,9 +918,6 @@
     function isFormZone(el) {
         if (!el || !el.tagName) return false;
 
-        // Skip auto-hide when Dual Mode is off — no system cursor fallback
-        if (!body.classList.contains('cmsm-cursor-dual')) return false;
-
         var tag = el.tagName;
         var reason = '';
 
@@ -912,25 +925,20 @@
         if (tag === 'BUTTON') return false;
         if (tag === 'INPUT' && (el.type === 'submit' || el.type === 'button')) return false;
 
-        // Direct form elements
+        // Direct form input elements only (not containers)
         if (tag === 'SELECT' || tag === 'TEXTAREA') {
             reason = tag;
         } else if (tag === 'INPUT') {
             reason = 'INPUT[' + el.type + ']';
-        } else if (el.closest && el.closest('form')) {
-            reason = 'inside <form>';
         } else if (el.closest && (
             el.closest('[role="listbox"]') ||
             el.closest('[role="combobox"]') ||
-            el.closest('[role="menu"]') ||
-            el.closest('[role="dialog"]') ||
-            el.closest('[aria-modal="true"]') ||
             el.closest('.air-datepicker') ||
             el.closest('.flatpickr-calendar') ||
             el.closest('.daterangepicker') ||
             el.closest('.ui-datepicker')
         )) {
-            reason = 'role/datepicker';
+            reason = 'widget';
         }
 
         if (reason) {

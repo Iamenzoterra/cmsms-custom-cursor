@@ -178,6 +178,12 @@ body.cmsm-cursor-hidden .cmsm-cursor {
     opacity:0!important
 }
 
+/* System cursor fallback when custom cursor hides (form zones, video/iframe) */
+body.cmsm-cursor-hidden,
+body.cmsm-cursor-hidden * {
+    cursor:default!important
+}
+
 body.cmsm-cursor-size-sm .cmsm-cursor-ring {
     width:20px;
     height:20px;
