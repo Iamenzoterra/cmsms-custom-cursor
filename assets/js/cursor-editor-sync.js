@@ -61,7 +61,8 @@
         '#cmsms-cursor-panel {',
         '  position: fixed !important;',
         '  bottom: 20px !important;',
-        '  right: 20px !important;',
+        '  left: 50% !important;',
+        '  transform: translateX(-50%) !important;',
         '  z-index: 999999 !important;',
         '  background: #1a1a1d !important;',
         '  border-radius: 8px !important;',
@@ -438,26 +439,48 @@
             // Lock size before changing position
             panel.style.width = rect.width + 'px';
             panel.style.height = rect.height + 'px';
-            // Switch from bottom/right to top/left positioning
-            panel.style.bottom = 'auto';
-            panel.style.right = 'auto';
-            panel.style.left = panelStartX + 'px';
-            panel.style.top = panelStartY + 'px';
+            // Switch from centered to absolute top/left positioning
+            panel.style.setProperty('bottom', 'auto', 'important');
+            panel.style.setProperty('transform', 'none', 'important');
+            panel.style.setProperty('left', panelStartX + 'px', 'important');
+            panel.style.setProperty('top', panelStartY + 'px', 'important');
             e.preventDefault();
         });
 
         document.addEventListener('mousemove', function(e) {
             if (!isDragging) return;
-            panel.style.left = (panelStartX + e.clientX - dragStartX) + 'px';
-            panel.style.top = (panelStartY + e.clientY - dragStartY) + 'px';
+            var x = panelStartX + e.clientX - dragStartX;
+            var y = panelStartY + e.clientY - dragStartY;
+            panel.style.setProperty('left', x + 'px', 'important');
+            panel.style.setProperty('top', y + 'px', 'important');
         });
 
         document.addEventListener('mouseup', function() {
             if (isDragging) {
                 isDragging = false;
                 panel.classList.remove('is-dragging');
+                // Clamp panel within viewport bounds
+                clampPanelToViewport(panel);
             }
         });
+
+        // Re-clamp on viewport resize (e.g. Elementor responsive mode switch)
+        window.addEventListener('resize', function() {
+            if (panel.style.top && panel.style.top !== 'auto') {
+                clampPanelToViewport(panel);
+            }
+        });
+    }
+
+    function clampPanelToViewport(panel) {
+        var rect = panel.getBoundingClientRect();
+        var vw = window.innerWidth;
+        var vh = window.innerHeight;
+        var margin = 8;
+        var left = Math.max(margin, Math.min(rect.left, vw - rect.width - margin));
+        var top = Math.max(margin, Math.min(rect.top, vh - rect.height - margin));
+        panel.style.setProperty('left', left + 'px', 'important');
+        panel.style.setProperty('top', top + 'px', 'important');
     }
 
     function startPreloader() {
