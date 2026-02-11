@@ -10,14 +10,15 @@
     if (window.self === window.top) return;
     if (!document.body.classList.contains('cmsm-cursor-enabled')) return;
 
-    // Skip on Theme Builder templates (Entry, Popup, Archive, Header, Footer, etc.)
-    // These don't support cursor in editor preview - no panel needed
-    // IMPORTANT: Must check the MAIN document (by elementor-preview ID), not just first
-    // .elementor element — header/footer templates are also in DOM with cmsmasters_ type
+    // Skip on Entry and Popup templates - no cursor panel needed
+    // Only entries (*_entry) and popup are excluded; header/footer/archive/singular show cursor
     var _previewId = new URLSearchParams(window.location.search).get('elementor-preview');
     if (_previewId) {
         var _elRoot = document.querySelector('.elementor[data-elementor-id="' + _previewId + '"]');
-        if (_elRoot && (_elRoot.getAttribute('data-elementor-type') || '').indexOf('cmsmasters_') === 0) return;
+        if (_elRoot) {
+            var _elType = _elRoot.getAttribute('data-elementor-type') || '';
+            if (_elType === 'cmsmasters_popup' || _elType.slice(-6) === '_entry') return;
+        }
     }
 
     // === SEC-002 FIX: Origin validation for postMessage ===

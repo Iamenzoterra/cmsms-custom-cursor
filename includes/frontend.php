@@ -1161,16 +1161,22 @@ class Frontend extends Base_App {
 				return false;
 			}
 
-			// Skip cursor for Theme Builder templates (Entry, Popup, Archive, etc.)
-			// where cursor doesn't render in editor preview
+			// Skip cursor for Entry and Popup templates where cursor doesn't render in editor preview
+			// Entries: cmsmasters_entry, cmsmasters_product_entry, cmsmasters_tribe_events_entry
+			// Popup: cmsmasters_popup
+			// Other cmsmasters_ types (header, footer, archive, singular) DO support cursor
 			if ( class_exists( '\Elementor\Plugin' ) ) {
 				$preview_id = isset( $_GET['elementor-preview'] ) ? absint( $_GET['elementor-preview'] ) : 0;
 
 				if ( $preview_id ) {
 					$document = \Elementor\Plugin::$instance->documents->get( $preview_id );
 
-					if ( $document && 0 === strpos( $document->get_name(), 'cmsmasters_' ) ) {
-						return false;
+					if ( $document ) {
+						$doc_name = $document->get_name();
+
+						if ( 'cmsmasters_popup' === $doc_name || '_entry' === substr( $doc_name, -6 ) ) {
+							return false;
+						}
 					}
 				}
 			}

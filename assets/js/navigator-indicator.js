@@ -1249,28 +1249,34 @@
 
 
 	/**
-	 * Check if current document is a Theme Builder template (cmsmasters_ prefix)
-	 * Entry, Popup, Archive, Singular, Header, Footer, etc. don't support cursor in editor preview
+	 * Check if current document is an Entry or Popup template where cursor should be hidden
+	 * Only entries (*_entry) and popup are excluded; header/footer/archive/singular show cursor
+	 */
+	function isCursorExcludedTemplate(type) {
+		if (!type) return false;
+		return type === 'cmsmasters_popup' || type.slice(-6) === '_entry';
+	}
+
+	/**
+	 * Check if current document should hide cursor panel
 	 * Uses two methods: Elementor JS API + preview iframe DOM fallback
 	 */
-	function isThemeBuilderTemplate() {
+	function isHiddenTemplate() {
 		try {
 			// Method 1: Elementor current document config
 			var doc = elementor.documents.getCurrent();
-			if (doc && doc.config && (doc.config.type || '').indexOf('cmsmasters_') === 0) {
+			if (doc && doc.config && isCursorExcludedTemplate(doc.config.type)) {
 				return true;
 			}
 
 			// Method 2: Preview iframe data-elementor-type attribute (more reliable on document switch)
-			// IMPORTANT: Must find the MAIN document by elementor-preview ID, not just first match
-			// (header/footer templates are also in DOM with cmsmasters_ type)
 			var previewIframe = document.getElementById('elementor-preview-iframe');
 			if (previewIframe && previewIframe.contentDocument) {
 				var iframeUrl = previewIframe.contentWindow.location.search || '';
 				var match = iframeUrl.match(/elementor-preview=(\d+)/);
 				if (match) {
 					var root = previewIframe.contentDocument.querySelector('.elementor[data-elementor-id="' + match[1] + '"]');
-					if (root && (root.getAttribute('data-elementor-type') || '').indexOf('cmsmasters_') === 0) {
+					if (root && isCursorExcludedTemplate(root.getAttribute('data-elementor-type'))) {
 						return true;
 					}
 				}
@@ -1292,7 +1298,7 @@
 		// Wait for Navigator and document context to be fully ready
 		setTimeout(function() {
 			// Check if current document is a Theme Builder template
-			var isThemeBuilder = isThemeBuilderTemplate();
+			var isThemeBuilder = isHiddenTemplate();
 
 			// Notify preview iframe to hide/show cursor panel
 			var previewIframe = document.getElementById('elementor-preview-iframe');
@@ -1400,13 +1406,13 @@
 			notifyDeviceMode(getDeviceModeFromBody());
 		}).observe(document.body, { attributes: true, attributeFilter: ['class'] });
 
-		// Hide/show cursor panel on document switch (Entry, Popup, Archive, etc.)
+		// Hide/show cursor panel on document switch (Entry + Popup only)
 		// document:loaded fires on EVERY document change, even soft-switches without iframe reload
 		elementor.on('document:loaded', function(loadedDoc) {
 			var isThemeBuilder = false;
 			try {
-				if (loadedDoc && loadedDoc.config && (loadedDoc.config.type || '').indexOf('cmsmasters_') === 0) {
-					isThemeBuilder = true;
+				if (loadedDoc && loadedDoc.config) {
+					isThemeBuilder = isCursorExcludedTemplate(loadedDoc.config.type);
 				}
 			} catch(e) {}
 
