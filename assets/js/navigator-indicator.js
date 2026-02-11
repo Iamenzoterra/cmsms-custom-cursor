@@ -1400,6 +1400,25 @@
 			notifyDeviceMode(getDeviceModeFromBody());
 		}).observe(document.body, { attributes: true, attributeFilter: ['class'] });
 
+		// Hide/show cursor panel on document switch (Entry, Popup, Archive, etc.)
+		// document:loaded fires on EVERY document change, even soft-switches without iframe reload
+		elementor.on('document:loaded', function(loadedDoc) {
+			var isThemeBuilder = false;
+			try {
+				if (loadedDoc && loadedDoc.config && (loadedDoc.config.type || '').indexOf('cmsmasters_') === 0) {
+					isThemeBuilder = true;
+				}
+			} catch(e) {}
+
+			var previewIframe = window.document.getElementById('elementor-preview-iframe');
+			if (previewIframe && previewIframe.contentWindow) {
+				previewIframe.contentWindow.postMessage({
+					type: 'cmsmasters:cursor:template-check',
+					isThemeBuilder: isThemeBuilder
+				}, TRUSTED_ORIGIN);
+			}
+		});
+
 		// MEM-001 + MEM-002: Cleanup on preview destroyed
 		elementor.on('preview:destroyed', cleanup);
 
