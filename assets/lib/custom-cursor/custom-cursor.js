@@ -902,6 +902,9 @@
     function isFormZone(el) {
         if (!el || !el.tagName) return false;
 
+        // Skip auto-hide when Dual Mode is off — no system cursor fallback
+        if (!body.classList.contains('cmsm-cursor-dual')) return false;
+
         var tag = el.tagName;
         var reason = '';
 
@@ -919,6 +922,9 @@
         } else if (el.closest && (
             el.closest('[role="listbox"]') ||
             el.closest('[role="combobox"]') ||
+            el.closest('[role="menu"]') ||
+            el.closest('[role="dialog"]') ||
+            el.closest('[aria-modal="true"]') ||
             el.closest('.air-datepicker') ||
             el.closest('.flatpickr-calendar') ||
             el.closest('.daterangepicker') ||
