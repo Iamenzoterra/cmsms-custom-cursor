@@ -16,15 +16,18 @@ class Module extends Base_Module {
 	}
 
 	protected function init_actions() {
-		// Use _section_responsive — exists in Advanced tab on ALL structural types
-		// (section_layout is in Layout tab, which breaks Advanced tab ordering on Sections
-		//  and doesn't exist at all on Columns)
-		$structural_types = array( 'section', 'container', 'column' );
-		foreach ( $structural_types as $type ) {
+		// Containers: right after Layout section (top of Advanced tab)
+		add_action( 'elementor/element/container/section_layout/after_section_end', array( $this, 'register_controls' ) );
+
+		// Widgets: right after first Advanced section
+		add_action( 'elementor/element/common/_section_style/after_section_end', array( $this, 'register_controls' ) );
+
+		// Legacy Sections & Columns: section_layout doesn't work (wrong tab / missing),
+		// fall back to _section_responsive
+		$legacy_types = array( 'section', 'column' );
+		foreach ( $legacy_types as $type ) {
 			add_action( "elementor/element/{$type}/_section_responsive/after_section_end", array( $this, 'register_controls' ) );
 		}
-		// Widgets use _section_style (Advanced tab)
-		add_action( 'elementor/element/common/_section_style/after_section_end', array( $this, 'register_controls' ) );
 	}
 
 	protected function init_filters() {
