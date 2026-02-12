@@ -938,6 +938,84 @@
 
 
 	/**
+	 * Broadcast page-level cursor settings to preview iframe.
+	 * Reads current values from document settings model and sends all 7 page cursor keys.
+	 *
+	 * @param {Object} docContainer - Elementor document container
+	 */
+	function broadcastPageCursorChange(docContainer) {
+		if (!docContainer || !docContainer.model) return;
+
+		var previewIframe = document.getElementById('elementor-preview-iframe');
+		if (!previewIframe || !previewIframe.contentWindow) return;
+
+		var settings = docContainer.model.get('settings');
+		if (!settings) return;
+		var json = settings.toJSON ? settings.toJSON() : settings.attributes;
+
+		var payload = {
+			disable:    json.cmsmasters_page_cursor_disable || '',
+			theme:      json.cmsmasters_page_cursor_theme || '',
+			color:      json.cmsmasters_page_cursor_color || '',
+			smoothness: json.cmsmasters_page_cursor_smoothness || '',
+			blend_mode: json.cmsmasters_page_cursor_blend_mode || '',
+			effect:     json.cmsmasters_page_cursor_effect || '',
+			adaptive:   json.cmsmasters_page_cursor_adaptive || ''
+		};
+
+		// Color may be a global reference — only send if hex, otherwise skip
+		if (payload.color && payload.color.charAt(0) !== '#') {
+			payload.color = '';
+		}
+
+		previewIframe.contentWindow.postMessage({
+			type: 'cmsmasters:cursor:page-settings',
+			payload: payload
+		}, TRUSTED_ORIGIN);
+
+		if (window.CMSM_DEBUG) console.log('[NavigatorIndicator] Broadcast page cursor settings:', payload);
+	}
+
+	/**
+	 * Get page-level cursor settings payload for initial sync.
+	 * Returns null if no page cursor settings are set.
+	 *
+	 * @returns {Object|null} payload with 7 page cursor keys, or null
+	 */
+	function getPageCursorPayload() {
+		try {
+			var doc = elementor.documents.getCurrent();
+			if (!doc || !doc.container || !doc.container.model) return null;
+
+			var settings = doc.container.model.get('settings');
+			if (!settings) return null;
+			var json = settings.toJSON ? settings.toJSON() : settings.attributes;
+
+			var payload = {
+				disable:    json.cmsmasters_page_cursor_disable || '',
+				theme:      json.cmsmasters_page_cursor_theme || '',
+				color:      json.cmsmasters_page_cursor_color || '',
+				smoothness: json.cmsmasters_page_cursor_smoothness || '',
+				blend_mode: json.cmsmasters_page_cursor_blend_mode || '',
+				effect:     json.cmsmasters_page_cursor_effect || '',
+				adaptive:   json.cmsmasters_page_cursor_adaptive || ''
+			};
+
+			// Color: only send hex values
+			if (payload.color && payload.color.charAt(0) !== '#') {
+				payload.color = '';
+			}
+
+			// Check if any value is non-empty
+			var hasAny = Object.keys(payload).some(function(k) { return payload[k] !== ''; });
+			return hasAny ? payload : null;
+		} catch (e) {
+			if (window.CMSM_DEBUG) console.warn('[NavigatorIndicator] getPageCursorPayload failed:', e);
+			return null;
+		}
+	}
+
+	/**
 	 * Collect all elements with cursor settings and send to preview iframe
 	 * Called when preview iframe requests initial cursor state
 	 */
@@ -1010,13 +1088,17 @@
 		}
 
 
+		// Include page-level cursor settings in initial sync
+		var pagePayload = getPageCursorPayload();
+
 		// Send all cursor settings to preview
 		previewIframe.contentWindow.postMessage({
 			type: 'cmsmasters:cursor:init',
-			elements: elements
+			elements: elements,
+			pageSettings: pagePayload
 		}, TRUSTED_ORIGIN);  // SEC-003 FIX
 
-		if (window.CMSM_DEBUG) console.log('[NavigatorIndicator] Sent initial cursor settings for', elements.length, 'elements');
+		if (window.CMSM_DEBUG) console.log('[NavigatorIndicator] Sent initial cursor settings for', elements.length, 'elements', pagePayload ? '(+ page settings)' : '');
 	}
 
 
@@ -1177,6 +1259,29 @@
 			elementor.channels.editor.on('history:redo', throttledUpdate);
 		}
 
+		// Listen to document-level (page) settings changes for page cursor controls
+		// Dedup guard: only attach once per editor session
+		if (!window.cmsmastersPageCursorListenerAttached) {
+			window.cmsmastersPageCursorListenerAttached = true;
+
+			try {
+				var doc = elementor.documents.getCurrent();
+				if (doc && doc.container && doc.container.model) {
+					doc.container.model.get('settings').on('change', function(settings) {
+						var changed = settings.changed || {};
+						var hasPageCursor = Object.keys(changed).some(function(k) {
+							return k.indexOf('cmsmasters_page_cursor') === 0;
+						});
+						if (hasPageCursor) {
+							broadcastPageCursorChange(doc.container);
+						}
+					});
+				}
+			} catch (e) {
+				if (window.CMSM_DEBUG) console.warn('[NavigatorIndicator] Document settings listener failed:', e);
+			}
+		}
+
 	}
 
 
@@ -1293,8 +1398,9 @@
 		}
 
 
-		previewIframe.contentWindow.postMessage({ type: 'cmsmasters:cursor:init', elements: elements }, TRUSTED_ORIGIN);  // SEC-003 FIX
-		if (window.CMSM_DEBUG) console.log('[NavigatorIndicator] Sent initial cursor settings for', elements.length, 'elements');
+		var pagePayload = getPageCursorPayload();
+		previewIframe.contentWindow.postMessage({ type: 'cmsmasters:cursor:init', elements: elements, pageSettings: pagePayload }, TRUSTED_ORIGIN);  // SEC-003 FIX
+		if (window.CMSM_DEBUG) console.log('[NavigatorIndicator] Sent initial cursor settings for', elements.length, 'elements', pagePayload ? '(+ page settings)' : '');
 	}
 
 

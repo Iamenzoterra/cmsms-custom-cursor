@@ -25,6 +25,33 @@ Living document tracking development sessions, decisions, and iterations.
 
 ---
 
+## 2026-02-12 — Fix Page-Level Cursor Settings (3 Issues)
+
+**Problem:** Page-level cursor settings (added earlier today) work on frontend but have three editor issues:
+1. **Disable doesn't work in editor preview** — `should_enable_custom_cursor()` returns `true` for editor preview BEFORE the page-level disable check (early return).
+2. **No real-time sync** — changing page settings requires reload. Editor sync only handles element-level settings.
+3. **Global Kit colors don't apply** — `get_settings()` returns raw global reference strings (`"globals/colors?id=primary"`) which `validate_hex_color()` rejects.
+
+**Fix 1 — frontend.php:** Added page-level disable check inside the `$in_elementor_preview` block, before `return true`. Uses `get_settings_for_display()` consistent with Fix 3.
+
+**Fix 2 — Real-time editor sync (3 files):**
+- `navigator-indicator.js`: Added `broadcastPageCursorChange()` function that reads all 7 page cursor keys from document container settings and posts to preview iframe. Added dedup-guarded document settings model listener in `initSettingsListener()`. Included page settings payload in both `sendInitialCursorSettings()` and `sendInitialCursorSettingsWithRetry()`.
+- `cursor-editor-sync.js`: Added handler for `cmsmasters:cursor:page-settings` message. New `applyPageCursorSettings()` applies changes via body classes + window props (same path as frontend — no direct DOM manipulation of dot/ring). Dual naming for window props (`cmsmastersCursor*` + `cmsmCursor*`). Also handles `pageSettings` in `cmsmasters:cursor:init` for initial sync.
+
+**Fix 3 — frontend.php:** Changed 3 `get_settings()` calls to `get_settings_for_display()`:
+- `get_page_cursor_setting()` — resolves global references for all page settings
+- `get_cursor_color()` — resolves global color for page color override
+- `should_enable_custom_cursor()` — frontend page disable check (was already changed in Fix 1 for editor path)
+
+**Key decisions:**
+1. Page settings sync uses body classes + window props (not direct dot/ring DOM) — same path as frontend, cursor RAF loop reads these each frame.
+2. Color global references skipped in real-time sync (only hex sent) — global colors require Kit resolution which lives in PHP. Frontend resolves on save+reload.
+3. Dedup guard via `window.cmsmastersPageCursorListenerAttached` — `initSettingsListener()` can be called multiple times (panel restart, hot reload).
+
+**Files modified:** `includes/frontend.php`, `assets/js/navigator-indicator.js`, `assets/js/cursor-editor-sync.js`
+
+---
+
 ## 2026-02-12 — PR #144 Code Review (11 пунктів, 6 фаз)
 
 **Контекст:** CMSArchitect залишив 13 коментарів на PR #144. Пункт 12 (var→const/let в main JS) відкладено, пункт 13 (модулі/Class) відхилено. Решта 11 пунктів виконано в 6 фазах.

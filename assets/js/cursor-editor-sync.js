@@ -312,6 +312,12 @@
             setResponsiveHidden(isTouchMode);
             return;
         }
+        if (event.data.type === 'cmsmasters:cursor:page-settings') {
+            if (event.data.payload) {
+                applyPageCursorSettings(event.data.payload);
+            }
+            return;
+        }
         if (event.data.type === 'cmsmasters:cursor:update') {
             var id = event.data.elementId, s = event.data.settings;
             if (id && s) {
@@ -328,6 +334,10 @@
                         applySettings(el.id, el.settings);
                     }
                 });
+            }
+            // Apply page-level settings if included in init payload
+            if (event.data.pageSettings) {
+                applyPageCursorSettings(event.data.pageSettings);
             }
         }
     });
@@ -727,6 +737,101 @@
         if (s.cmsmasters_cursor_icon_fit_circle === 'yes') el.setAttribute('data-cursor-icon-circle', 'yes');
         if (s.cmsmasters_cursor_effect) el.setAttribute('data-cursor-icon-effect', s.cmsmasters_cursor_effect);
         if (s.cmsmasters_cursor_special_blend) el.setAttribute('data-cursor-blend', s.cmsmasters_cursor_special_blend);
+    }
+
+    /**
+     * Apply page-level cursor settings via body classes and window properties.
+     * Uses the same paths as the frontend (body classes + window props) so
+     * the cursor's RAF loop picks up changes each frame.
+     *
+     * @param {Object} p - Payload with keys: disable, theme, color, smoothness, blend_mode, effect, adaptive
+     */
+    function applyPageCursorSettings(p) {
+        if (!p) return;
+        var body = document.body;
+
+        // --- Disable ---
+        if (p.disable === 'yes') {
+            body.classList.add('cmsmasters-cursor-disabled');
+            // Remove visual classes when disabled
+            removeClassByPrefix(body, 'cmsmasters-cursor-theme-');
+            removeClassByPrefix(body, 'cmsmasters-cursor-blend');
+            body.classList.remove('cmsmasters-cursor-wobble');
+            return;
+        }
+        // Re-enable if previously disabled by page setting
+        // (only remove disabled class — the panel toggle has its own state)
+        if (p.disable === '') {
+            // Don't force-enable if the panel switch is off
+            // Just remove the page-level disable; panel state is separate
+        }
+
+        // --- Theme ---
+        if (p.theme !== undefined) {
+            removeClassByPrefix(body, 'cmsmasters-cursor-theme-');
+            if (p.theme) {
+                body.classList.add('cmsmasters-cursor-theme-' + p.theme);
+            }
+        }
+
+        // --- Color (hex only) ---
+        if (p.color && p.color.charAt(0) === '#') {
+            document.documentElement.style.setProperty('--cmsmasters-cursor-color', p.color);
+            document.documentElement.style.setProperty('--cmsmasters-cursor-color-dark', p.color);
+        }
+
+        // --- Smoothness ---
+        if (p.smoothness !== undefined) {
+            window.cmsmastersCursorSmooth = p.smoothness || undefined;
+            window.cmsmCursorSmooth = p.smoothness || undefined;
+        }
+
+        // --- Blend mode ---
+        if (p.blend_mode !== undefined) {
+            removeClassByPrefix(body, 'cmsmasters-cursor-blend');
+            if (p.blend_mode) {
+                var bm = p.blend_mode;
+                if (bm === 'yes') bm = 'medium'; // legacy
+                if (['soft', 'medium', 'strong'].indexOf(bm) !== -1) {
+                    body.classList.add('cmsmasters-cursor-blend');
+                    body.classList.add('cmsmasters-cursor-blend-' + bm);
+                }
+            }
+        }
+
+        // --- Effect ---
+        if (p.effect !== undefined) {
+            body.classList.remove('cmsmasters-cursor-wobble');
+            if (p.effect === 'wobble') {
+                body.classList.add('cmsmasters-cursor-wobble');
+            }
+            // Non-wobble effects (pulse, shake, buzz) are handled via window prop
+            var eff = (p.effect && p.effect !== 'none') ? p.effect : undefined;
+            window.cmsmastersCursorEffect = eff;
+            window.cmsmCursorEffect = eff;
+        }
+
+        // --- Adaptive ---
+        if (p.adaptive !== undefined) {
+            var isAdaptive = p.adaptive === 'yes' ? true : undefined;
+            window.cmsmastersCursorAdaptive = isAdaptive;
+            window.cmsmCursorAdaptive = isAdaptive;
+        }
+
+        if (window.CMSM_DEBUG) console.log('[CursorEditorSync] Applied page cursor settings:', p);
+    }
+
+    /**
+     * Remove all classes from element that start with given prefix.
+     * @param {Element} el
+     * @param {string} prefix
+     */
+    function removeClassByPrefix(el, prefix) {
+        var toRemove = [];
+        el.classList.forEach(function(cls) {
+            if (cls.indexOf(prefix) === 0) toRemove.push(cls);
+        });
+        toRemove.forEach(function(cls) { el.classList.remove(cls); });
     }
 
     function requestInit() {

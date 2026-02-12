@@ -1187,7 +1187,7 @@ class Frontend extends Base_App {
 		$document = $this->get_current_page_document();
 
 		if ( $document ) {
-			$page_value = $document->get_settings( 'cmsmasters_page_cursor_' . $page_key );
+			$page_value = $document->get_settings_for_display( 'cmsmasters_page_cursor_' . $page_key );
 			if ( ! empty( $page_value ) ) {
 				return $page_value;
 			}
@@ -1245,6 +1245,11 @@ class Frontend extends Base_App {
 						if ( 'cmsmasters_popup' === $doc_name || '_entry' === substr( $doc_name, -6 ) ) {
 							return false;
 						}
+
+						// Page-level disable check (editor preview)
+						if ( 'yes' === $document->get_settings_for_display( 'cmsmasters_page_cursor_disable' ) ) {
+							return false;
+						}
 					}
 				}
 			}
@@ -1272,7 +1277,7 @@ class Frontend extends Base_App {
 
 		// Page-level disable check
 		$document = $this->get_current_page_document();
-		if ( $document && 'yes' === $document->get_settings( 'cmsmasters_page_cursor_disable' ) ) {
+		if ( $document && 'yes' === $document->get_settings_for_display( 'cmsmasters_page_cursor_disable' ) ) {
 			return false;
 		}
 
@@ -1541,7 +1546,7 @@ class Frontend extends Base_App {
 		// Page-level color override (takes priority over global)
 		$document = $this->get_current_page_document();
 		if ( $document ) {
-			$page_color = $document->get_settings( 'cmsmasters_page_cursor_color' );
+			$page_color = $document->get_settings_for_display( 'cmsmasters_page_cursor_color' );
 			if ( ! empty( $page_color ) ) {
 				return $this->validate_hex_color( $page_color );
 			}
