@@ -16,18 +16,12 @@ class Module extends Base_Module {
 	}
 
 	protected function init_actions() {
-		// Containers: right after Layout section (top of Advanced tab)
-		add_action( 'elementor/element/container/section_layout/after_section_end', array( $this, 'register_controls' ) );
-
-		// Widgets: right after first Advanced section
-		add_action( 'elementor/element/common/_section_style/after_section_end', array( $this, 'register_controls' ) );
-
-		// Legacy Sections & Columns: section_layout doesn't work (wrong tab / missing),
-		// fall back to _section_responsive
-		$legacy_types = array( 'section', 'column' );
-		foreach ( $legacy_types as $type ) {
+		// All element types: after Responsive section in Advanced tab
+		$structural_types = array( 'section', 'container', 'column' );
+		foreach ( $structural_types as $type ) {
 			add_action( "elementor/element/{$type}/_section_responsive/after_section_end", array( $this, 'register_controls' ) );
 		}
+		add_action( 'elementor/element/common/_section_responsive/after_section_end', array( $this, 'register_controls' ) );
 	}
 
 	protected function init_filters() {
