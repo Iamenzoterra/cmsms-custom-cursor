@@ -1277,9 +1277,18 @@
 				if (doc && doc.container && doc.container.model) {
 					doc.container.model.get('settings').on('change', function(settings) {
 						var changed = settings.changed || {};
-						var hasPageCursor = Object.keys(changed).some(function(k) {
+						var changedKeys = Object.keys(changed);
+						var hasPageCursor = changedKeys.some(function(k) {
 							return k.indexOf('cmsmasters_page_cursor') === 0;
 						});
+						// Also detect __globals__ changes (global color via globe picker)
+						// Only broadcast if __globals__ contains a cursor-related key
+						if (!hasPageCursor && changedKeys.indexOf('__globals__') !== -1) {
+							var globals = settings.get('__globals__') || {};
+							hasPageCursor = Object.keys(globals).some(function(gk) {
+								return gk.indexOf('cmsmasters_page_cursor') === 0;
+							});
+						}
 						if (hasPageCursor) {
 							broadcastPageCursorChange(doc.container);
 						}
@@ -1295,34 +1304,55 @@
 			e.preventDefault();
 			var doc = elementor.documents.getCurrent();
 			if (!doc || !doc.container) return;
+			if (typeof $e === 'undefined' || !$e.run) return;
 
-			// Clear all 7 page cursor settings via $e.run (integrates with undo/redo)
-			if (typeof $e !== 'undefined' && $e.run) {
-				$e.run('document/elements/settings', {
-					container: doc.container,
-					settings: {
-						cmsmasters_page_cursor_disable: '',
-						cmsmasters_page_cursor_theme: '',
-						cmsmasters_page_cursor_color: '',
-						cmsmasters_page_cursor_smoothness: '',
-						cmsmasters_page_cursor_blend_mode: '',
-						cmsmasters_page_cursor_effect: '',
-						cmsmasters_page_cursor_adaptive: ''
-					}
-				});
-			}
+			// Build settings to reset — include __globals__ cleanup inside command for undo support
+			var settingsToReset = {
+				cmsmasters_page_cursor_disable: '',
+				cmsmasters_page_cursor_theme: '',
+				cmsmasters_page_cursor_color: '',
+				cmsmasters_page_cursor_smoothness: '',
+				cmsmasters_page_cursor_blend_mode: '',
+				cmsmasters_page_cursor_effect: '',
+				cmsmasters_page_cursor_adaptive: ''
+			};
 
-			// Also clear any global color reference from __globals__
+			// Clear global color reference inside the same command (undo-safe)
 			try {
 				var settingsModel = doc.container.model.get('settings');
 				var globals = settingsModel.get('__globals__') || {};
 				if (globals.cmsmasters_page_cursor_color) {
-					var newGlobals = Object.assign({}, globals);
-					delete newGlobals.cmsmasters_page_cursor_color;
-					settingsModel.set('__globals__', newGlobals);
+					var cleanGlobals = Object.assign({}, globals);
+					delete cleanGlobals.cmsmasters_page_cursor_color;
+					settingsToReset.__globals__ = cleanGlobals;
 				}
 			} catch (err) {
-				if (window.CMSM_DEBUG) console.warn('[NavigatorIndicator] Reset globals cleanup failed:', err);
+				if (window.CMSM_DEBUG) console.warn('[NavigatorIndicator] Globals read failed:', err);
+			}
+
+			// Single $e.run — all changes in one undo step
+			var result = $e.run('document/elements/settings', {
+				container: doc.container,
+				settings: settingsToReset
+			});
+
+			// Force panel controls to re-render with cleared values
+			function refreshPanel() {
+				try {
+					var currentView = elementor.getPanelView().getCurrentPageView();
+					if (currentView && currentView._renderChildren) {
+						currentView._renderChildren();
+					}
+				} catch (err) {
+					if (window.CMSM_DEBUG) console.warn('[NavigatorIndicator] Panel re-render failed:', err);
+				}
+			}
+
+			// $e.run may return a Promise — use .then() if available, else refresh immediately
+			if (result && typeof result.then === 'function') {
+				result.then(refreshPanel);
+			} else {
+				refreshPanel();
 			}
 
 			if (window.CMSM_DEBUG) console.log('[NavigatorIndicator] Page cursor settings reset to defaults');
