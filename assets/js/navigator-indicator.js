@@ -1317,24 +1317,25 @@
 				cmsmasters_page_cursor_adaptive: ''
 			};
 
-			// Clear global color reference inside the same command (undo-safe)
+			// Single $e.run — all changes in one undo step
+			var result = $e.run('document/elements/settings', {
+				container: doc.container,
+				settings: settingsToReset
+			});
+
+			// Clear global color reference directly on model
+			// ($e.run doesn't process __globals__ — it's a special Backbone attribute)
 			try {
 				var settingsModel = doc.container.model.get('settings');
 				var globals = settingsModel.get('__globals__') || {};
 				if (globals.cmsmasters_page_cursor_color) {
 					var cleanGlobals = Object.assign({}, globals);
 					delete cleanGlobals.cmsmasters_page_cursor_color;
-					settingsToReset.__globals__ = cleanGlobals;
+					settingsModel.set('__globals__', cleanGlobals);
 				}
 			} catch (err) {
-				if (window.CMSM_DEBUG) console.warn('[NavigatorIndicator] Globals read failed:', err);
+				if (window.CMSM_DEBUG) console.warn('[NavigatorIndicator] Globals cleanup failed:', err);
 			}
-
-			// Single $e.run — all changes in one undo step
-			var result = $e.run('document/elements/settings', {
-				container: doc.container,
-				settings: settingsToReset
-			});
 
 			// Force panel controls to re-render with cleared values
 			function refreshPanel() {
