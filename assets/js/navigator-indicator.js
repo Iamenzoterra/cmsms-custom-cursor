@@ -1323,20 +1323,6 @@
 				settings: settingsToReset
 			});
 
-			// Clear global color reference directly on model
-			// ($e.run doesn't process __globals__ — it's a special Backbone attribute)
-			try {
-				var settingsModel = doc.container.model.get('settings');
-				var globals = settingsModel.get('__globals__') || {};
-				if (globals.cmsmasters_page_cursor_color) {
-					var cleanGlobals = Object.assign({}, globals);
-					delete cleanGlobals.cmsmasters_page_cursor_color;
-					settingsModel.set('__globals__', cleanGlobals, {silent: true});
-				}
-			} catch (err) {
-				if (window.CMSM_DEBUG) console.warn('[NavigatorIndicator] Globals cleanup failed:', err);
-			}
-
 			// Force panel controls to re-render with cleared values
 			function refreshPanel() {
 				try {
@@ -1355,6 +1341,24 @@
 			} else {
 				refreshPanel();
 			}
+
+			// Clear global color reference AFTER $e.run + _renderChildren settle.
+			// Both can restore __globals__ during their processing, so we must
+			// wait for them to finish, then nuke the reference and re-render.
+			setTimeout(function() {
+				try {
+					var settingsModel = doc.container.model.get('settings');
+					var globals = settingsModel.get('__globals__') || {};
+					if (globals.cmsmasters_page_cursor_color) {
+						var cleanGlobals = Object.assign({}, globals);
+						delete cleanGlobals.cmsmasters_page_cursor_color;
+						settingsModel.set('__globals__', cleanGlobals, {silent: true});
+						refreshPanel();
+					}
+				} catch (err) {
+					if (window.CMSM_DEBUG) console.warn('[NavigatorIndicator] Globals cleanup failed:', err);
+				}
+			}, 100);
 
 			if (window.CMSM_DEBUG) console.log('[NavigatorIndicator] Page cursor settings reset to defaults');
 		});
