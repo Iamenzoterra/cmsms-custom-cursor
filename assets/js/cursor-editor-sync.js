@@ -35,6 +35,26 @@
     var isResponsiveHidden = false;
     var wasEnabledBeforeResponsive = false;
 
+    // Snapshot of PHP-rendered cursor state (global defaults).
+    // Captured once on load, before any editor sync changes.
+    // Used to restore defaults when page settings are cleared to ''.
+    var initialCursorState = (function() {
+        var body = document.body;
+        var state = {
+            themeClasses: [],
+            blendClasses: [],
+            hasWobble: body.classList.contains('cmsmasters-cursor-wobble'),
+            effect: window.cmsmCursorEffect,
+            smooth: window.cmsmCursorSmooth,
+            adaptive: window.cmsmCursorAdaptive
+        };
+        body.classList.forEach(function(cls) {
+            if (cls.indexOf('cmsmasters-cursor-theme-') === 0) state.themeClasses.push(cls);
+            if (cls.indexOf('cmsmasters-cursor-blend') === 0) state.blendClasses.push(cls);
+        });
+        return state;
+    })();
+
     // Preloader config
     var PRELOAD_DURATION = 15000; // 15 seconds
     var preloaderStartTime = null;
@@ -744,82 +764,97 @@
      * Uses the same paths as the frontend (body classes + window props) so
      * the cursor's RAF loop picks up changes each frame.
      *
+     * KEY RULE: empty string '' means "Default (Global)" — restore PHP-rendered
+     * initial state for that setting. Non-empty means page override.
+     *
      * @param {Object} p - Payload with keys: disable, theme, color, smoothness, blend_mode, effect, adaptive
      */
     function applyPageCursorSettings(p) {
         if (!p) return;
         var body = document.body;
+        var ini = initialCursorState;
 
         // --- Disable ---
         if (p.disable === 'yes') {
             body.classList.add('cmsmasters-cursor-disabled');
-            // Remove visual classes when disabled
-            removeClassByPrefix(body, 'cmsmasters-cursor-theme-');
-            removeClassByPrefix(body, 'cmsmasters-cursor-blend');
-            body.classList.remove('cmsmasters-cursor-wobble');
             return;
         }
-        // Re-enable if previously disabled by page setting
-        // (only remove disabled class — the panel toggle has its own state)
         if (p.disable === '') {
-            // Don't force-enable if the panel switch is off
-            // Just remove the page-level disable; panel state is separate
+            // Don't force-enable — panel toggle has its own state
         }
 
         // --- Theme ---
-        if (p.theme !== undefined) {
+        if (p.theme) {
+            // Page override
             removeClassByPrefix(body, 'cmsmasters-cursor-theme-');
-            if (p.theme) {
-                body.classList.add('cmsmasters-cursor-theme-' + p.theme);
-            }
+            body.classList.add('cmsmasters-cursor-theme-' + p.theme);
+        } else if (p.theme === '') {
+            // Restore global defaults
+            removeClassByPrefix(body, 'cmsmasters-cursor-theme-');
+            ini.themeClasses.forEach(function(cls) { body.classList.add(cls); });
         }
 
         // --- Color ---
+        // CSS vars: JS setProperty overrides PHP <style> tag; removeProperty
+        // reveals the PHP value underneath. No initial state needed.
         if (p.color && p.color.charAt(0) === '#') {
             document.documentElement.style.setProperty('--cmsmasters-cursor-color', p.color);
             document.documentElement.style.setProperty('--cmsmasters-cursor-color-dark', p.color);
         } else if (p.color === '') {
-            // Color cleared — remove overrides so global/default CSS takes effect
             document.documentElement.style.removeProperty('--cmsmasters-cursor-color');
             document.documentElement.style.removeProperty('--cmsmasters-cursor-color-dark');
         }
 
         // --- Smoothness ---
-        if (p.smoothness !== undefined) {
-            window.cmsmastersCursorSmooth = p.smoothness || undefined;
-            window.cmsmCursorSmooth = p.smoothness || undefined;
+        if (p.smoothness) {
+            window.cmsmastersCursorSmooth = p.smoothness;
+            window.cmsmCursorSmooth = p.smoothness;
+        } else if (p.smoothness === '') {
+            window.cmsmastersCursorSmooth = ini.smooth;
+            window.cmsmCursorSmooth = ini.smooth;
         }
 
         // --- Blend mode ---
-        if (p.blend_mode !== undefined) {
+        if (p.blend_mode) {
             removeClassByPrefix(body, 'cmsmasters-cursor-blend');
-            if (p.blend_mode) {
-                var bm = p.blend_mode;
-                if (bm === 'yes') bm = 'medium'; // legacy
-                if (['soft', 'medium', 'strong'].indexOf(bm) !== -1) {
-                    body.classList.add('cmsmasters-cursor-blend');
-                    body.classList.add('cmsmasters-cursor-blend-' + bm);
-                }
+            var bm = p.blend_mode;
+            if (bm === 'yes') bm = 'medium'; // legacy
+            if (['soft', 'medium', 'strong'].indexOf(bm) !== -1) {
+                body.classList.add('cmsmasters-cursor-blend');
+                body.classList.add('cmsmasters-cursor-blend-' + bm);
+            } else if (bm === 'off') {
+                // Explicit disable — don't add any blend classes
             }
+        } else if (p.blend_mode === '') {
+            removeClassByPrefix(body, 'cmsmasters-cursor-blend');
+            ini.blendClasses.forEach(function(cls) { body.classList.add(cls); });
         }
 
         // --- Effect ---
-        if (p.effect !== undefined) {
+        if (p.effect) {
             body.classList.remove('cmsmasters-cursor-wobble');
             if (p.effect === 'wobble') {
                 body.classList.add('cmsmasters-cursor-wobble');
             }
-            // Non-wobble effects (pulse, shake, buzz) are handled via window prop
-            var eff = (p.effect && p.effect !== 'none') ? p.effect : undefined;
+            var eff = (p.effect !== 'none') ? p.effect : undefined;
             window.cmsmastersCursorEffect = eff;
             window.cmsmCursorEffect = eff;
+        } else if (p.effect === '') {
+            // Restore global defaults
+            body.classList.remove('cmsmasters-cursor-wobble');
+            if (ini.hasWobble) body.classList.add('cmsmasters-cursor-wobble');
+            window.cmsmastersCursorEffect = ini.effect;
+            window.cmsmCursorEffect = ini.effect;
         }
 
         // --- Adaptive ---
-        if (p.adaptive !== undefined) {
+        if (p.adaptive) {
             var isAdaptive = p.adaptive === 'yes' ? true : undefined;
             window.cmsmastersCursorAdaptive = isAdaptive;
             window.cmsmCursorAdaptive = isAdaptive;
+        } else if (p.adaptive === '') {
+            window.cmsmastersCursorAdaptive = ini.adaptive;
+            window.cmsmCursorAdaptive = ini.adaptive;
         }
 
         if (window.CMSM_DEBUG) console.log('[CursorEditorSync] Applied page cursor settings:', p);
