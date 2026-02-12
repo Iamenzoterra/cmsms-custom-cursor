@@ -4,6 +4,24 @@ Living document tracking development sessions, decisions, and iterations.
 
 ---
 
+## 2026-02-13 — Fix: Reset Button Cannot Clear Global Color Reference
+
+**Problem:** The "Reset to System Default" button in Page Settings couldn't clear `__globals__.cmsmasters_page_cursor_color`. After 3 failed timing-based approaches (direct set after `$e.run`, `{silent: true}`, `setTimeout(100)`), all failed because Elementor's `_renderChildren()` re-applies `__globals__` for controls that have the `'global'` parameter.
+
+**Root cause:** The `'global' => array('default' => '')` on the page color control tells Elementor's rendering pipeline to actively manage `__globals__` for that control. Every `_renderChildren()` call reads and RE-WRITES the global reference back into the model. No timing trick can prevent this.
+
+**Solution:** Remove the `'global'` parameter from the page-level cursor color control in module.php. Without it, `_renderChildren()` doesn't touch `__globals__`, so the cleanup in the reset handler works immediately — no setTimeout needed.
+
+**Key insight:** The element-level `cmsmasters_cursor_color` (module.php line 207) never had the `'global'` parameter either. The page-level control now matches. Users can still pick hex colors; existing pages with saved global references still resolve normally via `get_settings_for_display()` and `resolveGlobalColor()`. The only difference is no globe icon in the page color picker.
+
+**Changes:**
+- `modules/cursor-controls/module.php` line 930: Removed `'global' => array('default' => '')`
+- `assets/js/navigator-indicator.js`: Moved `__globals__` cleanup before `_renderChildren()`, removed `setTimeout(100)` and `{silent: true}`, kept backward-compat cleanup for existing pages
+
+**Files modified:** `modules/cursor-controls/module.php`, `assets/js/navigator-indicator.js`
+
+---
+
 ## 2026-02-12 — Page Cursor: Global Colors, Color Reset, Reset Button
 
 **Problem:** Three issues with page-level cursor settings:
