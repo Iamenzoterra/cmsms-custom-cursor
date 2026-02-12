@@ -1331,7 +1331,7 @@
 				if (globals.cmsmasters_page_cursor_color) {
 					var cleanGlobals = Object.assign({}, globals);
 					delete cleanGlobals.cmsmasters_page_cursor_color;
-					settingsModel.set('__globals__', cleanGlobals);
+					settingsModel.set('__globals__', cleanGlobals, {silent: true});
 				}
 			} catch (err) {
 				if (window.CMSM_DEBUG) console.warn('[NavigatorIndicator] Globals cleanup failed:', err);
