@@ -860,8 +860,8 @@ class Module extends Base_Module {
 	 * @param string                    $section_id The section ID that just ended.
 	 */
 	public function register_page_cursor_controls( $element, $section_id ) {
-		// Page settings documents only (type 'stack')
-		if ( 'stack' !== $element->get_type() ) {
+		// Page settings documents only (Document instances, not widgets/sections/containers)
+		if ( ! ( $element instanceof \Elementor\Core\Base\Document ) ) {
 			return;
 		}
 
