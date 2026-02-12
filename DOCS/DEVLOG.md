@@ -4,6 +4,23 @@ Living document tracking development sessions, decisions, and iterations.
 
 ---
 
+## 2026-02-12 — Page Cursor: Global Colors, Color Reset, Reset Button
+
+**Problem:** Three issues with page-level cursor settings:
+1. Global Kit colors (Primary, Secondary, etc.) couldn't be selected — page color control lacked `'global'` param, and real-time sync skipped non-hex colors.
+2. Clearing page color didn't revert cursor to global default — CSS custom properties stayed set.
+3. No way to reset all 7 page cursor settings at once.
+
+**Fix 1 — Global colors:** Added `'global' => array( 'default' => '' )` to the page color control in module.php (enables globe icon in color picker). Updated `broadcastPageCursorChange()` and `getPageCursorPayload()` in navigator-indicator.js to resolve `__globals__` references via the existing `resolveGlobalColor()` function instead of skipping them. PHP side already handled by `get_settings_for_display()` from previous commit.
+
+**Fix 2 — Color reset:** In `applyPageCursorSettings()` (cursor-editor-sync.js), when color is empty string, call `removeProperty()` on `--cmsmasters-cursor-color` and `--cmsmasters-cursor-color-dark` CSS vars. This lets the global/default CSS take over.
+
+**Fix 3 — Reset button:** Added `RAW_HTML` control with styled button at the bottom of page cursor section (module.php). Click handler in navigator-indicator.js uses `$e.run('document/elements/settings', ...)` to clear all 7 settings (integrates with Elementor undo/redo). Also clears `__globals__` for color.
+
+**Files modified:** `modules/cursor-controls/module.php`, `assets/js/navigator-indicator.js`, `assets/js/cursor-editor-sync.js`
+
+---
+
 ## 2026-02-12 — Page-Level Cursor Settings (Page Settings → Advanced tab)
 
 **Problem:** No middle override layer between Global (WP Admin) and Element (per-widget) cursor settings. Users cannot customize cursor per-page (e.g., disable on a landing page, different theme on a specific page).

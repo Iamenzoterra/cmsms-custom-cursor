@@ -774,10 +774,14 @@
             }
         }
 
-        // --- Color (hex only) ---
+        // --- Color ---
         if (p.color && p.color.charAt(0) === '#') {
             document.documentElement.style.setProperty('--cmsmasters-cursor-color', p.color);
             document.documentElement.style.setProperty('--cmsmasters-cursor-color-dark', p.color);
+        } else if (p.color === '') {
+            // Color cleared — remove overrides so global/default CSS takes effect
+            document.documentElement.style.removeProperty('--cmsmasters-cursor-color');
+            document.documentElement.style.removeProperty('--cmsmasters-cursor-color-dark');
         }
 
         // --- Smoothness ---

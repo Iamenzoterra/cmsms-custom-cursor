@@ -963,9 +963,13 @@
 			adaptive:   json.cmsmasters_page_cursor_adaptive || ''
 		};
 
-		// Color may be a global reference — only send if hex, otherwise skip
-		if (payload.color && payload.color.charAt(0) !== '#') {
-			payload.color = '';
+		// Resolve global color reference (e.g. "globals/colors?id=primary") to hex
+		var globals = json.__globals__ || {};
+		if (globals.cmsmasters_page_cursor_color) {
+			var resolved = resolveGlobalColor(globals.cmsmasters_page_cursor_color);
+			if (resolved) payload.color = resolved;
+		} else if (payload.color && payload.color.charAt(0) !== '#') {
+			payload.color = '';  // Unknown format — skip
 		}
 
 		previewIframe.contentWindow.postMessage({
@@ -1001,9 +1005,13 @@
 				adaptive:   json.cmsmasters_page_cursor_adaptive || ''
 			};
 
-			// Color: only send hex values
-			if (payload.color && payload.color.charAt(0) !== '#') {
-				payload.color = '';
+			// Resolve global color reference to hex
+			var globals = json.__globals__ || {};
+			if (globals.cmsmasters_page_cursor_color) {
+				var resolved = resolveGlobalColor(globals.cmsmasters_page_cursor_color);
+				if (resolved) payload.color = resolved;
+			} else if (payload.color && payload.color.charAt(0) !== '#') {
+				payload.color = '';  // Unknown format — skip
 			}
 
 			// Check if any value is non-empty
@@ -1281,6 +1289,44 @@
 				if (window.CMSM_DEBUG) console.warn('[NavigatorIndicator] Document settings listener failed:', e);
 			}
 		}
+
+		// "Reset to System Default" button — clears all page cursor settings
+		$(document).on('click', '.cmsmasters-page-cursor-reset-btn', function(e) {
+			e.preventDefault();
+			var doc = elementor.documents.getCurrent();
+			if (!doc || !doc.container) return;
+
+			// Clear all 7 page cursor settings via $e.run (integrates with undo/redo)
+			if (typeof $e !== 'undefined' && $e.run) {
+				$e.run('document/elements/settings', {
+					container: doc.container,
+					settings: {
+						cmsmasters_page_cursor_disable: '',
+						cmsmasters_page_cursor_theme: '',
+						cmsmasters_page_cursor_color: '',
+						cmsmasters_page_cursor_smoothness: '',
+						cmsmasters_page_cursor_blend_mode: '',
+						cmsmasters_page_cursor_effect: '',
+						cmsmasters_page_cursor_adaptive: ''
+					}
+				});
+			}
+
+			// Also clear any global color reference from __globals__
+			try {
+				var settingsModel = doc.container.model.get('settings');
+				var globals = settingsModel.get('__globals__') || {};
+				if (globals.cmsmasters_page_cursor_color) {
+					var newGlobals = Object.assign({}, globals);
+					delete newGlobals.cmsmasters_page_cursor_color;
+					settingsModel.set('__globals__', newGlobals);
+				}
+			} catch (err) {
+				if (window.CMSM_DEBUG) console.warn('[NavigatorIndicator] Reset globals cleanup failed:', err);
+			}
+
+			if (window.CMSM_DEBUG) console.log('[NavigatorIndicator] Page cursor settings reset to defaults');
+		});
 
 	}
 

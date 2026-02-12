@@ -927,6 +927,7 @@ class Module extends Base_Module {
 				'label'     => __( 'Cursor Color', 'cmsmasters-elementor' ),
 				'type'      => Controls_Manager::COLOR,
 				'default'   => '',
+				'global'    => array( 'default' => '' ),
 				'condition' => array(
 					'cmsmasters_page_cursor_disable' => '',
 				),
@@ -1006,6 +1007,18 @@ class Module extends Base_Module {
 				'condition' => array(
 					'cmsmasters_page_cursor_disable' => '',
 				),
+			)
+		);
+
+		$element->add_control(
+			'cmsmasters_page_cursor_reset',
+			array(
+				'type'            => Controls_Manager::RAW_HTML,
+				'raw'             => '<button type="button" class="elementor-button elementor-button-default cmsmasters-page-cursor-reset-btn" style="width:100%;margin-top:5px;">'
+				                   . __( 'Reset to System Default', 'cmsmasters-elementor' )
+				                   . '</button>',
+				'content_classes' => 'elementor-control-field',
+				'separator'       => 'before',
 			)
 		);
 
