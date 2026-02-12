@@ -22,6 +22,9 @@ class Module extends Base_Module {
 			add_action( "elementor/element/{$type}/_section_responsive/after_section_end", array( $this, 'register_controls' ) );
 		}
 		add_action( 'elementor/element/common/_section_responsive/after_section_end', array( $this, 'register_controls' ) );
+
+		// Page-level controls (Page Settings → Advanced tab)
+		add_action( 'elementor/element/after_section_end', array( $this, 'register_page_cursor_controls' ), 10, 2 );
 	}
 
 	protected function init_filters() {
@@ -840,6 +843,171 @@ class Module extends Base_Module {
 			)
 		);
 
+
+		$element->end_controls_section();
+	}
+
+	/**
+	 * Register cursor controls for Page Settings.
+	 *
+	 * Adds cursor override controls to Page Settings → Advanced tab,
+	 * providing a middle layer between global and element-level settings.
+	 * Override chain: Element > Page > Global.
+	 *
+	 * @since 5.7
+	 *
+	 * @param \Elementor\Controls_Stack $element    The element instance.
+	 * @param string                    $section_id The section ID that just ended.
+	 */
+	public function register_page_cursor_controls( $element, $section_id ) {
+		// Only attach after the Additional Settings section or Custom CSS section (fallback)
+		if ( 'cmsmasters_section_additional' !== $section_id && 'section_custom_css_pro' !== $section_id ) {
+			return;
+		}
+
+		// Page settings documents only (type 'stack')
+		if ( 'stack' !== $element->get_type() ) {
+			return;
+		}
+
+		// Skip during content import
+		if ( defined( 'WP_IMPORTING' ) && WP_IMPORTING ) {
+			return;
+		}
+
+		// Prevent duplicate registration
+		if ( $element->get_controls( 'cmsmasters_page_cursor_disable' ) ) {
+			return;
+		}
+
+		// Get the tab from the parent section
+		$stack_name = $element->get_unique_name();
+		$parent_section = \Elementor\Plugin::$instance->controls_manager->get_control_from_stack( $stack_name, $section_id );
+
+		$element->start_controls_section(
+			'cmsmasters_section_page_cursor',
+			array(
+				'label' => __( 'Custom Cursor', 'cmsmasters-elementor' ),
+				'tab'   => $parent_section['tab'],
+			)
+		);
+
+		$element->add_control(
+			'cmsmasters_page_cursor_disable',
+			array(
+				'label'       => __( 'Disable Cursor on This Page', 'cmsmasters-elementor' ),
+				'type'        => Controls_Manager::SWITCHER,
+				'default'     => '',
+				'label_off'   => __( 'No', 'cmsmasters-elementor' ),
+				'label_on'    => __( 'Yes', 'cmsmasters-elementor' ),
+				'description' => __( 'Completely disable custom cursor on this page.', 'cmsmasters-elementor' ),
+			)
+		);
+
+		$element->add_control(
+			'cmsmasters_page_cursor_theme',
+			array(
+				'label'     => __( 'Cursor Theme', 'cmsmasters-elementor' ),
+				'type'      => Controls_Manager::SELECT,
+				'default'   => '',
+				'options'   => array(
+					''        => __( 'Default (Global)', 'cmsmasters-elementor' ),
+					'classic' => __( 'Dot + Ring', 'cmsmasters-elementor' ),
+					'dot'     => __( 'Dot Only', 'cmsmasters-elementor' ),
+				),
+				'condition' => array(
+					'cmsmasters_page_cursor_disable' => '',
+				),
+			)
+		);
+
+		$element->add_control(
+			'cmsmasters_page_cursor_color',
+			array(
+				'label'     => __( 'Cursor Color', 'cmsmasters-elementor' ),
+				'type'      => Controls_Manager::COLOR,
+				'default'   => '',
+				'condition' => array(
+					'cmsmasters_page_cursor_disable' => '',
+				),
+			)
+		);
+
+		$element->add_control(
+			'cmsmasters_page_cursor_smoothness',
+			array(
+				'label'     => __( 'Cursor Smoothness', 'cmsmasters-elementor' ),
+				'type'      => Controls_Manager::SELECT,
+				'default'   => '',
+				'options'   => array(
+					''        => __( 'Default (Global)', 'cmsmasters-elementor' ),
+					'precise' => __( 'Precise', 'cmsmasters-elementor' ),
+					'snappy'  => __( 'Snappy', 'cmsmasters-elementor' ),
+					'normal'  => __( 'Normal', 'cmsmasters-elementor' ),
+					'smooth'  => __( 'Smooth', 'cmsmasters-elementor' ),
+					'fluid'   => __( 'Fluid', 'cmsmasters-elementor' ),
+				),
+				'condition' => array(
+					'cmsmasters_page_cursor_disable' => '',
+				),
+			)
+		);
+
+		$element->add_control(
+			'cmsmasters_page_cursor_blend_mode',
+			array(
+				'label'     => __( 'Blend Mode', 'cmsmasters-elementor' ),
+				'type'      => Controls_Manager::SELECT,
+				'default'   => '',
+				'options'   => array(
+					''       => __( 'Default (Global)', 'cmsmasters-elementor' ),
+					'off'    => __( 'Disabled', 'cmsmasters-elementor' ),
+					'soft'   => __( 'Soft (Exclusion)', 'cmsmasters-elementor' ),
+					'medium' => __( 'Medium (Difference)', 'cmsmasters-elementor' ),
+					'strong' => __( 'Strong (High Contrast)', 'cmsmasters-elementor' ),
+				),
+				'condition' => array(
+					'cmsmasters_page_cursor_disable' => '',
+				),
+			)
+		);
+
+		$element->add_control(
+			'cmsmasters_page_cursor_effect',
+			array(
+				'label'     => __( 'Animation Effect', 'cmsmasters-elementor' ),
+				'type'      => Controls_Manager::SELECT,
+				'default'   => '',
+				'options'   => array(
+					''       => __( 'Default (Global)', 'cmsmasters-elementor' ),
+					'none'   => __( 'None', 'cmsmasters-elementor' ),
+					'wobble' => __( 'Wobble', 'cmsmasters-elementor' ),
+					'pulse'  => __( 'Pulse', 'cmsmasters-elementor' ),
+					'shake'  => __( 'Shake', 'cmsmasters-elementor' ),
+					'buzz'   => __( 'Buzz', 'cmsmasters-elementor' ),
+				),
+				'condition' => array(
+					'cmsmasters_page_cursor_disable' => '',
+				),
+			)
+		);
+
+		$element->add_control(
+			'cmsmasters_page_cursor_adaptive',
+			array(
+				'label'     => __( 'Adaptive Mode', 'cmsmasters-elementor' ),
+				'type'      => Controls_Manager::SELECT,
+				'default'   => '',
+				'options'   => array(
+					''    => __( 'Default (Global)', 'cmsmasters-elementor' ),
+					'yes' => __( 'Enabled', 'cmsmasters-elementor' ),
+					'no'  => __( 'Disabled', 'cmsmasters-elementor' ),
+				),
+				'condition' => array(
+					'cmsmasters_page_cursor_disable' => '',
+				),
+			)
+		);
 
 		$element->end_controls_section();
 	}

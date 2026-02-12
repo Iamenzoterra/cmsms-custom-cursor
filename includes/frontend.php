@@ -1135,6 +1135,72 @@ class Frontend extends Base_App {
 	// =========================================================================
 
 	/**
+	 * Get the current page's Elementor document (static-cached).
+	 *
+	 * Uses get_queried_object_id() instead of get_the_ID() to prevent
+	 * the "archive → first post" bug on blog/archive pages.
+	 *
+	 * @since 5.7
+	 *
+	 * @return \Elementor\Core\Base\Document|null Document or null.
+	 */
+	private function get_current_page_document() {
+		static $document = null;
+		static $checked = false;
+
+		if ( $checked ) {
+			return $document;
+		}
+		$checked = true;
+
+		$post_id = get_queried_object_id();
+		if ( ! $post_id ) {
+			return null;
+		}
+
+		if ( ! class_exists( '\Elementor\Plugin' ) ) {
+			return null;
+		}
+
+		$doc = \Elementor\Plugin::$instance->documents->get( $post_id );
+		if ( $doc && $doc->is_built_with_elementor() ) {
+			$document = $doc;
+		}
+
+		return $document;
+	}
+
+	/**
+	 * Get a cursor setting with page-level override.
+	 *
+	 * Checks page document settings first, falls back to global option.
+	 * Override chain: Page > Global.
+	 *
+	 * @since 5.7
+	 *
+	 * @param string $page_key   Page setting suffix (after 'cmsmasters_page_cursor_').
+	 * @param string $global_key Global option suffix (after 'elementor_custom_cursor_'). Empty = no global fallback.
+	 * @param string $default    Default value if neither page nor global is set.
+	 * @return string Setting value.
+	 */
+	private function get_page_cursor_setting( $page_key, $global_key, $default = '' ) {
+		$document = $this->get_current_page_document();
+
+		if ( $document ) {
+			$page_value = $document->get_settings( 'cmsmasters_page_cursor_' . $page_key );
+			if ( ! empty( $page_value ) ) {
+				return $page_value;
+			}
+		}
+
+		if ( empty( $global_key ) ) {
+			return $default;
+		}
+
+		return get_option( 'elementor_custom_cursor_' . $global_key, $default );
+	}
+
+	/**
 	 * Check if custom cursor should be enabled.
 	 *
 	 * @since 1.21.0
@@ -1204,6 +1270,12 @@ class Frontend extends Base_App {
 			}
 		}
 
+		// Page-level disable check
+		$document = $this->get_current_page_document();
+		if ( $document && 'yes' === $document->get_settings( 'cmsmasters_page_cursor_disable' ) ) {
+			return false;
+		}
+
 		// Frontend - allow
 		return true;
 	}
@@ -1265,23 +1337,29 @@ class Frontend extends Base_App {
 		// Collect inline JS parts (window properties — NOT subject to cmsmasters- → cmsmasters- rename)
 		$inline_js_parts = array();
 
-		// Adaptive cursor setting
-		$adaptive = get_option( 'elementor_custom_cursor_adaptive', '' );
+		// Adaptive cursor setting (page > global)
+		$adaptive = $this->get_page_cursor_setting( 'adaptive', 'adaptive', '' );
 		if ( 'yes' === $adaptive ) {
 			$inline_js_parts[] = 'window.cmsmCursorAdaptive = true;';
 		}
 
-		// Cursor theme setting
-		$cursor_theme = get_option( 'elementor_custom_cursor_theme', 'classic' );
+		// Cursor theme setting (page > global)
+		$cursor_theme = $this->get_page_cursor_setting( 'theme', 'theme', 'classic' );
 		$cursor_theme = apply_filters( 'cmsmasters_custom_cursor_theme', $cursor_theme );
 		if ( ! empty( $cursor_theme ) && 'classic' !== $cursor_theme ) {
 			$inline_js_parts[] = 'window.cmsmCursorTheme = "' . esc_js( $cursor_theme ) . '";';
 		}
 
-		// Cursor smoothness setting
-		$smoothness = get_option( 'elementor_custom_cursor_smoothness', 'normal' );
+		// Cursor smoothness setting (page > global)
+		$smoothness = $this->get_page_cursor_setting( 'smoothness', 'smoothness', 'normal' );
 		if ( ! empty( $smoothness ) && 'normal' !== $smoothness ) {
 			$inline_js_parts[] = 'window.cmsmCursorSmooth = "' . esc_js( $smoothness ) . '";';
+		}
+
+		// Page-level effect: non-wobble effects need window property for JS
+		$page_effect = $this->get_page_cursor_setting( 'effect', '', '' );
+		if ( ! empty( $page_effect ) && 'none' !== $page_effect && 'wobble' !== $page_effect ) {
+			$inline_js_parts[] = 'window.cmsmCursorEffect = "' . esc_js( $page_effect ) . '";';
 		}
 
 		if ( ! empty( $inline_js_parts ) ) {
@@ -1301,8 +1379,8 @@ class Frontend extends Base_App {
 		if ( $this->should_enable_custom_cursor() ) {
 			$classes[] = 'cmsmasters-cursor-enabled';
 
-			// Theme class via PHP (fallback if JS fails) - CRITICAL for correct styling
-			$cursor_theme = get_option( 'elementor_custom_cursor_theme', 'classic' );
+			// Theme class via PHP (fallback if JS fails) - CRITICAL for correct styling (page > global)
+			$cursor_theme = $this->get_page_cursor_setting( 'theme', 'theme', 'classic' );
 			$cursor_theme = apply_filters( 'cmsmasters_custom_cursor_theme', $cursor_theme );
 			if ( ! empty( $cursor_theme ) ) {
 				$classes[] = 'cmsmasters-cursor-theme-' . sanitize_html_class( $cursor_theme );
@@ -1314,8 +1392,8 @@ class Frontend extends Base_App {
 				$classes[] = 'cmsmasters-cursor-dual';
 			}
 
-			// Add blend mode class based on intensity
-			$blend_mode = get_option( 'elementor_custom_cursor_blend_mode', '' );
+			// Add blend mode class based on intensity (page > global)
+			$blend_mode = $this->get_page_cursor_setting( 'blend_mode', 'blend_mode', '' );
 			if ( $blend_mode ) {
 				// Legacy support: 'yes' maps to 'medium'
 				if ( 'yes' === $blend_mode ) {
@@ -1327,10 +1405,21 @@ class Frontend extends Base_App {
 				}
 			}
 
-			// Add wobble effect class (elastic deformation based on velocity)
-			$wobble = get_option( 'elementor_custom_cursor_wobble', '' );
-			if ( 'yes' === $wobble ) {
+			// Animation effect → wobble body class (page > global)
+			$page_effect = $this->get_page_cursor_setting( 'effect', '', '' );
+
+			if ( 'wobble' === $page_effect ) {
+				// Page explicitly sets wobble → add class
 				$classes[] = 'cmsmasters-cursor-wobble';
+			} elseif ( 'none' === $page_effect || 'pulse' === $page_effect || 'shake' === $page_effect || 'buzz' === $page_effect ) {
+				// Page explicitly sets non-wobble effect → do NOT add wobble class
+				// (even if global wobble is enabled)
+			} else {
+				// Page effect is '' (inherit) → fall back to global wobble setting
+				$wobble = get_option( 'elementor_custom_cursor_wobble', '' );
+				if ( 'yes' === $wobble ) {
+					$classes[] = 'cmsmasters-cursor-wobble';
+				}
 			}
 		}
 		return $classes;
@@ -1449,6 +1538,15 @@ class Frontend extends Base_App {
 	 * @return string Hex color value.
 	 */
 	private function get_cursor_color() {
+		// Page-level color override (takes priority over global)
+		$document = $this->get_current_page_document();
+		if ( $document ) {
+			$page_color = $document->get_settings( 'cmsmasters_page_cursor_color' );
+			if ( ! empty( $page_color ) ) {
+				return $this->validate_hex_color( $page_color );
+			}
+		}
+
 		$color_source = get_option( 'elementor_custom_cursor_color_source', 'custom' );
 
 		// If custom, return the hex color directly

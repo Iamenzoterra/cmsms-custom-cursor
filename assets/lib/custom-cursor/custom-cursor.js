@@ -900,6 +900,7 @@
             return '';
         }
         if (!cursorEffect || cursorEffect === 'default') {
+            if (window.cmsmCursorEffect) return window.cmsmCursorEffect;
             return globalWobble ? 'wobble' : '';
         }
         return cursorEffect;

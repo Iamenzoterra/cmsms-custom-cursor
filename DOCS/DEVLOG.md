@@ -4,6 +4,27 @@ Living document tracking development sessions, decisions, and iterations.
 
 ---
 
+## 2026-02-12 — Page-Level Cursor Settings (Page Settings → Advanced tab)
+
+**Problem:** No middle override layer between Global (WP Admin) and Element (per-widget) cursor settings. Users cannot customize cursor per-page (e.g., disable on a landing page, different theme on a specific page).
+
+**Solution:** Added 7 cursor controls to Elementor Page Settings → Advanced tab. Override chain: Element > Page > Global.
+
+**Files modified:**
+- `modules/cursor-controls/module.php` — New `register_page_cursor_controls()` method + hook via `elementor/element/after_section_end`. Pattern copied from `additional-settings/module.php` (section_id check + `get_type() === 'stack'` guard).
+- `includes/frontend.php` — Two new helpers: `get_current_page_document()` (static-cached, uses `get_queried_object_id()` to prevent archive→first post bug) and `get_page_cursor_setting()` (page override → global fallback). Modified 4 methods: `should_enable_custom_cursor()` (page disable check), `enqueue_custom_cursor()` (adaptive/theme/smoothness/effect via helper), `add_cursor_body_class()` (theme/blend/wobble via helper), `get_cursor_color()` (page color override).
+- `assets/lib/custom-cursor/custom-cursor.js` — 1-line addition in `resolveEffect()`: checks `window.cmsmCursorEffect` for page-level pulse/shake/buzz effects.
+
+**Key decisions:**
+1. `get_queried_object_id()` over `get_the_ID()` — prevents wrong document on archive/blog pages.
+2. `window.cmsmCursorEffect` naming (not `cmsmastersCursorEffect`) — matches existing `cmsmCursor*` internal config prefix convention.
+3. Wobble handled via body class (existing mechanism), non-wobble effects via `window.cmsmCursorEffect` (new mechanism) — avoids breaking existing wobble logic.
+4. Empty `$global_key` in helper returns `$default` directly — prevents broken `get_option('elementor_custom_cursor_', '')` call for effect setting which has no global option key.
+
+**Controls:** disable (SWITCHER), theme (SELECT), color (COLOR), smoothness (SELECT), blend_mode (SELECT), effect (SELECT), adaptive (SELECT). All SELECTs have `'' = Default (Global)` as first option.
+
+---
+
 ## 2026-02-12 — PR #144 Code Review (11 пунктів, 6 фаз)
 
 **Контекст:** CMSArchitect залишив 13 коментарів на PR #144. Пункт 12 (var→const/let в main JS) відкладено, пункт 13 (модулі/Class) відхилено. Решта 11 пунктів виконано в 6 фазах.
