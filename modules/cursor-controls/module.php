@@ -860,13 +860,17 @@ class Module extends Base_Module {
 	 * @param string                    $section_id The section ID that just ended.
 	 */
 	public function register_page_cursor_controls( $element, $section_id ) {
-		// Only attach after the Additional Settings section or Custom CSS section (fallback)
-		if ( 'cmsmasters_section_additional' !== $section_id && 'section_custom_css_pro' !== $section_id ) {
+		// Page settings documents only (type 'stack')
+		if ( 'stack' !== $element->get_type() ) {
 			return;
 		}
 
-		// Page settings documents only (type 'stack')
-		if ( 'stack' !== $element->get_type() ) {
+		// Trigger after known sections in page settings:
+		// - cmsmasters_section_additional: CMSMasters addon (Advanced tab)
+		// - section_custom_css_pro: Elementor Pro (Advanced tab)
+		// - section_page_style: Elementor core (Style tab — fallback if above absent)
+		$valid_sections = array( 'cmsmasters_section_additional', 'section_custom_css_pro', 'section_page_style' );
+		if ( ! in_array( $section_id, $valid_sections, true ) ) {
 			return;
 		}
 
@@ -875,20 +879,16 @@ class Module extends Base_Module {
 			return;
 		}
 
-		// Prevent duplicate registration
+		// Prevent duplicate registration (critical — multiple sections may trigger this)
 		if ( $element->get_controls( 'cmsmasters_page_cursor_disable' ) ) {
 			return;
 		}
-
-		// Get the tab from the parent section
-		$stack_name = $element->get_unique_name();
-		$parent_section = \Elementor\Plugin::$instance->controls_manager->get_control_from_stack( $stack_name, $section_id );
 
 		$element->start_controls_section(
 			'cmsmasters_section_page_cursor',
 			array(
 				'label' => __( 'Custom Cursor', 'cmsmasters-elementor' ),
-				'tab'   => $parent_section['tab'],
+				'tab'   => Controls_Manager::TAB_ADVANCED,
 			)
 		);
 
