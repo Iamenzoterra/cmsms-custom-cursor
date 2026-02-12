@@ -25,6 +25,13 @@ class Module extends Base_Module {
 	}
 
 	protected function init_filters() {
+		// before_render hooks add data-cursor-* attributes for frontend JS.
+		// Not needed in admin (CSS regeneration, imports) — skip to avoid timeout.
+		// Elementor preview iframe is NOT is_admin(), so editor preview still works.
+		if ( is_admin() ) {
+			return;
+		}
+
 		add_action( 'elementor/frontend/element/before_render', array( $this, 'apply_cursor_attributes' ) );
 		add_action( 'elementor/frontend/widget/before_render', array( $this, 'apply_cursor_attributes' ) );
 		add_action( 'elementor/frontend/section/before_render', array( $this, 'apply_cursor_attributes' ) );
@@ -992,11 +999,6 @@ class Module extends Base_Module {
 	 * @param \Elementor\Element_Base $element
 	 */
 	public function apply_cursor_attributes( $element ) {
-		// Skip during content import (Merlin wizard) — no attributes needed, avoids 504 timeout
-		if ( defined( 'WP_IMPORTING' ) && WP_IMPORTING ) {
-			return;
-		}
-
 		$settings = $element->get_settings_for_display();
 		$raw_settings = $element->get_settings();
 
