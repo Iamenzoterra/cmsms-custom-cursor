@@ -39,6 +39,11 @@ class Module extends Base_Module {
 	}
 
 	public function register_controls( $element ) {
+		// Skip during content import (Merlin wizard) — no controls needed, avoids 504 timeout
+		if ( defined( 'WP_IMPORTING' ) && WP_IMPORTING ) {
+			return;
+		}
+
 		// Prevent duplicate registration
 		if ( $element->get_controls( 'cmsmasters_cursor_hide' ) ) {
 			return;
@@ -993,6 +998,11 @@ class Module extends Base_Module {
 	 * @param \Elementor\Element_Base $element
 	 */
 	public function apply_cursor_attributes( $element ) {
+		// Skip during content import (Merlin wizard) — no attributes needed, avoids 504 timeout
+		if ( defined( 'WP_IMPORTING' ) && WP_IMPORTING ) {
+			return;
+		}
+
 		$settings = $element->get_settings_for_display();
 		$raw_settings = $element->get_settings();
 
