@@ -1322,16 +1322,6 @@
 				settings: settingsToReset
 			});
 
-			// Re-render controls to reflect reset state
-			try {
-				var pageView = elementor.getPanelView().getCurrentPageView();
-				if (pageView && pageView._renderChildren) {
-					pageView._renderChildren();
-				}
-			} catch (err) {
-				if (window.CMSM_DEBUG) console.warn('[NavigatorIndicator] Controls re-render failed:', err);
-			}
-
 			if (window.CMSM_DEBUG) console.log('[NavigatorIndicator] Page cursor settings reset to defaults');
 		});
 
