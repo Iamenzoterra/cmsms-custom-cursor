@@ -43,46 +43,44 @@ jQuery(function($) {
 		'elementor_custom_cursor_wobble': ''
 	};
 
-	// Insert reset button after the Settings section table
-	var $settingsSection = $('#elementor_custom_cursor_settings');
-	if ($settingsSection.length) {
-		var $sectionTable = $settingsSection.next('table.form-table');
-		if ($sectionTable.length) {
-			var $resetBtn = $('<button type="button" class="button cmsmasters-reset-defaults">' +
-				'Reset to System Defaults</button>');
-			var $resetWrap = $('<p class="cmsmasters-reset-wrap"></p>').append($resetBtn);
-			$sectionTable.after($resetWrap);
+	// Find the Settings section table (contains the wobble field as last row)
+	var $wobbleField = $('select[name="elementor_custom_cursor_wobble"]');
+	var $settingsTable = $wobbleField.closest('table.form-table');
+	if ($settingsTable.length) {
+		var $resetBtn = $('<button type="button" class="button cmsmasters-reset-defaults">' +
+			'Reset to System Defaults</button>');
+		var $resetWrap = $('<p class="cmsmasters-reset-wrap"></p>').append($resetBtn);
+		$settingsTable.after($resetWrap);
 
-			$resetBtn.on('click', function() {
-				if (!confirm('Reset all cursor settings to defaults? Color settings will not be affected.')) {
-					return;
-				}
+		$resetBtn.on('click', function() {
+			if (!confirm('Reset all cursor settings to defaults? Color settings will not be affected.')) {
+				return;
+			}
 
-				var changed = [];
-				$.each(settingsDefaults, function(name, defaultVal) {
-					var $field = $('[name="' + name + '"]');
-					if (!$field.length) return;
+			var changed = [];
+			$.each(settingsDefaults, function(name, defaultVal) {
+				var $field = $('[name="' + name + '"]');
+				if (!$field.length) return;
 
-					var currentVal = $field.val();
-					if (currentVal !== defaultVal) {
-						$field.val(defaultVal);
-						changed.push($field);
-					}
-				});
-
-				// Visual flash on changed fields
-				if (changed.length) {
-					changed.forEach(function($f) {
-						var $row = $f.closest('tr');
-						$row.css('background-color', '#fff3cd');
-						setTimeout(function() {
-							$row.css('transition', 'background-color 0.8s ease');
-							$row.css('background-color', '');
-						}, 100);
-					});
+				var currentVal = $field.val();
+				if (currentVal !== defaultVal) {
+					$field.val(defaultVal);
+					changed.push($field);
 				}
 			});
-		}
+
+			// Visual flash on changed fields
+			if (changed.length) {
+				changed.forEach(function($f) {
+					var $row = $f.closest('tr');
+					$row.css('background-color', '#fff3cd');
+					setTimeout(function() {
+						$row.css('transition', 'background-color 0.8s ease');
+						$row.css('background-color', '');
+					}, 100);
+				});
+			}
+		});
 	}
 
 	// --- Color swatches UI ---
@@ -129,12 +127,13 @@ jQuery(function($) {
 	$colorSource.after($swatchesContainer);
 
 	// Pickr standalone container (outside button to prevent button flash)
-	var $pickrStandalone = $('<div class="cmsmasters-pickr-standalone"></div>');
-	$swatchesContainer.after($pickrStandalone);
+	// Wrapper stays in DOM; Pickr replaces the inner <span> with its .pickr button
+	var $pickrWrap = $('<div class="cmsmasters-pickr-standalone"><span></span></div>');
+	$swatchesContainer.after($pickrWrap);
 
 	// --- Initialize Pickr ---
 	var pickr = Pickr.create({
-		el: $pickrStandalone[0],
+		el: $pickrWrap.find('span')[0],
 		theme: 'monolith',
 		default: customColorValue,
 		swatches: [
