@@ -1009,17 +1009,6 @@ class Module extends Base_Module {
 			)
 		);
 
-		$element->end_controls_section();
-
-		// Separate section for color — keeps it outside the reset button's scope
-		$element->start_controls_section(
-			'cmsmasters_section_page_cursor_color',
-			array(
-				'label' => __( 'Cursor Color', 'cmsmasters-elementor' ),
-				'tab'   => Controls_Manager::TAB_ADVANCED,
-			)
-		);
-
 		$element->add_control(
 			'cmsmasters_page_cursor_color',
 			array(
@@ -1028,6 +1017,7 @@ class Module extends Base_Module {
 				'default'     => '',
 				'global'      => array( 'default' => '' ),
 				'description' => __( 'Use the clear button (circular arrow) to reset color.', 'cmsmasters-elementor' ),
+				'separator'   => 'before',
 				'condition'   => array(
 					'cmsmasters_page_cursor_disable' => '',
 				),
