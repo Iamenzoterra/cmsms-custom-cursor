@@ -787,7 +787,7 @@
             return;
         }
         if (p.disable === '') {
-            // Don't force-enable — panel toggle has its own state
+            body.classList.remove('cmsmasters-cursor-disabled');
         }
 
         // --- Theme ---
