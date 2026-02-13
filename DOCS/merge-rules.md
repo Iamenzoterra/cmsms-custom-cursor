@@ -65,6 +65,10 @@ assets/css/editor-navigator.min.css
 mkdir -p commit
 cp -r assets includes modules commit/
 
+# Add managers/modules.php from reference copy (registers cursor-controls module)
+mkdir -p commit/includes/managers
+cp cmsmasters-elementor-addon/includes/managers/modules.php commit/includes/managers/
+
 # Remove backup files (not needed in production)
 find commit -type f \( -name "*.pre-*" -o -name "*.backup" \) -delete
 ```
@@ -145,6 +149,7 @@ git push
 cd custom-cursor/github/
 npm run build
 mkdir -p commit && cp -r assets includes modules commit/
+mkdir -p commit/includes/managers && cp cmsmasters-elementor-addon/includes/managers/modules.php commit/includes/managers/
 find commit -type f -name "*.pre-*" -delete
 
 cd ../cmsmasters-elementor-addon/cmsmasters-elementor-addon/

@@ -42,7 +42,33 @@ class Module extends Base_Module {
 		add_action( 'elementor/frontend/column/before_render', array( $this, 'apply_cursor_attributes' ) );
 	}
 
+	/**
+	 * Check if current context needs cursor controls registered.
+	 *
+	 * Controls are only needed in the Elementor editor panel and AJAX.
+	 * Not needed during CSS regeneration, Merlin wizard, WP-Cron, WP-CLI.
+	 *
+	 * @return bool
+	 */
+	private function should_register_controls() {
+		if ( ! is_admin() ) {
+			return true;
+		}
+
+		if ( wp_doing_ajax() ) {
+			return true;
+		}
+
+		// Admin page — only register if it's the Elementor editor (?action=elementor)
+		return ! empty( $_REQUEST['action'] ) && 'elementor' === $_REQUEST['action'];
+	}
+
 	public function register_controls( $element ) {
+		// Skip on admin pages that aren't the Elementor editor (fixes 504 timeout on Merlin wizard)
+		if ( ! $this->should_register_controls() ) {
+			return;
+		}
+
 		// Skip during content import (Merlin wizard) — no controls needed, avoids 504 timeout
 		if ( defined( 'WP_IMPORTING' ) && WP_IMPORTING ) {
 			return;
@@ -871,6 +897,11 @@ class Module extends Base_Module {
 		// - section_page_style: Elementor core (Style tab — fallback if above absent)
 		$valid_sections = array( 'cmsmasters_section_additional', 'section_custom_css_pro', 'section_page_style' );
 		if ( ! in_array( $section_id, $valid_sections, true ) ) {
+			return;
+		}
+
+		// Skip on admin pages that aren't the Elementor editor (fixes 504 timeout on Merlin wizard)
+		if ( ! $this->should_register_controls() ) {
 			return;
 		}
 

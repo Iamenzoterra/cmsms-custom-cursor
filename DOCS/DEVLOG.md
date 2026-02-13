@@ -4,6 +4,23 @@ Living document tracking development sessions, decisions, and iterations.
 
 ---
 
+## 2026-02-13 — Fix: 504 Gateway Timeout on Merlin Wizard Content Import
+
+**Problem:** First-time Merlin wizard run hits 504 on `step=content`. After `step=plugins` installs/updates plugins, Elementor invalidates CSS cache. Next admin page load triggers CSS regeneration which builds control stacks for ALL element types. Our `register_controls()` fires ~50 controls per type, `register_page_cursor_controls()` fires ~7 per Document. Total: hundreds of registrations → PHP exceeds nginx timeout.
+
+**Why existing guards failed:**
+- `WP_IMPORTING` — only defined during XML import, NOT during the page load that triggers CSS regen
+- `is_admin()` guard in `init_filters()` — only protects `before_render` hooks, not control registration
+- `is_edit_mode()` — returns false during control stack building because Editor property is set AFTER stacks are built (timing issue)
+
+**Solution:** Added `should_register_controls()` private method using `$_REQUEST['action'] === 'elementor'` check. This is the same signal Elementor uses internally but available from PHP startup without timing dependency. Guard added to both `register_controls()` and `register_page_cursor_controls()`.
+
+**Key insight:** Our cursor controls don't generate CSS — they only show UI in the editor panel and add `data-cursor-*` attributes via `before_render`. During CSS regeneration on non-editor admin pages, building our control stack is completely unnecessary.
+
+**Files changed:** `modules/cursor-controls/module.php` — added `should_register_controls()` method, added guard calls in both registration methods.
+
+---
+
 ## 2026-02-13 — Fix: Special Cursor Color Reset + Settings Page Restructure
 
 **Problem 1: forcedColor leaks across zones.** Special cursor branches (image/text/icon) in `detectCursorMode()` return early before the core branch's color reset logic. If `forcedColor` was set on a previous element, the `--cmsmasters-cursor-color` inline style stays stuck on body when hovering into a special cursor zone without its own color.
