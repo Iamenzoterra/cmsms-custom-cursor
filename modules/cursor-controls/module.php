@@ -1016,7 +1016,6 @@ class Module extends Base_Module {
 				'type'        => Controls_Manager::COLOR,
 				'default'     => '',
 				'global'      => array( 'default' => '' ),
-				'description' => __( 'Use the clear button (circular arrow) to reset color.', 'cmsmasters-elementor' ),
 				'separator'   => 'before',
 				'condition'   => array(
 					'cmsmasters_page_cursor_disable' => '',

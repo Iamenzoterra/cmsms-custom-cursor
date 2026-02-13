@@ -1306,10 +1306,11 @@
 			if (!doc || !doc.container) return;
 			if (typeof $e === 'undefined' || !$e.run) return;
 
-			// Build settings to reset (color is in its own section — user clears it manually)
+			// Build settings to reset — include __globals__ cleanup inside command for undo support
 			var settingsToReset = {
 				cmsmasters_page_cursor_disable: '',
 				cmsmasters_page_cursor_theme: '',
+				cmsmasters_page_cursor_color: '',
 				cmsmasters_page_cursor_smoothness: '',
 				cmsmasters_page_cursor_blend_mode: '',
 				cmsmasters_page_cursor_effect: '',
@@ -1317,11 +1318,35 @@
 			};
 
 			// Single $e.run — all changes in one undo step
-			$e.run('document/elements/settings', {
+			var result = $e.run('document/elements/settings', {
 				container: doc.container,
 				settings: settingsToReset
 			});
 
+			// Clear global color reference via the color control's built-in clear
+			// (same mechanism as the circular arrow reset button in the Color Picker)
+			try {
+				var pageView = elementor.getPanelView().getCurrentPageView();
+				if (pageView && pageView.children) {
+					var colorControl = null;
+					pageView.children.each(function(childView) {
+						if (childView.model && childView.model.get('name') === 'cmsmasters_page_cursor_color') {
+							colorControl = childView;
+						}
+					});
+					if (colorControl) {
+						colorControl.setValue('');
+						colorControl.triggerMethod('value:type:change');
+						colorControl.applySavedValue();
+					}
+				}
+				// Re-render all controls to reflect reset state
+				if (pageView && pageView._renderChildren) {
+					pageView._renderChildren();
+				}
+			} catch (err) {
+				if (window.CMSM_DEBUG) console.warn('[NavigatorIndicator] Color control clear failed:', err);
+			}
 
 			if (window.CMSM_DEBUG) console.log('[NavigatorIndicator] Page cursor settings reset to defaults');
 		});
