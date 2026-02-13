@@ -1322,6 +1322,20 @@
 				settings: settingsToReset
 			});
 
+			// Re-render only the reset controls (skip color to avoid flash)
+			try {
+				var pageView = elementor.getPanelView().getCurrentPageView();
+				if (pageView && pageView.children) {
+					pageView.children.each(function(childView) {
+						if (childView.model && childView.model.get('name') !== 'cmsmasters_page_cursor_color') {
+							childView.render();
+						}
+					});
+				}
+			} catch (err) {
+				if (window.CMSM_DEBUG) console.warn('[NavigatorIndicator] Controls re-render failed:', err);
+			}
+
 			if (window.CMSM_DEBUG) console.log('[NavigatorIndicator] Page cursor settings reset to defaults');
 		});
 
