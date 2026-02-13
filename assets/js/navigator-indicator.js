@@ -1323,37 +1323,29 @@
 				settings: settingsToReset
 			});
 
-			// Clean up any existing __globals__ reference (backward compat for pages
-			// that had a global color set before the 'global' param was removed)
+			// Clear global color reference via the color control's built-in clear
+			// (same mechanism as the circular arrow reset button in the Color Picker)
 			try {
-				var settingsModel = doc.container.model.get('settings');
-				var globals = settingsModel.get('__globals__') || {};
-				if (globals.cmsmasters_page_cursor_color) {
-					var cleanGlobals = Object.assign({}, globals);
-					delete cleanGlobals.cmsmasters_page_cursor_color;
-					settingsModel.set('__globals__', cleanGlobals);
+				var pageView = elementor.getPanelView().getCurrentPageView();
+				if (pageView && pageView.children) {
+					var colorControl = null;
+					pageView.children.each(function(childView) {
+						if (childView.model && childView.model.get('name') === 'cmsmasters_page_cursor_color') {
+							colorControl = childView;
+						}
+					});
+					if (colorControl) {
+						colorControl.setValue('');
+						colorControl.triggerMethod('value:type:change');
+						colorControl.applySavedValue();
+					}
+				}
+				// Re-render all controls to reflect reset state
+				if (pageView && pageView._renderChildren) {
+					pageView._renderChildren();
 				}
 			} catch (err) {
-				if (window.CMSM_DEBUG) console.warn('[NavigatorIndicator] Globals cleanup failed:', err);
-			}
-
-			// Force panel controls to re-render with cleared values
-			function refreshPanel() {
-				try {
-					var currentView = elementor.getPanelView().getCurrentPageView();
-					if (currentView && currentView._renderChildren) {
-						currentView._renderChildren();
-					}
-				} catch (err) {
-					if (window.CMSM_DEBUG) console.warn('[NavigatorIndicator] Panel re-render failed:', err);
-				}
-			}
-
-			// $e.run may return a Promise — use .then() if available, else refresh immediately
-			if (result && typeof result.then === 'function') {
-				result.then(refreshPanel);
-			} else {
-				refreshPanel();
+				if (window.CMSM_DEBUG) console.warn('[NavigatorIndicator] Color control clear failed:', err);
 			}
 
 			if (window.CMSM_DEBUG) console.log('[NavigatorIndicator] Page cursor settings reset to defaults');

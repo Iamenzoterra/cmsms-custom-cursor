@@ -927,6 +927,7 @@ class Module extends Base_Module {
 				'label'     => __( 'Cursor Color', 'cmsmasters-elementor' ),
 				'type'      => Controls_Manager::COLOR,
 				'default'   => '',
+				'global'    => array( 'default' => '' ),
 				'condition' => array(
 					'cmsmasters_page_cursor_disable' => '',
 				),
