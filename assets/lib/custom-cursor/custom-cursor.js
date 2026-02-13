@@ -687,6 +687,15 @@
     }
     var currentBlendIntensity = globalBlendIntensity;
 
+    // True WP Admin global blend (ignores page settings).
+    // Widgets with "Default (Global)" use this, not the page override.
+    var trueGlobalBlend = window.cmsmCursorTrueGlobalBlend || '';
+
+    // Editor live preview: update page > global blend when Page Settings change
+    body.addEventListener('cmsmasters:cursor:page-blend-update', function(e) {
+        globalBlendIntensity = e.detail.blend || '';
+    });
+
     // === SPECIAL CURSOR LIFECYCLE MANAGER (Phase 3 — MEM-004 fix) ===
     // Coordinates create/remove of image/text/icon cursors.
     // Prevents accumulation by deduplication and atomic cleanup.
@@ -1799,14 +1808,14 @@
                 } else if (imgSelfBlend === 'soft' || imgSelfBlend === 'medium' || imgSelfBlend === 'strong') {
                     if (currentBlendIntensity !== imgSelfBlend) setBlendIntensity(imgSelfBlend);
                 } else if (imgSelfBlend === 'default' || imgSelfBlend === '') {
-                    // P1 fix: Explicit "default" = use GLOBAL
-                    if (currentBlendIntensity !== globalBlendIntensity) setBlendIntensity(globalBlendIntensity);
+                    // P1 fix: Explicit "default" = use true GLOBAL (not page override)
+                    if (currentBlendIntensity !== trueGlobalBlend) setBlendIntensity(trueGlobalBlend);
                 }
             } else {
-                // P1 fix: Image cursor element has no blend = use GLOBAL
+                // P1 fix: Image cursor element has no blend = use true GLOBAL
                 // (imageEl already has cursor-image, so it's "modified" - don't inherit blend)
-                if (currentBlendIntensity !== globalBlendIntensity) {
-                    setBlendIntensity(globalBlendIntensity);
+                if (currentBlendIntensity !== trueGlobalBlend) {
+                    setBlendIntensity(trueGlobalBlend);
                 }
             }
 
@@ -1865,14 +1874,14 @@
                 } else if (txtSelfBlend === 'soft' || txtSelfBlend === 'medium' || txtSelfBlend === 'strong') {
                     if (currentBlendIntensity !== txtSelfBlend) setBlendIntensity(txtSelfBlend);
                 } else if (txtSelfBlend === 'default' || txtSelfBlend === '') {
-                    // P1 fix: Explicit "default" = use GLOBAL
-                    if (currentBlendIntensity !== globalBlendIntensity) setBlendIntensity(globalBlendIntensity);
+                    // P1 fix: Explicit "default" = use true GLOBAL (not page override)
+                    if (currentBlendIntensity !== trueGlobalBlend) setBlendIntensity(trueGlobalBlend);
                 }
             } else {
-                // P1 fix: Text cursor element has no blend = use GLOBAL
+                // P1 fix: Text cursor element has no blend = use true GLOBAL
                 // (textEl already has cursor-text, so it's "modified" - don't inherit blend)
-                if (currentBlendIntensity !== globalBlendIntensity) {
-                    setBlendIntensity(globalBlendIntensity);
+                if (currentBlendIntensity !== trueGlobalBlend) {
+                    setBlendIntensity(trueGlobalBlend);
                 }
             }
 
@@ -1928,14 +1937,14 @@
                 } else if (icoSelfBlend === 'soft' || icoSelfBlend === 'medium' || icoSelfBlend === 'strong') {
                     if (currentBlendIntensity !== icoSelfBlend) setBlendIntensity(icoSelfBlend);
                 } else if (icoSelfBlend === 'default' || icoSelfBlend === '') {
-                    // P1 fix: Explicit "default" = use GLOBAL
-                    if (currentBlendIntensity !== globalBlendIntensity) setBlendIntensity(globalBlendIntensity);
+                    // P1 fix: Explicit "default" = use true GLOBAL (not page override)
+                    if (currentBlendIntensity !== trueGlobalBlend) setBlendIntensity(trueGlobalBlend);
                 }
             } else {
-                // P1 fix: Icon cursor element has no blend = use GLOBAL
+                // P1 fix: Icon cursor element has no blend = use true GLOBAL
                 // (iconElSpecial already has cursor-icon, so it's "modified" - don't inherit blend)
-                if (currentBlendIntensity !== globalBlendIntensity) {
-                    setBlendIntensity(globalBlendIntensity);
+                if (currentBlendIntensity !== trueGlobalBlend) {
+                    setBlendIntensity(trueGlobalBlend);
                 }
             }
 
@@ -1998,29 +2007,30 @@
             } else if (selfBlend === 'soft' || selfBlend === 'medium' || selfBlend === 'strong') {
                 if (currentBlendIntensity !== selfBlend) setBlendIntensity(selfBlend);
             } else if (selfBlend === 'yes' && currentBlendIntensity === '') {
-                setBlendIntensity(globalBlendIntensity || 'soft');
+                setBlendIntensity(trueGlobalBlend || 'soft');
             } else if (selfBlend === 'default' || selfBlend === '') {
-                // P1 fix: Explicit "default" = use GLOBAL, not inherit from parent
-                if (currentBlendIntensity !== globalBlendIntensity) {
-                    setBlendIntensity(globalBlendIntensity);
+                // P1 fix: Explicit "default" = use true GLOBAL, not page override
+                if (currentBlendIntensity !== trueGlobalBlend) {
+                    setBlendIntensity(trueGlobalBlend);
                 }
             }
         } else {
             // Element has NO blend attribute
-            // P1 fix: Widget (data-id) with no blend = use GLOBAL (don't inherit from parent)
-            //         Inner content (no data-id) = walk up to find parent's blend
+            // Widget (data-id) with no blend = use true GLOBAL (not page override)
+            // Inner content (no data-id) = walk up to find parent's blend
             var isWidget = el.getAttribute && el.getAttribute('data-id');
 
             if (isWidget) {
-                // Widget without blend attribute = use GLOBAL
-                if (currentBlendIntensity !== globalBlendIntensity) {
-                    setBlendIntensity(globalBlendIntensity);
+                // Widget without blend attribute = use true GLOBAL
+                if (currentBlendIntensity !== trueGlobalBlend) {
+                    setBlendIntensity(trueGlobalBlend);
                 }
             } else {
                 // Inner content - walk up to find blend
-                // "Dirty" widget (has ANY cursor settings) = new "floor" = use GLOBAL for unset
+                // "Dirty" widget (has ANY cursor settings) = new "floor" = use true GLOBAL for unset
                 // "Clean" widget (no cursor settings) = same "floor" = cascade from parent
                 var blendEl = null;
+                var stoppedAtWidget = false;
                 var current = el.parentElement;
                 while (current && current !== document.body) {
                     if (current.getAttribute) {
@@ -2032,6 +2042,7 @@
                                 blendEl = current;
                             }
                             // Either way, STOP here - dirty widget = new floor
+                            stoppedAtWidget = true;
                             break;
                         }
                         // Clean widget or non-widget - check for blend and continue cascade
@@ -2049,10 +2060,14 @@
                     } else if (blendValue === 'soft' || blendValue === 'medium' || blendValue === 'strong') {
                         if (currentBlendIntensity !== blendValue) setBlendIntensity(blendValue);
                     } else if (blendValue === 'yes' && currentBlendIntensity === '') {
-                        setBlendIntensity(globalBlendIntensity || 'soft');
+                        setBlendIntensity(trueGlobalBlend || 'soft');
                     }
-                } else if (currentBlendIntensity !== globalBlendIntensity) {
-                    setBlendIntensity(globalBlendIntensity);
+                } else {
+                    // No blend found — widget context uses true global, body uses page > global
+                    var fallbackBlend = stoppedAtWidget ? trueGlobalBlend : globalBlendIntensity;
+                    if (currentBlendIntensity !== fallbackBlend) {
+                        setBlendIntensity(fallbackBlend);
+                    }
                 }
             }
         }

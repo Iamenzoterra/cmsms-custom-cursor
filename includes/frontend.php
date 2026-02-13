@@ -1367,6 +1367,16 @@ class Frontend extends Base_App {
 			$inline_js_parts[] = 'window.cmsmCursorEffect = "' . esc_js( $page_effect ) . '";';
 		}
 
+		// True global blend (for widget fallback — NOT page > global).
+		// Widgets with "Default (Global)" use this instead of the page override.
+		$global_blend_only = get_option( 'elementor_custom_cursor_blend_mode', '' );
+		if ( 'yes' === $global_blend_only ) {
+			$global_blend_only = 'medium'; // legacy
+		}
+		if ( ! empty( $global_blend_only ) ) {
+			$inline_js_parts[] = 'window.cmsmCursorTrueGlobalBlend = "' . esc_js( $global_blend_only ) . '";';
+		}
+
 		if ( ! empty( $inline_js_parts ) ) {
 			wp_add_inline_script( 'cmsmasters-custom-cursor', implode( "\n", $inline_js_parts ), 'before' );
 		}

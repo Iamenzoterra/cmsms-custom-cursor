@@ -4,6 +4,28 @@ Living document tracking development sessions, decisions, and iterations.
 
 ---
 
+## 2026-02-13 — Fix: Page Blend Mode Leaks Into Widget Cursors
+
+**Problem:** Page Settings blend mode applied to ALL cursors on the page, including widgets with their own cursor settings or "Default (Global)". Widgets should use the WP Admin global blend, not the page override.
+
+**Root cause:** `globalBlendIntensity` in `custom-cursor.js` is initialized from body classes, which contain the merged page > global value (output by PHP). All widget fallback code used this merged value, so page blend leaked everywhere.
+
+**Solution:** Separate "true global" from "page > global":
+- PHP outputs `window.cmsmCursorTrueGlobalBlend` with the raw WP Admin global blend (bypassing page settings)
+- JS reads `trueGlobalBlend` from this window property
+- All widget fallback locations (image/text/icon/core cursors) now use `trueGlobalBlend` instead of `globalBlendIntensity`
+- Inner content walk-up uses `stoppedAtWidget` flag: dirty widget floor → true global, reached body → page > global
+- Editor sync dispatches `cmsmasters:cursor:page-blend-update` event to keep `globalBlendIntensity` in sync during live editing
+
+**Priority chain (after fix):**
+- Widget with explicit blend → use it (unchanged)
+- Widget with "Default (Global)" / no attribute → `trueGlobalBlend` (WP Admin)
+- Default cursor (body, not on widget) → `globalBlendIntensity` (page > global)
+
+**Files modified:** `includes/frontend.php`, `assets/lib/custom-cursor/custom-cursor.js`, `assets/js/cursor-editor-sync.js`
+
+---
+
 ## 2026-02-13 — Fix: Reset Button — Use Color Control's Built-in Clear
 
 **Problem:** The "Reset to System Default" button couldn't clear `__globals__.cmsmasters_page_cursor_color`. Manual `__globals__` manipulation (direct model.set, silent:true, setTimeout, removing 'global' param) all failed — Elementor's rendering pipeline kept restoring the reference.

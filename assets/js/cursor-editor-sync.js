@@ -52,6 +52,13 @@
             if (cls.indexOf('cmsmasters-cursor-theme-') === 0) state.themeClasses.push(cls);
             if (cls.indexOf('cmsmasters-cursor-blend') === 0) state.blendClasses.push(cls);
         });
+        // Extract initial blend intensity from captured classes
+        state.blendIntensity = '';
+        state.blendClasses.forEach(function(cls) {
+            if (cls === 'cmsmasters-cursor-blend-strong') state.blendIntensity = 'strong';
+            else if (cls === 'cmsmasters-cursor-blend-medium') state.blendIntensity = 'medium';
+            else if (cls === 'cmsmasters-cursor-blend-soft') state.blendIntensity = 'soft';
+        });
         return state;
     })();
 
@@ -829,6 +836,22 @@
             removeClassByPrefix(body, 'cmsmasters-cursor-blend');
             ini.blendClasses.forEach(function(cls) { body.classList.add(cls); });
         }
+
+        // Notify custom-cursor.js of page blend change (updates globalBlendIntensity)
+        var effectiveBlend = '';
+        if (p.blend_mode) {
+            var bmNorm = p.blend_mode === 'yes' ? 'medium' : p.blend_mode;
+            if (['soft', 'medium', 'strong'].indexOf(bmNorm) !== -1) {
+                effectiveBlend = bmNorm;
+            }
+            // 'off' → effectiveBlend stays ''
+        } else if (p.blend_mode === '') {
+            // Cleared → restore initial PHP blend (page > global at page load)
+            effectiveBlend = ini.blendIntensity || '';
+        }
+        body.dispatchEvent(new CustomEvent('cmsmasters:cursor:page-blend-update', {
+            detail: { blend: effectiveBlend }
+        }));
 
         // --- Effect ---
         if (p.effect) {
