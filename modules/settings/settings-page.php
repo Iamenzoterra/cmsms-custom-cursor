@@ -200,11 +200,8 @@ class Settings_Page extends ElementorSettingsPage {
 		$tabs['advanced'] = array(
 			'label' => __( 'Custom Cursor', 'cmsmasters-elementor' ),
 			'sections' => array(
-				'custom_cursor_settings' => array(
-					'label' => __( 'Settings', 'cmsmasters-elementor' ),
-					'callback' => function() {
-						// Section description (rendered before the fields table)
-					},
+				'custom_cursor' => array(
+					'label' => '',
 					'fields' => array(
 						'custom_cursor_enabled' => array(
 							'label' => __( 'Enable Custom Cursor', 'cmsmasters-elementor' ),
@@ -240,6 +237,29 @@ class Settings_Page extends ElementorSettingsPage {
 								),
 								'default' => '',
 								'desc' => __( 'Show system cursor alongside custom cursor.', 'cmsmasters-elementor' ),
+							),
+						),
+						'custom_cursor_color_source' => array(
+							'label' => __( 'Cursor Color', 'cmsmasters-elementor' ),
+							'field_args' => array(
+								'type' => 'select',
+								'default' => 'custom',
+								'options' => array(
+									'primary'   => __( 'Primary (Global)', 'cmsmasters-elementor' ),
+									'secondary' => __( 'Secondary (Global)', 'cmsmasters-elementor' ),
+									'text'      => __( 'Text (Global)', 'cmsmasters-elementor' ),
+									'accent'    => __( 'Accent (Global)', 'cmsmasters-elementor' ),
+									'custom'    => __( 'Custom Color', 'cmsmasters-elementor' ),
+								),
+								'desc' => __( 'Choose a global color from Kit or select Custom to enter your own.', 'cmsmasters-elementor' ),
+							),
+						),
+						'custom_cursor_color' => array(
+							'label' => __( 'Custom Color', 'cmsmasters-elementor' ),
+							'field_args' => array(
+								'type' => 'text',
+								'default' => '#222222',
+								'desc' => __( 'Hex color (e.g. #222222). Only used when "Custom Color" selected above.', 'cmsmasters-elementor' ),
 							),
 						),
 						'custom_cursor_adaptive' => array(
@@ -321,39 +341,6 @@ class Settings_Page extends ElementorSettingsPage {
 									'yes' => __( 'Enabled', 'cmsmasters-elementor' ),
 								),
 								'desc' => __( 'Elastic rubber-like deformation based on cursor velocity.', 'cmsmasters-elementor' ),
-							),
-						),
-					),
-				),
-				'custom_cursor_color' => array(
-					'label' => __( 'Color', 'cmsmasters-elementor' ),
-					'callback' => function() {
-						// NOTE: Elementor global color "clear" retains resolved hex as local value.
-						// This is standard Elementor behavior. User must manually change color
-						// or toggle Force Color off to reset per-element cursor color.
-					},
-					'fields' => array(
-						'custom_cursor_color_source' => array(
-							'label' => __( 'Cursor Color', 'cmsmasters-elementor' ),
-							'field_args' => array(
-								'type' => 'select',
-								'default' => 'custom',
-								'options' => array(
-									'primary'   => __( 'Primary (Global)', 'cmsmasters-elementor' ),
-									'secondary' => __( 'Secondary (Global)', 'cmsmasters-elementor' ),
-									'text'      => __( 'Text (Global)', 'cmsmasters-elementor' ),
-									'accent'    => __( 'Accent (Global)', 'cmsmasters-elementor' ),
-									'custom'    => __( 'Custom Color', 'cmsmasters-elementor' ),
-								),
-								'desc' => __( 'Choose a global color from Kit or select Custom to enter your own.', 'cmsmasters-elementor' ),
-							),
-						),
-						'custom_cursor_color' => array(
-							'label' => __( 'Custom Color', 'cmsmasters-elementor' ),
-							'field_args' => array(
-								'type' => 'text',
-								'default' => '#222222',
-								'desc' => __( 'Hex color (e.g. #222222). Only used when "Custom Color" selected above.', 'cmsmasters-elementor' ),
 							),
 						),
 					),
