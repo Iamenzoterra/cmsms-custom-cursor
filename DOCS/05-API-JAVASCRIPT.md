@@ -18,6 +18,38 @@
 
 **Location:** `assets/lib/custom-cursor/custom-cursor.js`
 
+### Global Variables
+
+**Location:** Lines ~690-695
+
+#### trueGlobalBlend
+
+```javascript
+var trueGlobalBlend = window.cmsmCursorTrueGlobalBlend || '';
+```
+
+**Purpose:** Stores the true WP Admin global blend mode setting, bypassing page-level overrides.
+
+**Source:** Set by PHP in `frontend.php` via `window.cmsmCursorTrueGlobalBlend`
+
+**Usage:** Widget fallback blend mode when widget has "Default (Global)" or no `data-cursor-blend` attribute.
+
+**Difference from `globalBlendIntensity`:**
+- `trueGlobalBlend` = pure WP Admin global setting (read from `get_option('elementor_custom_cursor_blend_mode')`)
+- `globalBlendIntensity` = page > global merge (read from body classes, used for default cursor on body)
+
+**See:** Blend mode priority chain in [10-MAP-DATA-FLOW.md](./10-MAP-DATA-FLOW.md)
+
+---
+
+#### globalBlendIntensity
+
+**Purpose:** Stores the merged page > global blend mode (used for default cursor when not hovering any widget).
+
+**Updated by:** `cmsmasters:cursor:page-blend-update` CustomEvent from editor sync.
+
+---
+
 ### Constants (CONSTANTS Section)
 
 **Location:** Lines ~160-256
@@ -1714,6 +1746,38 @@ Sends message to parent requesting initial cursor settings.
     type: 'cmsmasters:cursor:request-init'
 }
 ```
+
+---
+
+### Editor Sync Events
+
+#### cmsmasters:cursor:page-blend-update
+
+**Direction:** Editor → Preview iframe
+
+**Purpose:** Notifies preview iframe when page-level blend mode changes in editor, allowing `globalBlendIntensity` to update for real-time preview of default cursor blend.
+
+**Dispatched by:** `cursor-editor-sync.js` - `applyPageCursorSettings()` after applying page blend changes
+
+**Listened by:** `custom-cursor.js` (lines ~690-695)
+
+**Event Detail:**
+```javascript
+{
+    blendIntensity: 'soft' | 'medium' | 'strong' | ''
+}
+```
+
+**Handler:**
+```javascript
+window.addEventListener('cmsmasters:cursor:page-blend-update', function(e) {
+    if (e.detail && e.detail.blendIntensity !== undefined) {
+        globalBlendIntensity = e.detail.blendIntensity;
+    }
+});
+```
+
+**Why Needed:** `globalBlendIntensity` is initialized from body classes on page load, but when page blend changes in editor, body classes don't update (applied via JS `body.classList`, not re-rendered HTML). This event keeps the variable in sync.
 
 ---
 

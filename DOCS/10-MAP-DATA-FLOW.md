@@ -364,6 +364,60 @@ This document traces how cursor settings flow from WordPress options to visual o
 
 ---
 
+## Blend Mode Data Flow (v5.6 - February 2026)
+
+### Priority Chain
+
+**Fix:** Page blend mode no longer leaks into widget cursors. Widgets use true WP Admin global, default cursor uses page > global.
+
+```
+Widget Cursor Blend Priority:
+1. Widget explicit blend (soft/medium/strong/off) → use it
+2. Widget "Default (Global)" / no data-cursor-blend → trueGlobalBlend (WP Admin only)
+3. (Widget fallback never reaches page blend)
+
+Default Cursor Blend Priority (on body, not hovering widget):
+1. Page blend override → globalBlendIntensity
+2. WP Admin global → globalBlendIntensity
+```
+
+### Data Sources
+
+| Variable | Source | Used For |
+|----------|--------|----------|
+| `trueGlobalBlend` | `window.cmsmCursorTrueGlobalBlend` from PHP `get_option('elementor_custom_cursor_blend_mode')` | Widget fallback "Default (Global)" |
+| `globalBlendIntensity` | Body classes (page > global merge) + `cmsmasters:cursor:page-blend-update` event | Default cursor on body |
+
+### Widget Fallback Walk-Up
+
+When widget has no `data-cursor-blend` attribute, inner content detection walks up:
+
+```javascript
+// Walk up from inner content to widget floor
+var stoppedAtWidget = false;
+while (current && current !== document.body) {
+    if (current.hasAttribute('data-cursor-blend')) return current.getAttribute('data-cursor-blend');
+    if (current.hasAttribute('data-id')) {
+        stoppedAtWidget = true;
+        break;  // Hit widget boundary
+    }
+    current = current.parentElement;
+}
+
+// Fallback logic
+if (stoppedAtWidget) {
+    // Dirty widget floor (inner content, no blend on widget) → use true global
+    return trueGlobalBlend;
+} else {
+    // Clean walk to body → use page > global for default cursor
+    return globalBlendIntensity;
+}
+```
+
+**Why:** Inner content (like buttons inside sections) should inherit widget blend if set, else use global. Default cursor on body should use page override.
+
+---
+
 ## Adaptive Mode Data Flow
 
 ```

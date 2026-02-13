@@ -58,6 +58,44 @@ The editor sync system enables real-time cursor preview in Elementor editor. It 
 | `cmsmasters:cursor:request-init` | Preview → Editor | Request settings resend |
 | `cmsmasters:cursor:device-mode` | Editor → Preview | Notify responsive mode change |
 | `cmsmasters:cursor:template-check` | Editor → Preview | Hide/show panel on template type change |
+| `cmsmasters:cursor:page-settings` | Editor → Preview | Send page-level cursor settings (real-time sync) |
+
+---
+
+### cmsmasters:cursor:page-settings
+
+**Direction:** Editor → Preview
+
+**Triggered By:** Page Settings model change in editor (blend, theme, color, etc.)
+
+**Purpose:** Real-time sync of page-level cursor settings to preview iframe
+
+**Source:** `navigator-indicator.js` - `broadcastPageCursorChange()` and included in `sendInitialCursorSettings()`
+
+**Payload:**
+```javascript
+{
+    type: 'cmsmasters:cursor:page-settings',
+    pageSettings: {
+        cmsmasters_page_cursor_disable: '',           // '' or 'yes'
+        cmsmasters_page_cursor_theme: 'dot',          // '' | 'classic' | 'dot'
+        cmsmasters_page_cursor_color: '#ff0000',      // '' or hex color (resolved from globals)
+        cmsmasters_page_cursor_smoothness: 'smooth',  // '' | 'precise' | 'snappy' | 'normal' | 'smooth' | 'fluid'
+        cmsmasters_page_cursor_blend_mode: 'medium',  // '' | 'soft' | 'medium' | 'strong'
+        cmsmasters_page_cursor_effect: 'pulse',       // '' | 'wobble' | 'pulse' | 'shake' | 'buzz'
+        cmsmasters_page_cursor_adaptive: 'yes'        // '' or 'yes'
+    }
+}
+```
+
+**Handler (cursor-editor-sync.js ~840):**
+```javascript
+if (event.data.type === 'cmsmasters:cursor:page-settings') {
+    applyPageCursorSettings(event.data.pageSettings);
+}
+```
+
+**Note:** Page settings are also included in `cmsmasters:cursor:init` message as `pageSettings` property for initial sync.
 
 ---
 

@@ -4,6 +4,42 @@ Living document tracking development sessions, decisions, and iterations.
 
 ---
 
+## 2026-02-13 — Fix: Special Cursor Color Reset + Settings Page Restructure
+
+**Problem 1: forcedColor leaks across zones.** Special cursor branches (image/text/icon) in `detectCursorMode()` return early before the core branch's color reset logic. If `forcedColor` was set on a previous element, the `--cmsmasters-cursor-color` inline style stays stuck on body when hovering into a special cursor zone without its own color.
+
+**Solution:** Extracted `updateForcedColor(targetEl)` helper using `closest('[data-cursor-color]')`. Called in all four branches:
+- Image branch: `updateForcedColor(imageEl)` before return
+- Text branch: `updateForcedColor(textEl)` before return
+- Icon branch: `updateForcedColor(iconElSpecial)` before return
+- Core branch: replaces the 38-line inline color logic with `updateForcedColor(el)`
+
+The core branch previously used a manual DOM walk with `hasCursorSettings` smart boundary. The new `closest()` approach is simpler and consistent with how special cursors find their elements. Color attributes cascade through `closest()` without the boundary check.
+
+**Problem 2: Settings page structure.** All settings and color fields in one flat section. No way to reset settings without affecting color.
+
+**Solution:** Split `custom_cursor` section into two:
+- `custom_cursor_settings` — all behavioral settings (enabled, editor preview, theme, sizes, etc.)
+- `custom_cursor_color` — color source and custom color only
+
+Added "Reset to System Defaults" button between sections:
+- Resets all Section 1 fields to factory defaults
+- Does NOT touch color settings
+- Shows confirm dialog before reset
+- Visual yellow flash on changed rows
+
+**Problem 3: Pickr button flash.** Pickr was initialized inside the Custom color `<button>`, causing the button to flash when Pickr opened/closed.
+
+**Solution:** Extracted Pickr to a standalone `<div class="cmsmasters-pickr-standalone">` rendered as a sibling after the swatches container, outside all buttons. Button now only has circle + label.
+
+**Files modified:**
+- `assets/lib/custom-cursor/custom-cursor.js` — `updateForcedColor()` helper + 4 call sites
+- `modules/settings/settings-page.php` — two sections, known limitation comment
+- `assets/js/admin-settings.js` — reset button, Pickr extraction
+- `assets/css/admin-settings.css` — Pickr standalone styles, reset button styles
+
+---
+
 ## 2026-02-13 — Fix: Page Blend Mode Leaks Into Widget Cursors
 
 **Problem:** Page Settings blend mode applied to ALL cursors on the page, including widgets with their own cursor settings or "Default (Global)". Widgets should use the WP Admin global blend, not the page override.

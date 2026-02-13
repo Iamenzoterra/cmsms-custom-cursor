@@ -167,7 +167,7 @@ Adds cursor-related classes to body element.
 
 ### print_custom_cursor_html()
 
-**Line:** 1318-1336
+**Line:** 1318-1373
 
 ```php
 public function print_custom_cursor_html() { ... }
@@ -183,7 +183,12 @@ Outputs cursor HTML structure in footer.
     <div class="cmsm-cursor cmsm-cursor-dot" aria-hidden="true"></div>
     <div class="cmsm-cursor cmsm-cursor-ring" aria-hidden="true"></div>
 </div>
+<script>
+    window.cmsmCursorTrueGlobalBlend = 'medium'; // Example output
+</script>
 ```
+
+**New in v5.6 (line ~1370):** Outputs `window.cmsmCursorTrueGlobalBlend` inline script with the raw WP Admin global blend mode setting (bypassing page-level overrides).
 
 Also calls `print_cursor_critical_js()` for instant response.
 

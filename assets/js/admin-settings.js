@@ -1,6 +1,6 @@
 /**
  * CMSMasters Custom Cursor — Admin Settings Page
- * Color swatches UI, Pickr integration, and number input conversion.
+ * Color swatches UI, Pickr integration, reset button, and number input conversion.
  *
  * Expects `cmsmAdminSettings` from wp_localize_script:
  *   - kitColors:   { primary, secondary, text, accent } hex values
@@ -29,6 +29,62 @@ jQuery(function($) {
 		}
 	});
 
+	// --- Reset to Defaults button ---
+	var settingsDefaults = {
+		'elementor_custom_cursor_enabled': '',
+		'elementor_custom_cursor_editor_preview': '',
+		'elementor_custom_cursor_dual_mode': '',
+		'elementor_custom_cursor_adaptive': '',
+		'elementor_custom_cursor_theme': 'classic',
+		'elementor_custom_cursor_dot_size': '8',
+		'elementor_custom_cursor_dot_hover_size': '40',
+		'elementor_custom_cursor_smoothness': 'normal',
+		'elementor_custom_cursor_blend_mode': '',
+		'elementor_custom_cursor_wobble': ''
+	};
+
+	// Insert reset button after the Settings section table
+	var $settingsSection = $('#elementor_custom_cursor_settings');
+	if ($settingsSection.length) {
+		var $sectionTable = $settingsSection.next('table.form-table');
+		if ($sectionTable.length) {
+			var $resetBtn = $('<button type="button" class="button cmsmasters-reset-defaults">' +
+				'Reset to System Defaults</button>');
+			var $resetWrap = $('<p class="cmsmasters-reset-wrap"></p>').append($resetBtn);
+			$sectionTable.after($resetWrap);
+
+			$resetBtn.on('click', function() {
+				if (!confirm('Reset all cursor settings to defaults? Color settings will not be affected.')) {
+					return;
+				}
+
+				var changed = [];
+				$.each(settingsDefaults, function(name, defaultVal) {
+					var $field = $('[name="' + name + '"]');
+					if (!$field.length) return;
+
+					var currentVal = $field.val();
+					if (currentVal !== defaultVal) {
+						$field.val(defaultVal);
+						changed.push($field);
+					}
+				});
+
+				// Visual flash on changed fields
+				if (changed.length) {
+					changed.forEach(function($f) {
+						var $row = $f.closest('tr');
+						$row.css('background-color', '#fff3cd');
+						setTimeout(function() {
+							$row.css('transition', 'background-color 0.8s ease');
+							$row.css('background-color', '');
+						}, 100);
+					});
+				}
+			});
+		}
+	}
+
 	// --- Color swatches UI ---
 	var settings = window.cmsmAdminSettings || {};
 	var kitColors = settings.kitColors || {};
@@ -47,10 +103,9 @@ jQuery(function($) {
 
 		if (value === 'custom') {
 			$btn.addClass('cmsmasters-custom-color-btn');
-			var $pickerSpan = $('<span class="cmsmasters-pickr-inline"></span>');
 			var $circle = $('<span class="cmsmasters-swatch-circle"></span>');
 			var $label = $('<span></span>').text(label);
-			$btn.append($pickerSpan, $circle, $label);
+			$btn.append($circle, $label);
 			$customBtn = $btn;
 
 			if (currentValue === 'custom' && customColorValue) {
@@ -73,10 +128,13 @@ jQuery(function($) {
 
 	$colorSource.after($swatchesContainer);
 
+	// Pickr standalone container (outside button to prevent button flash)
+	var $pickrStandalone = $('<div class="cmsmasters-pickr-standalone"></div>');
+	$swatchesContainer.after($pickrStandalone);
+
 	// --- Initialize Pickr ---
-	var $pickerEl = $customBtn.find('.cmsmasters-pickr-inline');
 	var pickr = Pickr.create({
-		el: $pickerEl[0],
+		el: $pickrStandalone[0],
 		theme: 'monolith',
 		default: customColorValue,
 		swatches: [

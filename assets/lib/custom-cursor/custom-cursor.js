@@ -1106,6 +1106,28 @@
         currentBlendIntensity = intensity || '';
     }
 
+    /**
+     * Update forced color from nearest data-cursor-color ancestor.
+     * Called in ALL branches (image/text/icon/core) so color resets
+     * correctly when moving between zones.
+     *
+     * @param {Element|null} targetEl - The special cursor element (or hovered el for core)
+     */
+    function updateForcedColor(targetEl) {
+        var colorEl = targetEl && targetEl.closest ?
+            targetEl.closest('[data-cursor-color]') : null;
+        if (colorEl) {
+            var newColor = colorEl.getAttribute('data-cursor-color');
+            if (newColor !== forcedColor) {
+                forcedColor = newColor;
+                body.style.setProperty('--cmsmasters-cursor-color', newColor, 'important');
+            }
+        } else if (forcedColor) {
+            forcedColor = null;
+            body.style.removeProperty('--cmsmasters-cursor-color');
+        }
+    }
+
     // Popup tracking (calendars use native cursor via CSS)
     var currentPopup = null;
 
@@ -1819,6 +1841,9 @@
                 }
             }
 
+            // Handle forced color for image cursor zone
+            updateForcedColor(imageEl);
+
             // Still skip other detections when in image mode
             return;
 
@@ -1885,6 +1910,9 @@
                 }
             }
 
+            // Handle forced color for text cursor zone
+            updateForcedColor(textEl);
+
             // Skip other detections when in text mode
             return;
 
@@ -1948,6 +1976,9 @@
                 }
             }
 
+            // Handle forced color for icon cursor zone
+            updateForcedColor(iconElSpecial);
+
             return; // Skip other detections
 
         } else if (SpecialCursorManager.isActive()) {
@@ -1955,45 +1986,8 @@
             SpecialCursorManager.deactivate();
         }
 
-        // Check for forced color (per-element color picker, widget boundary logic)
-        var selfColor = el.getAttribute ? el.getAttribute('data-cursor-color') : null;
-
-        if (selfColor !== null) {
-            // Element has EXPLICIT color - use it
-            if (selfColor !== forcedColor) {
-                forcedColor = selfColor;
-                body.style.setProperty('--cmsmasters-cursor-color', selfColor, 'important');
-            }
-        } else {
-            // Element has NO color attribute - walk up to find color (smart cascade)
-            // P1 fix Attempt 5: Smart boundary - "modified" elements stop cascade
-            var colorEl = null;
-            var colorCurrent = el.parentElement;
-            while (colorCurrent && colorCurrent !== document.body) {
-                if (colorCurrent.getAttribute) {
-                    if (colorCurrent.getAttribute('data-cursor-color')) {
-                        colorEl = colorCurrent;
-                        break;
-                    }
-                    // Smart boundary: element has OTHER cursor settings = "modified", stop
-                    if (hasCursorSettings(colorCurrent)) {
-                        break; // Use global default
-                    }
-                }
-                colorCurrent = colorCurrent.parentElement;
-            }
-            if (colorEl) {
-                var newColor = colorEl.getAttribute('data-cursor-color');
-                if (newColor !== forcedColor) {
-                    forcedColor = newColor;
-                    body.style.setProperty('--cmsmasters-cursor-color', newColor, 'important');
-                }
-            } else if (forcedColor) {
-                // No parent with color - use default
-                forcedColor = null;
-                body.style.removeProperty('--cmsmasters-cursor-color');
-            }
-        }
+        // Handle forced color for core cursor (uses closest() cascade)
+        updateForcedColor(el);
 
         // Check for blend mode intensity override (per-element)
         // FIX: Elementor widgets (data-id) without attribute use GLOBAL
