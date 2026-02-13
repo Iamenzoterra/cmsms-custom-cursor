@@ -1006,6 +1006,9 @@ class Module extends Base_Module {
 				                   . '</button>',
 				'content_classes' => 'elementor-control-field',
 				'separator'       => 'before',
+				'condition'       => array(
+					'cmsmasters_page_cursor_disable' => '',
+				),
 			)
 		);
 
