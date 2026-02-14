@@ -181,7 +181,8 @@ class Editor extends Base_App {
 		wp_add_inline_script(
 			'cmsmasters-navigator-indicator',
 			'window.cmsmastersNavigatorConfig = ' . wp_json_encode( array(
-				'cursorEnabled' => $cursor_enabled,
+				'cursorEnabled'  => $cursor_enabled,
+				'widgetOverride' => get_option( 'elementor_custom_cursor_widget_override', '' ) === 'yes',
 			) ) . ';',
 			'before'
 		);
@@ -198,11 +199,12 @@ class Editor extends Base_App {
 	 * @since 4.6
 	 */
 	public function enqueue_preview_scripts() {
-		// Only enqueue if cursor is enabled and editor preview option is on
-		$cursor_enabled = get_option( 'elementor_custom_cursor_enabled', '' ) === 'yes';
-		$editor_preview = get_option( 'elementor_custom_cursor_editor_preview', '' ) === 'yes';
+		$cursor_enabled  = get_option( 'elementor_custom_cursor_enabled', '' ) === 'yes';
+		$editor_preview  = get_option( 'elementor_custom_cursor_editor_preview', '' ) === 'yes';
+		$widget_override = get_option( 'elementor_custom_cursor_widget_override', '' ) === 'yes';
 
-		if ( ! $cursor_enabled || ! $editor_preview ) {
+		// Load when: editor preview ON AND (cursor enabled OR widget override)
+		if ( ! $editor_preview || ( ! $cursor_enabled && ! $widget_override ) ) {
 			return;
 		}
 
@@ -214,6 +216,16 @@ class Editor extends Base_App {
 			CMSMASTERS_ELEMENTOR_VERSION,
 			true
 		);
+
+		// Pass show-mode flag to sync script
+		$is_show_mode = ! $cursor_enabled && $widget_override;
+		if ( $is_show_mode ) {
+			wp_add_inline_script(
+				'cmsmasters-cursor-editor-sync',
+				'window.cmsmCursorShowMode=true;',
+				'before'
+			);
+		}
 	}
 
 	/**

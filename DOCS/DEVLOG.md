@@ -4,6 +4,42 @@ Living document tracking development sessions, decisions, and iterations.
 
 ---
 
+## 2026-02-14 — Fix: Widget-only mode — contextual Hide/Show toggle (v2)
+
+**Problem:** Commit f5c3915 replaced `cmsmasters_cursor_hide` with `cmsmasters_cursor_show` as the Elementor control key. This broke normal full-mode: existing "Hide" settings lost (different DB key), condition logic inverted, and the toggle label was always "Show" even when global cursor was ON.
+
+**Approach:** Same control key (`cmsmasters_cursor_hide`) for both modes, but contextual label, conditions, and output based on 3 states:
+- **Global ON** (full mode): "Hide Custom Cursor" toggle — sub-controls visible when toggle=NO (not hiding)
+- **Global OFF + Override ON** (show mode): "Show Custom Cursor" toggle — sub-controls visible when toggle=YES (opting in)
+- **Global OFF + Override OFF** (disabled): info notice only, sub-controls NOT registered, DB values persist silently
+
+**Key decisions:**
+- `$toggle_condition` PHP variable drives ALL sub-control conditions — show mode: `'cmsmasters_cursor_hide' => 'yes'`, full mode: `'cmsmasters_cursor_hide' => ''`
+- `is_show_render_mode()` checks both global OFF + override ON AND global ON + page-level disable + override ON (for page-level widget-only)
+- `apply_cursor_attributes()` dispatcher: show mode outputs `data-cursor-show="yes"`, full mode outputs `data-cursor="hide"`
+- Editor scripts get mode flags: `window.cmsmCursorShowMode` for sync script, `window.cmsmastersNavigatorConfig.widgetOverride` for navigator
+- Navigator indicators: disabled mode returns null (no dots), show mode shows show/special/inherit types, full mode unchanged
+
+**Files changed:**
+- `modules/cursor-controls/module.php` — contextual registration, `$toggle_condition`, `is_show_render_mode()`, mode-aware `apply_cursor_attributes()` + `apply_core_cursor_attributes()`
+- `includes/editor.php` — load sync script when override ON, pass `cmsmCursorShowMode` + `widgetOverride` flags
+- `assets/js/cursor-editor-sync.js` — `isShowMode` flag, mode-aware `applySettings()` dispatcher, reverted to `cmsmasters_cursor_hide`
+- `assets/js/navigator-indicator.js` — `isShowMode`/`isDisabledMode` config, 3-mode `hasNonDefaultCursor()`, reverted to `cmsmasters_cursor_hide`
+
+---
+
+## 2026-02-13 — Production repo build: EBUSY phantom lock on build\archive
+
+**Problem:** `npm run build` in production repo (`cmsmasters-repo/cmsmasters-elementor-addon`) fails at Grunt `clean:main` step with `EBUSY: resource busy or locked, rmdir build\archive`. Folder is empty, no visible process holds it, restart doesn't help — Windows phantom lock.
+
+**Attempts:** `rmdir`, `rm -rf`, PowerShell `Remove-Item -Force`, `mv` — all fail with busy/permission error.
+
+**Solution:** `npx grunt build --force` — Grunt skips the failed `clean` and continues. All subsequent tasks (sass, postcss, copy, compress) complete successfully. Output ends with `Done, but with warnings` which is acceptable.
+
+**Files changed:** `DOCS/merge-rules.md` — added troubleshooting entry.
+
+---
+
 ## 2026-02-13 — Fix: 504 Gateway Timeout on Merlin Wizard Content Import
 
 **Problem:** First-time Merlin wizard run hits 504 on `step=content`. After `step=plugins` installs/updates plugins, Elementor invalidates CSS cache. Next admin page load triggers CSS regeneration which builds control stacks for ALL element types. Our `register_controls()` fires ~50 controls per type, `register_page_cursor_controls()` fires ~7 per Document. Total: hundreds of registrations → PHP exceeds nginx timeout.

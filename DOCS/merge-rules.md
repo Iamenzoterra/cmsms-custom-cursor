@@ -120,6 +120,7 @@ git push
 2. **Never edit `.min.*` directly** — they're auto-generated
 3. **Test before merge** — verify cursor works in Elementor editor + frontend
 4. **Keep dev repo clean** — `/commit` folder is temporary, git-ignored
+5. **STOP after preparing `commit/`** — do NOT copy to production repo, do NOT commit/push to production. Only do exactly what these rules describe, nothing more. The user handles production deployment manually.
 
 ### 🔄 Two-Repository Workflow
 
@@ -169,6 +170,16 @@ npm install           # Reinstall dependencies
 npm run build         # Try again
 ```
 
+### Production repo build: `EBUSY` on `build\archive`
+
+Grunt `clean:main` task fails with `Unable to delete "build" file (EBUSY: resource busy or locked)`. The `build\archive` folder appears empty but cannot be deleted — no visible process holds it (Windows phantom lock).
+
+**Fix:** Run with `--force` flag:
+```bash
+npx grunt build --force
+```
+Build completes normally. The warning is only from `clean` step; all subsequent tasks (sass, postcss, copy, compress) succeed.
+
 ### Minified files not updated
 - Check file timestamps: `ls -la assets/**/*.min.js`
 - Build should create files newer than source files
@@ -188,4 +199,4 @@ npm run build         # Try again
 
 ---
 
-Last updated: 2026-02-09
+Last updated: 2026-02-13

@@ -22,7 +22,11 @@
 	var TRUSTED_ORIGIN = window.location.origin;
 
 	// Config passed from PHP
-	var config = window.cmsmastersNavigatorConfig || { cursorEnabled: true };
+	var config = window.cmsmastersNavigatorConfig || { cursorEnabled: true, widgetOverride: false };
+	var cursorEnabled = config.cursorEnabled;
+	var widgetOverride = config.widgetOverride;
+	var isShowMode = !cursorEnabled && widgetOverride;
+	var isDisabledMode = !cursorEnabled && !widgetOverride;
 
 	// Throttle helper
 	var throttleTimer = null;
@@ -347,49 +351,65 @@
 	 * @returns {Object|null} - { type: 'core'|'special'|'hidden'|'show', subtype?: string } or null
 	 */
 	function hasNonDefaultCursor(settings) {
-		if (!settings || typeof settings.get !== 'function') {
+		if (!settings || typeof settings.get !== 'function') return null;
+
+		var toggle = settings.get('cmsmasters_cursor_hide');
+
+		// === DISABLED MODE: no indicators ===
+		if (isDisabledMode) {
 			return null;
 		}
 
+		// === SHOW MODE (widget-only): toggle=yes means cursor active ===
+		if (isShowMode) {
+			if (toggle !== 'yes') return null;
 
-		// Show toggle gates all cursor indicators (mirrors PHP apply_cursor_attributes)
-		var showCursor = settings.get('cmsmasters_cursor_show');
-		if (showCursor !== 'yes') {
-			return null; // No cursor settings — no indicator
+			// Check special → inherit → core (same priority as full mode)
+			var specialActive = settings.get('cmsmasters_cursor_special_active');
+			if (specialActive === 'yes') {
+				var specialType = settings.get('cmsmasters_cursor_special_type') || 'image';
+				return { type: 'special', subtype: specialType };
+			}
+
+			var inheritParent = settings.get('cmsmasters_cursor_inherit_parent');
+			if (inheritParent === 'yes') {
+				return { type: 'inherit' };
+			}
+
+			// Show mode active with no special/inherit = "show" indicator
+			return { type: 'show' };
 		}
 
-		// === Show is ON — determine indicator type ===
+		// === FULL MODE (existing logic) ===
 
 		// Priority 1: Special cursor (highest priority indicator)
 		var specialActive = settings.get('cmsmasters_cursor_special_active');
 		if (specialActive === 'yes') {
 			var specialType = settings.get('cmsmasters_cursor_special_type') || 'image';
-			return {
-				type: 'special',
-				subtype: specialType
-			};
+			return { type: 'special', subtype: specialType };
 		}
 
-
-		// Priority 1.5: Inherit mode (modifier — transparent for type cascade)
+		// Priority 2: Inherit
 		var inheritParent = settings.get('cmsmasters_cursor_inherit_parent');
 		if (inheritParent === 'yes') {
 			return { type: 'inherit' };
 		}
 
+		// Priority 3: Hide toggle
+		if (toggle === 'yes') {
+			return { type: 'hidden' };
+		}
 
-		// Priority 3: Core settings changed from default
+		// Priority 4: Core settings changed
 		var hoverStyle = settings.get('cmsmasters_cursor_hover_style');
 		var forceColor = settings.get('cmsmasters_cursor_force_color');
 		var blendMode = settings.get('cmsmasters_cursor_blend_mode');
 		var effect = settings.get('cmsmasters_cursor_effect');
 
-		// Check if any Core setting is non-default
 		if (hoverStyle && hoverStyle !== '' ||
 			forceColor === 'yes' ||
 			blendMode && blendMode !== '' ||
 			effect && effect !== '') {
-
 			return {
 				type: 'core',
 				details: {
@@ -398,10 +418,8 @@
 					blend: blendMode || null,
 					effect: effect || null
 				}
-
 			};
 		}
-
 
 		return null;
 	}

@@ -8,7 +8,10 @@
     'use strict';
 
     if (window.self === window.top) return;
-    if (!document.body.classList.contains('cmsmasters-cursor-enabled')) return;
+
+    // Show mode: cursor-enabled class absent, but widget-only class present
+    var isShowMode = window.cmsmCursorShowMode || false;
+    if (!isShowMode && !document.body.classList.contains('cmsmasters-cursor-enabled')) return;
 
     // Skip on Entry and Popup templates - no cursor panel needed
     // Only entries (*_entry) and popup are excluded; header/footer/archive/singular show cursor
@@ -636,9 +639,22 @@
         var element = findElement(elementId);
         if (!element) return;
         clearAttributes(element);
-        // Show toggle gates all cursor attributes (mirrors PHP apply_cursor_attributes)
-        if (settings.cmsmasters_cursor_show !== 'yes') { clearAttributes(element); return; }
-        element.setAttribute('data-cursor-show', 'yes');
+
+        var toggle = settings.cmsmasters_cursor_hide;
+
+        if (isShowMode) {
+            // Show mode: toggle=yes means SHOW cursor
+            if (toggle !== 'yes') return;
+            element.setAttribute('data-cursor-show', 'yes');
+        } else {
+            // Full mode: toggle=yes means HIDE cursor
+            if (toggle === 'yes') {
+                element.setAttribute('data-cursor', 'hide');
+                return;
+            }
+        }
+
+        // Inherit → Special → Core (existing logic)
         if (settings.cmsmasters_cursor_inherit_parent === 'yes') {
             element.setAttribute('data-cursor-inherit', 'yes');
             if (settings.cmsmasters_cursor_inherit_blend) element.setAttribute('data-cursor-inherit-blend', settings.cmsmasters_cursor_inherit_blend);
