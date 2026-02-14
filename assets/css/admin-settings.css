@@ -104,3 +104,9 @@ select[name="elementor_custom_cursor_color_source"] {
 	font-family: monospace;
 	font-size: 13px;
 }
+
+/* Disabled field rows (conditional dependencies) */
+tr.cmsmasters-field-disabled th,
+tr.cmsmasters-field-disabled td { opacity: 0.5; }
+tr.cmsmasters-field-disabled select { pointer-events: none !important; }
+.cmsmasters-field-hint { color: #d63638 !important; font-style: italic; margin-top: 4px; }

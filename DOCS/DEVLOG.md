@@ -4,6 +4,28 @@ Living document tracking development sessions, decisions, and iterations.
 
 ---
 
+## 2026-02-14 — Feat: Conditional settings controls (grey out invalid combos)
+
+**Problem:** Settings page has 3 linked controls (Custom Cursor, Widget Override, Editor Preview) but no visual dependency between them. User can enable "Show in Editor Preview" when cursor is OFF and Widget Override is OFF — a broken state where no scripts load and no preloader appears in editor.
+
+**Approach:** Pure frontend solution — CSS class + `pointer-events: none` to grey out controls in invalid states. No HTML `disabled` attribute (would break form submission and lose saved values). Red italic hint text explains why the field is greyed.
+
+**State table:**
+- Cursor OFF + WO OFF → Editor Preview greyed ("Enable Custom Cursor or Widget Override...")
+- Cursor OFF + WO ON → Editor Preview active
+- Cursor ON + any → Widget Override greyed ("Only available when Custom Cursor is disabled globally"), Editor Preview active
+
+**Key decisions:**
+- Used `tabindex="-1"` instead of `disabled` to prevent keyboard access without breaking form submission
+- Hint text created/removed dynamically (not just shown/hidden) to keep DOM clean
+- Guard clause: all 3 selects must exist before binding — safe on pages that don't have all fields
+
+**Files changed:**
+- `assets/js/admin-settings.js` — +38 lines: `updateFieldStates()` with `setRowDisabled()` helper, bound to `change` events
+- `assets/css/admin-settings.css` — +4 rules: `cmsmasters-field-disabled` opacity/pointer-events, `cmsmasters-field-hint` styling
+
+---
+
 ## 2026-02-14 — Fix: Widget-only mode — contextual Hide/Show toggle (v2)
 
 **Problem:** Commit f5c3915 replaced `cmsmasters_cursor_hide` with `cmsmasters_cursor_show` as the Elementor control key. This broke normal full-mode: existing "Hide" settings lost (different DB key), condition logic inverted, and the toggle label was always "Show" even when global cursor was ON.

@@ -147,4 +147,42 @@ jQuery(function($) {
 	}
 
 	$colorRow.hide();
+
+	// --- Conditional field dependencies ---
+	var $cursorSelect  = $('select[name="elementor_custom_cursor_enabled"]');
+	var $editorSelect  = $('select[name="elementor_custom_cursor_editor_preview"]');
+	var $widgetSelect  = $('select[name="elementor_custom_cursor_widget_override"]');
+
+	if ($cursorSelect.length && $editorSelect.length && $widgetSelect.length) {
+		var $editorRow = $editorSelect.closest('tr');
+		var $widgetRow = $widgetSelect.closest('tr');
+
+		function setRowDisabled($row, $select, disabled, hint) {
+			if (disabled) {
+				$row.addClass('cmsmasters-field-disabled');
+				$select.attr('tabindex', '-1');
+				if (!$row.find('.cmsmasters-field-hint').length) {
+					$select.after('<p class="description cmsmasters-field-hint">' + hint + '</p>');
+				}
+			} else {
+				$row.removeClass('cmsmasters-field-disabled');
+				$select.removeAttr('tabindex');
+				$row.find('.cmsmasters-field-hint').remove();
+			}
+		}
+
+		function updateFieldStates() {
+			var cursorOn = $cursorSelect.val() === 'yes';
+			var widgetOn = $widgetSelect.val() === 'yes';
+
+			setRowDisabled($editorRow, $editorSelect, !cursorOn && !widgetOn,
+				'Enable Custom Cursor or Widget Override to use this setting.');
+			setRowDisabled($widgetRow, $widgetSelect, cursorOn,
+				'Only available when Custom Cursor is disabled globally.');
+		}
+
+		updateFieldStates();
+		$cursorSelect.on('change', updateFieldStates);
+		$widgetSelect.on('change', updateFieldStates);
+	}
 });
