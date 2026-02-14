@@ -546,10 +546,11 @@
     var body = document.body;
     if (!body) return;
     CursorState.init(body); // Initialize state machine with body reference
-    if (!body.classList.contains('cmsmasters-cursor-enabled')) return;
+    var isWidgetOnly = body.classList.contains('cmsmasters-cursor-widget-only');
+    if (!body.classList.contains('cmsmasters-cursor-enabled') && !isWidgetOnly) return;
     if (matchMedia('(prefers-reduced-motion:reduce)').matches) return;
     if (matchMedia('(hover:none),(pointer:coarse)').matches) return;
-    // Note: PHP controls cmsmasters-cursor-enabled class, including for Elementor preview iframe
+    // Note: PHP controls body class, including for Elementor preview iframe
     // Block main editor frame (has elementor-editor-wp-page) but allow preview iframe (doesn't have it)
     if (body.classList.contains('elementor-editor-wp-page')) return;
 
@@ -579,11 +580,13 @@
     }
 
     // === WORDPRESS ADMIN BAR ===
-    // Mark admin bar to use existing data-cursor="hide" system
-    // This hides custom cursor and shows native cursor on admin bar
-    var adminBar = document.getElementById('wpadminbar');
-    if (adminBar && !adminBar.hasAttribute('data-cursor')) {
-        adminBar.setAttribute('data-cursor', 'hide');
+    // Mark admin bar to use existing data-cursor="hide" system (full mode only)
+    // In widget-only mode, cursor is already hidden by default — no need
+    if (!isWidgetOnly) {
+        var adminBar = document.getElementById('wpadminbar');
+        if (adminBar && !adminBar.hasAttribute('data-cursor')) {
+            adminBar.setAttribute('data-cursor', 'hide');
+        }
     }
 
 
@@ -595,6 +598,11 @@
     var rx = mx, ry = my; // ring position (lerped)
     var isRingHidden = false; // Flag to skip ring paint when in special cursor zone
     var hasValidPosition = !!_criticalPos; // Track if we have a real mouse position
+
+    // Widget-only mode: cursor starts hidden, only shows on show zones
+    if (isWidgetOnly) {
+        CursorState.transition({ hidden: true }, 'init:widget-only');
+    }
 
     // Smoothness: lerp factor (higher = snappier, lower = smoother)
     var smoothMap = {
@@ -610,6 +618,9 @@
     // Theme support
     var theme = window.cmsmCursorTheme || 'classic';
     body.classList.add('cmsmasters-cursor-theme-' + theme);
+
+    // Widget-only mode: show zone selector (cached for mouseover/mouseout/adaptive)
+    var SHOW_ZONE_SELECTOR = '[data-cursor-show]';
 
     // Adaptive cursor
     var adaptive = window.cmsmCursorAdaptive || false;
@@ -1605,11 +1616,16 @@
             return;
         }
 
-        // CRITICAL: Check for HIDE cursor FIRST (before any color/blend/effect processing)
-        // Mirrors the check in mouseover handler (lines 1507-1513)
-        var hideEl = el.closest ? el.closest('[data-cursor="hide"],[data-cursor="none"]') : null;
-        if (hideEl) {
-            return; // Skip ALL detection for hidden cursor zones
+        // Widget-only: skip adaptive detection outside show zones
+        if (isWidgetOnly) {
+            var showZone = el.closest ? el.closest(SHOW_ZONE_SELECTOR) : null;
+            if (!showZone) return; // Outside show zone — nothing to detect
+        } else {
+            // Full mode: check for HIDE cursor FIRST (before any color/blend/effect processing)
+            var hideEl = el.closest ? el.closest('[data-cursor="hide"],[data-cursor="none"]') : null;
+            if (hideEl) {
+                return; // Skip ALL detection for hidden cursor zones
+            }
         }
 
         // P4 v2: Auto-hide cursor on forms/popups (graceful degradation)
@@ -2485,12 +2501,29 @@
             }
         }
 
-        // Check for HIDE cursor on ANY ancestor FIRST (before hover detection)
-        // This fixes: data-cursor="hide" on container not working when hovering child buttons
-        var hideEl = t.closest ? t.closest('[data-cursor="hide"],[data-cursor="none"]') : null;
-        if (hideEl) {
-            CursorState.transition({ hidden: true }, 'mouseover:hide');
-            return; // Dont apply other hover effects when cursor is hidden
+        // Widget-only mode: show zone detection — cursor only visible inside show zones
+        if (isWidgetOnly) {
+            var showZone = t.closest ? t.closest(SHOW_ZONE_SELECTOR) : null;
+            if (showZone) {
+                if (CursorState.get('hidden')) {
+                    CursorState.transition({ hidden: false }, 'mouseover:show-zone');
+                }
+                // Fall through to hover/special cursor detection below
+            } else {
+                if (!CursorState.get('hidden')) {
+                    CursorState.transition({ hidden: true }, 'mouseover:outside-show');
+                }
+                return; // Skip all hover detection outside show zones
+            }
+        }
+
+        // Hide zone detection (full mode only — data-cursor="hide" kept for admin bar / manual HTML)
+        if (!isWidgetOnly) {
+            var hideEl = t.closest ? t.closest('[data-cursor="hide"],[data-cursor="none"]') : null;
+            if (hideEl) {
+                CursorState.transition({ hidden: true }, 'mouseover:hide');
+                return; // Dont apply other hover effects when cursor is hidden
+            }
         }
 
         // P4 v2: Auto-hide cursor on forms/popups (immediate response)
@@ -2521,6 +2554,20 @@
 
     document.addEventListener('mouseout', function(e) {
         var t = e.target;
+
+        // Widget-only: hide cursor when leaving show zone
+        if (isWidgetOnly) {
+            var showZone = t.closest ? t.closest(SHOW_ZONE_SELECTOR) : null;
+            if (showZone) {
+                var related = e.relatedTarget;
+                var relatedInShow = related && related.closest
+                    ? related.closest(SHOW_ZONE_SELECTOR) : null;
+                if (!relatedInShow) {
+                    CursorState.transition({ hidden: true }, 'mouseout:show-zone');
+                }
+            }
+        }
+
         var el = t.closest ? t.closest(hoverSel) : null;
 
         // P4 v2: Restore cursor when leaving form zone
@@ -2589,7 +2636,10 @@
         CursorState.transition({ hidden: true }, 'mouseleave');
     });
     document.documentElement.addEventListener('mouseenter', function() {
-        CursorState.transition({ hidden: false }, 'mouseenter');
+        // Widget-only: don't auto-unhide — show zones control visibility
+        if (!isWidgetOnly) {
+            CursorState.transition({ hidden: false }, 'mouseenter');
+        }
     });
 
     // === TOUCH DEVICE DETECTION (live) ===

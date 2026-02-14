@@ -58,6 +58,17 @@ body.cmsmasters-cursor-on-light {
     cursor:default!important
 }
 
+/* Widget-only mode: cursor elements visible */
+.cmsmasters-cursor-widget-only .cmsmasters-cursor {
+    opacity:1
+}
+
+/* Widget-only mode: hide native cursor only inside show zones */
+.cmsmasters-cursor-widget-only [data-cursor-show],
+.cmsmasters-cursor-widget-only [data-cursor-show] * {
+    cursor:none!important
+}
+
 /* ==========================================================================
    Plugin & UI Overrides (auto-hide, datepicker, select2, admin bar, touch)
    ========================================================================== */

@@ -1201,6 +1201,48 @@ class Frontend extends Base_App {
 	}
 
 	/**
+	 * Check if widget override is enabled in settings.
+	 *
+	 * @since 5.7
+	 * @return bool
+	 */
+	private function is_widget_override_enabled() {
+		return 'yes' === get_option( 'elementor_custom_cursor_widget_override', '' );
+	}
+
+	/**
+	 * Check if cursor is in widget-only mode.
+	 *
+	 * Widget-only mode activates when widget override is ON and either:
+	 * - Global cursor is disabled, OR
+	 * - Page-level cursor is disabled
+	 *
+	 * In this mode, cursor scripts load but cursor only appears on
+	 * widgets with "Show Custom Cursor" enabled.
+	 *
+	 * @since 5.7
+	 * @return bool
+	 */
+	private function is_widget_only_mode() {
+		if ( ! $this->is_widget_override_enabled() ) {
+			return false;
+		}
+
+		// Widget-only when global is OFF
+		if ( 'yes' !== get_option( 'elementor_custom_cursor_enabled', '' ) ) {
+			return true;
+		}
+
+		// Widget-only when page has cursor disabled
+		$document = $this->get_current_page_document();
+		if ( $document && 'yes' === $document->get_settings_for_display( 'cmsmasters_page_cursor_disable' ) ) {
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
 	 * Check if custom cursor should be enabled.
 	 *
 	 * @since 1.21.0
@@ -1208,9 +1250,9 @@ class Frontend extends Base_App {
 	 * @return bool Whether custom cursor should be enabled.
 	 */
 	private function should_enable_custom_cursor() {
-		// Check addon setting first
+		// Check addon setting — allow widget-only mode if override enabled
 		if ( 'yes' !== get_option( 'elementor_custom_cursor_enabled', '' ) ) {
-			return false;
+			return $this->is_widget_only_mode();
 		}
 
 		// Check if we're in Elementor preview iframe
@@ -1246,9 +1288,9 @@ class Frontend extends Base_App {
 							return false;
 						}
 
-						// Page-level disable check (editor preview)
+						// Page-level disable check (editor preview) — allow widget-only mode
 						if ( 'yes' === $document->get_settings_for_display( 'cmsmasters_page_cursor_disable' ) ) {
-							return false;
+							return $this->is_widget_only_mode();
 						}
 					}
 				}
@@ -1275,10 +1317,10 @@ class Frontend extends Base_App {
 			}
 		}
 
-		// Page-level disable check
+		// Page-level disable check — allow widget-only mode
 		$document = $this->get_current_page_document();
 		if ( $document && 'yes' === $document->get_settings_for_display( 'cmsmasters_page_cursor_disable' ) ) {
-			return false;
+			return $this->is_widget_only_mode();
 		}
 
 		// Frontend - allow
@@ -1377,6 +1419,11 @@ class Frontend extends Base_App {
 			$inline_js_parts[] = 'window.cmsmCursorTrueGlobalBlend = "' . esc_js( $global_blend_only ) . '";';
 		}
 
+		// Widget-only mode flag — JS uses this to start cursor hidden
+		if ( $this->is_widget_only_mode() ) {
+			$inline_js_parts[] = 'window.cmsmCursorWidgetOnly=true;';
+		}
+
 		if ( ! empty( $inline_js_parts ) ) {
 			wp_add_inline_script( 'cmsmasters-custom-cursor', implode( "\n", $inline_js_parts ), 'before' );
 		}
@@ -1391,52 +1438,62 @@ class Frontend extends Base_App {
 	 * @return array Modified body classes.
 	 */
 	public function add_cursor_body_class( $classes ) {
-		if ( $this->should_enable_custom_cursor() ) {
+		if ( ! $this->should_enable_custom_cursor() ) {
+			return $classes;
+		}
+
+		// Mode class: widget-only or full
+		if ( $this->is_widget_only_mode() ) {
+			$classes[] = 'cmsmasters-cursor-widget-only';
+		} else {
 			$classes[] = 'cmsmasters-cursor-enabled';
+		}
 
-			// Theme class via PHP (fallback if JS fails) - CRITICAL for correct styling (page > global)
-			$cursor_theme = $this->get_page_cursor_setting( 'theme', 'theme', 'classic' );
-			$cursor_theme = apply_filters( 'cmsmasters_custom_cursor_theme', $cursor_theme );
-			if ( ! empty( $cursor_theme ) ) {
-				$classes[] = 'cmsmasters-cursor-theme-' . sanitize_html_class( $cursor_theme );
+		// Shared classes for both modes (show zones need theme/blend/wobble)
+
+		// Theme class via PHP (fallback if JS fails) - CRITICAL for correct styling (page > global)
+		$cursor_theme = $this->get_page_cursor_setting( 'theme', 'theme', 'classic' );
+		$cursor_theme = apply_filters( 'cmsmasters_custom_cursor_theme', $cursor_theme );
+		if ( ! empty( $cursor_theme ) ) {
+			$classes[] = 'cmsmasters-cursor-theme-' . sanitize_html_class( $cursor_theme );
+		}
+
+		// Dual cursor mode - show system cursor alongside custom cursor
+		$dual_mode = get_option( 'elementor_custom_cursor_dual_mode', '' );
+		if ( 'yes' === $dual_mode ) {
+			$classes[] = 'cmsmasters-cursor-dual';
+		}
+
+		// Add blend mode class based on intensity (page > global)
+		$blend_mode = $this->get_page_cursor_setting( 'blend_mode', 'blend_mode', '' );
+		if ( $blend_mode ) {
+			// Legacy support: 'yes' maps to 'medium'
+			if ( 'yes' === $blend_mode ) {
+				$blend_mode = 'medium';
 			}
-
-			// Dual cursor mode - show system cursor alongside custom cursor
-			$dual_mode = get_option( 'elementor_custom_cursor_dual_mode', '' );
-			if ( 'yes' === $dual_mode ) {
-				$classes[] = 'cmsmasters-cursor-dual';
-			}
-
-			// Add blend mode class based on intensity (page > global)
-			$blend_mode = $this->get_page_cursor_setting( 'blend_mode', 'blend_mode', '' );
-			if ( $blend_mode ) {
-				// Legacy support: 'yes' maps to 'medium'
-				if ( 'yes' === $blend_mode ) {
-					$blend_mode = 'medium';
-				}
-				if ( in_array( $blend_mode, array( 'soft', 'medium', 'strong' ), true ) ) {
-					$classes[] = 'cmsmasters-cursor-blend';
-					$classes[] = 'cmsmasters-cursor-blend-' . $blend_mode;
-				}
-			}
-
-			// Animation effect → wobble body class (page > global)
-			$page_effect = $this->get_page_cursor_setting( 'effect', '', '' );
-
-			if ( 'wobble' === $page_effect ) {
-				// Page explicitly sets wobble → add class
-				$classes[] = 'cmsmasters-cursor-wobble';
-			} elseif ( 'none' === $page_effect || 'pulse' === $page_effect || 'shake' === $page_effect || 'buzz' === $page_effect ) {
-				// Page explicitly sets non-wobble effect → do NOT add wobble class
-				// (even if global wobble is enabled)
-			} else {
-				// Page effect is '' (inherit) → fall back to global wobble setting
-				$wobble = get_option( 'elementor_custom_cursor_wobble', '' );
-				if ( 'yes' === $wobble ) {
-					$classes[] = 'cmsmasters-cursor-wobble';
-				}
+			if ( in_array( $blend_mode, array( 'soft', 'medium', 'strong' ), true ) ) {
+				$classes[] = 'cmsmasters-cursor-blend';
+				$classes[] = 'cmsmasters-cursor-blend-' . $blend_mode;
 			}
 		}
+
+		// Animation effect → wobble body class (page > global)
+		$page_effect = $this->get_page_cursor_setting( 'effect', '', '' );
+
+		if ( 'wobble' === $page_effect ) {
+			// Page explicitly sets wobble → add class
+			$classes[] = 'cmsmasters-cursor-wobble';
+		} elseif ( 'none' === $page_effect || 'pulse' === $page_effect || 'shake' === $page_effect || 'buzz' === $page_effect ) {
+			// Page explicitly sets non-wobble effect → do NOT add wobble class
+			// (even if global wobble is enabled)
+		} else {
+			// Page effect is '' (inherit) → fall back to global wobble setting
+			$wobble = get_option( 'elementor_custom_cursor_wobble', '' );
+			if ( 'yes' === $wobble ) {
+				$classes[] = 'cmsmasters-cursor-wobble';
+			}
+		}
+
 		return $classes;
 	}
 
@@ -1461,8 +1518,10 @@ class Frontend extends Base_App {
 		echo '</div>';
 
 		// Inline critical JS for instant cursor response
-		// This runs immediately before main script loads, eliminating initial lag
-		$this->print_cursor_critical_js();
+		// Skip in widget-only mode — cursor starts hidden, no instant response needed
+		if ( ! $this->is_widget_only_mode() ) {
+			$this->print_cursor_critical_js();
+		}
 	}
 
 	/**

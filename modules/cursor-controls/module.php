@@ -75,7 +75,7 @@ class Module extends Base_Module {
 		}
 
 		// Prevent duplicate registration
-		if ( $element->get_controls( 'cmsmasters_cursor_hide' ) ) {
+		if ( $element->get_controls( 'cmsmasters_cursor_show' ) ) {
 			return;
 		}
 
@@ -87,20 +87,20 @@ class Module extends Base_Module {
 			)
 		);
 
-		// === HIDE CURSOR (always visible) ===
+		// === SHOW CUSTOM CURSOR (opt-in toggle) ===
 		$element->add_control(
-			'cmsmasters_cursor_hide',
+			'cmsmasters_cursor_show',
 			array(
-				'label'        => __( 'Hide Custom Cursor', 'cmsmasters-elementor' ),
+				'label'        => __( 'Show Custom Cursor', 'cmsmasters-elementor' ),
 				'type'         => Controls_Manager::SWITCHER,
 				'default'      => '',
 				'label_off'    => __( 'No', 'cmsmasters-elementor' ),
 				'label_on'     => __( 'Yes', 'cmsmasters-elementor' ),
-				'description'  => __( 'Show system cursor instead of custom cursor on this element.', 'cmsmasters-elementor' ),
+				'description'  => __( 'Enable custom cursor on this widget. Required when cursor is globally or page-disabled.', 'cmsmasters-elementor' ),
 			)
 		);
 
-		// === USE PARENT CURSOR (visible when not hidden, actual visibility via CSS class) ===
+		// === USE PARENT CURSOR (visible when show is ON) ===
 		$element->add_control(
 			'cmsmasters_cursor_inherit_parent',
 			array(
@@ -112,7 +112,7 @@ class Module extends Base_Module {
 				'description'  => __( 'Inherit cursor type from parent element. Override only blend and effect.', 'cmsmasters-elementor' ),
 				'separator'    => 'before',
 				'condition'    => array(
-					'cmsmasters_cursor_hide' => '',
+					'cmsmasters_cursor_show' => 'yes',
 				),
 			)
 		);
@@ -132,7 +132,7 @@ class Module extends Base_Module {
 					'strong' => __( 'Strong (High Contrast)', 'cmsmasters-elementor' ),
 				),
 				'condition'   => array(
-					'cmsmasters_cursor_hide'           => '',
+					'cmsmasters_cursor_show'           => 'yes',
 					'cmsmasters_cursor_inherit_parent' => 'yes',
 				),
 			)
@@ -154,13 +154,13 @@ class Module extends Base_Module {
 					'buzz'   => __( 'Buzz', 'cmsmasters-elementor' ),
 				),
 				'condition'   => array(
-					'cmsmasters_cursor_hide'           => '',
+					'cmsmasters_cursor_show'           => 'yes',
 					'cmsmasters_cursor_inherit_parent' => 'yes',
 				),
 			)
 		);
 
-		// === SPECIAL CURSOR TOGGLE (visible when not hidden and not inherit) ===
+		// === SPECIAL CURSOR TOGGLE (visible when show is ON and not inherit) ===
 		$element->add_control(
 			'cmsmasters_cursor_special_active',
 			array(
@@ -172,7 +172,7 @@ class Module extends Base_Module {
 				'description'  => __( 'Replace default cursor with Image, Text or Icon.', 'cmsmasters-elementor' ),
 				'separator'    => 'before',
 				'condition'    => array(
-					'cmsmasters_cursor_hide'           => '',
+					'cmsmasters_cursor_show'           => 'yes',
 					'cmsmasters_cursor_inherit_parent' => '',
 				),
 			)
@@ -186,7 +186,7 @@ class Module extends Base_Module {
 				'type'      => Controls_Manager::HEADING,
 				'separator' => 'before',
 				'condition' => array(
-					'cmsmasters_cursor_hide'           => '',
+					'cmsmasters_cursor_show'           => 'yes',
 					'cmsmasters_cursor_inherit_parent' => '',
 					'cmsmasters_cursor_special_active' => '',
 				),
@@ -205,7 +205,7 @@ class Module extends Base_Module {
 				),
 				'description' => __( 'Cursor style when hovering this element.', 'cmsmasters-elementor' ),
 				'condition'   => array(
-					'cmsmasters_cursor_hide'           => '',
+					'cmsmasters_cursor_show'           => 'yes',
 					'cmsmasters_cursor_inherit_parent' => '',
 					'cmsmasters_cursor_special_active' => '',
 				),
@@ -222,7 +222,7 @@ class Module extends Base_Module {
 				'label_on'     => __( 'Yes', 'cmsmasters-elementor' ),
 				'description'  => __( 'Override cursor color on this element.', 'cmsmasters-elementor' ),
 				'condition'    => array(
-					'cmsmasters_cursor_hide'           => '',
+					'cmsmasters_cursor_show'           => 'yes',
 					'cmsmasters_cursor_inherit_parent' => '',
 					'cmsmasters_cursor_special_active' => '',
 				),
@@ -236,7 +236,7 @@ class Module extends Base_Module {
 				'type'      => Controls_Manager::COLOR,
 				'default'   => '',
 				'condition' => array(
-					'cmsmasters_cursor_hide'           => '',
+					'cmsmasters_cursor_show'           => 'yes',
 					'cmsmasters_cursor_inherit_parent' => '',
 					'cmsmasters_cursor_special_active' => '',
 					'cmsmasters_cursor_force_color'    => 'yes',
@@ -259,7 +259,7 @@ class Module extends Base_Module {
 				),
 				'description' => __( 'Override global blend mode on this element.', 'cmsmasters-elementor' ),
 				'condition'   => array(
-					'cmsmasters_cursor_hide'           => '',
+					'cmsmasters_cursor_show'           => 'yes',
 					'cmsmasters_cursor_inherit_parent' => '',
 					'cmsmasters_cursor_special_active' => '',
 				),
@@ -280,7 +280,7 @@ class Module extends Base_Module {
 				),
 				'separator'   => 'before',
 				'condition'   => array(
-					'cmsmasters_cursor_hide'           => '',
+					'cmsmasters_cursor_show'           => 'yes',
 					'cmsmasters_cursor_inherit_parent' => '',
 					'cmsmasters_cursor_special_active' => 'yes',
 				),
@@ -296,7 +296,7 @@ class Module extends Base_Module {
 				'dynamic'   => array( 'active' => true ),
 				'default'   => array( 'url' => \Elementor\Utils::get_placeholder_image_src() ),
 				'condition' => array(
-					'cmsmasters_cursor_hide'           => '',
+					'cmsmasters_cursor_show'           => 'yes',
 					'cmsmasters_cursor_inherit_parent' => '',
 					'cmsmasters_cursor_special_active' => 'yes',
 					'cmsmasters_cursor_special_type'   => 'image',
@@ -312,7 +312,7 @@ class Module extends Base_Module {
 				'type'      => Controls_Manager::HEADING,
 				'separator' => 'before',
 				'condition' => array(
-					'cmsmasters_cursor_hide'           => '',
+					'cmsmasters_cursor_show'           => 'yes',
 					'cmsmasters_cursor_inherit_parent' => '',
 					'cmsmasters_cursor_special_active' => 'yes',
 					'cmsmasters_cursor_special_type'   => 'image',
@@ -328,7 +328,7 @@ class Module extends Base_Module {
 				'range'     => array( 'px' => array( 'min' => 16, 'max' => 128, 'step' => 1 ) ),
 				'default'   => array( 'size' => 96, 'unit' => 'px' ),
 				'condition' => array(
-					'cmsmasters_cursor_hide'           => '',
+					'cmsmasters_cursor_show'           => 'yes',
 					'cmsmasters_cursor_inherit_parent' => '',
 					'cmsmasters_cursor_special_active' => 'yes',
 					'cmsmasters_cursor_special_type'   => 'image',
@@ -344,7 +344,7 @@ class Module extends Base_Module {
 				'range'     => array( 'deg' => array( 'min' => -180, 'max' => 180, 'step' => 1 ) ),
 				'default'   => array( 'size' => 0, 'unit' => 'deg' ),
 				'condition' => array(
-					'cmsmasters_cursor_hide'           => '',
+					'cmsmasters_cursor_show'           => 'yes',
 					'cmsmasters_cursor_inherit_parent' => '',
 					'cmsmasters_cursor_special_active' => 'yes',
 					'cmsmasters_cursor_special_type'   => 'image',
@@ -360,7 +360,7 @@ class Module extends Base_Module {
 				'type'      => Controls_Manager::HEADING,
 				'separator' => 'before',
 				'condition' => array(
-					'cmsmasters_cursor_hide'           => '',
+					'cmsmasters_cursor_show'           => 'yes',
 					'cmsmasters_cursor_inherit_parent' => '',
 					'cmsmasters_cursor_special_active' => 'yes',
 					'cmsmasters_cursor_special_type'   => 'image',
@@ -376,7 +376,7 @@ class Module extends Base_Module {
 				'range'     => array( 'px' => array( 'min' => 16, 'max' => 128, 'step' => 1 ) ),
 				'default'   => array( 'size' => 80, 'unit' => 'px' ),
 				'condition' => array(
-					'cmsmasters_cursor_hide'           => '',
+					'cmsmasters_cursor_show'           => 'yes',
 					'cmsmasters_cursor_inherit_parent' => '',
 					'cmsmasters_cursor_special_active' => 'yes',
 					'cmsmasters_cursor_special_type'   => 'image',
@@ -392,7 +392,7 @@ class Module extends Base_Module {
 				'range'     => array( 'deg' => array( 'min' => -180, 'max' => 180, 'step' => 1 ) ),
 				'default'   => array( 'size' => 0, 'unit' => 'deg' ),
 				'condition' => array(
-					'cmsmasters_cursor_hide'           => '',
+					'cmsmasters_cursor_show'           => 'yes',
 					'cmsmasters_cursor_inherit_parent' => '',
 					'cmsmasters_cursor_special_active' => 'yes',
 					'cmsmasters_cursor_special_type'   => 'image',
@@ -408,7 +408,7 @@ class Module extends Base_Module {
 				'type'      => Controls_Manager::HEADING,
 				'separator' => 'before',
 				'condition' => array(
-					'cmsmasters_cursor_hide'           => '',
+					'cmsmasters_cursor_show'           => 'yes',
 					'cmsmasters_cursor_inherit_parent' => '',
 					'cmsmasters_cursor_special_active' => 'yes',
 					'cmsmasters_cursor_special_type'   => 'image',
@@ -425,7 +425,7 @@ class Module extends Base_Module {
 				'default'     => 'View',
 				'placeholder' => __( 'Enter cursor text', 'cmsmasters-elementor' ),
 				'condition'   => array(
-					'cmsmasters_cursor_hide'           => '',
+					'cmsmasters_cursor_show'           => 'yes',
 					'cmsmasters_cursor_inherit_parent' => '',
 					'cmsmasters_cursor_special_active' => 'yes',
 					'cmsmasters_cursor_special_type'   => 'text',
@@ -439,7 +439,7 @@ class Module extends Base_Module {
 				'name'      => 'cmsmasters_cursor_text_typography',
 				'selector'  => '{{WRAPPER}} .cmsm-cursor-text-dummy', // Dummy selector - we extract values manually
 				'condition' => array(
-					'cmsmasters_cursor_hide'           => '',
+					'cmsmasters_cursor_show'           => 'yes',
 					'cmsmasters_cursor_inherit_parent' => '',
 					'cmsmasters_cursor_special_active' => 'yes',
 					'cmsmasters_cursor_special_type'   => 'text',
@@ -455,7 +455,7 @@ class Module extends Base_Module {
 				'default'   => '#000000',
 				'global'    => array( 'default' => '' ),
 				'condition' => array(
-					'cmsmasters_cursor_hide'           => '',
+					'cmsmasters_cursor_show'           => 'yes',
 					'cmsmasters_cursor_inherit_parent' => '',
 					'cmsmasters_cursor_special_active' => 'yes',
 					'cmsmasters_cursor_special_type'   => 'text',
@@ -471,7 +471,7 @@ class Module extends Base_Module {
 				'default'   => '#ffffff',
 				'global'    => array( 'default' => '' ),
 				'condition' => array(
-					'cmsmasters_cursor_hide'           => '',
+					'cmsmasters_cursor_show'           => 'yes',
 					'cmsmasters_cursor_inherit_parent' => '',
 					'cmsmasters_cursor_special_active' => 'yes',
 					'cmsmasters_cursor_special_type'   => 'text',
@@ -491,7 +491,7 @@ class Module extends Base_Module {
 				'description'  => __( 'Auto-calculate padding to fit text into a perfect circle.', 'cmsmasters-elementor' ),
 				'separator'    => 'before',
 				'condition'    => array(
-					'cmsmasters_cursor_hide'           => '',
+					'cmsmasters_cursor_show'           => 'yes',
 					'cmsmasters_cursor_inherit_parent' => '',
 					'cmsmasters_cursor_special_active' => 'yes',
 					'cmsmasters_cursor_special_type'   => 'text',
@@ -519,7 +519,7 @@ class Module extends Base_Module {
 				),
 				'description' => __( 'Extra space around text inside the circle.', 'cmsmasters-elementor' ),
 				'condition'   => array(
-					'cmsmasters_cursor_hide'            => '',
+					'cmsmasters_cursor_show'            => 'yes',
 					'cmsmasters_cursor_inherit_parent'  => '',
 					'cmsmasters_cursor_special_active'  => 'yes',
 					'cmsmasters_cursor_special_type'    => 'text',
@@ -542,7 +542,7 @@ class Module extends Base_Module {
 					'unit'   => 'px',
 				),
 				'condition'  => array(
-					'cmsmasters_cursor_hide'            => '',
+					'cmsmasters_cursor_show'            => 'yes',
 					'cmsmasters_cursor_inherit_parent'  => '',
 					'cmsmasters_cursor_special_active'  => 'yes',
 					'cmsmasters_cursor_special_type'    => 'text',
@@ -565,7 +565,7 @@ class Module extends Base_Module {
 					'unit'   => 'px',
 				),
 				'condition'  => array(
-					'cmsmasters_cursor_hide'            => '',
+					'cmsmasters_cursor_show'            => 'yes',
 					'cmsmasters_cursor_inherit_parent'  => '',
 					'cmsmasters_cursor_special_active'  => 'yes',
 					'cmsmasters_cursor_special_type'    => 'text',
@@ -586,7 +586,7 @@ class Module extends Base_Module {
 					'library' => 'fa-solid',
 				),
 				'condition' => array(
-					'cmsmasters_cursor_hide'           => '',
+					'cmsmasters_cursor_show'           => 'yes',
 					'cmsmasters_cursor_inherit_parent' => '',
 					'cmsmasters_cursor_special_active' => 'yes',
 					'cmsmasters_cursor_special_type'   => 'icon',
@@ -602,7 +602,7 @@ class Module extends Base_Module {
 				'default'   => '#000000',
 				'global'    => array( 'default' => '' ),
 				'condition' => array(
-					'cmsmasters_cursor_hide'                  => '',
+					'cmsmasters_cursor_show'                  => 'yes',
 					'cmsmasters_cursor_inherit_parent'       => '',
 					'cmsmasters_cursor_special_active'        => 'yes',
 					'cmsmasters_cursor_special_type'          => 'icon',
@@ -619,7 +619,7 @@ class Module extends Base_Module {
 				'default'   => '#ffffff',
 				'global'    => array( 'default' => '' ),
 				'condition' => array(
-					'cmsmasters_cursor_hide'           => '',
+					'cmsmasters_cursor_show'           => 'yes',
 					'cmsmasters_cursor_inherit_parent' => '',
 					'cmsmasters_cursor_special_active' => 'yes',
 					'cmsmasters_cursor_special_type'   => 'icon',
@@ -637,7 +637,7 @@ class Module extends Base_Module {
 				'label_on'     => __( 'Yes', 'cmsmasters-elementor' ),
 				'description'  => __( 'Keep original icon colors (for multicolor icons/emojis).', 'cmsmasters-elementor' ),
 				'condition'    => array(
-					'cmsmasters_cursor_hide'           => '',
+					'cmsmasters_cursor_show'           => 'yes',
 					'cmsmasters_cursor_inherit_parent' => '',
 					'cmsmasters_cursor_special_active' => 'yes',
 					'cmsmasters_cursor_special_type'   => 'icon',
@@ -653,7 +653,7 @@ class Module extends Base_Module {
 				'type'      => Controls_Manager::HEADING,
 				'separator' => 'before',
 				'condition' => array(
-					'cmsmasters_cursor_hide'           => '',
+					'cmsmasters_cursor_show'           => 'yes',
 					'cmsmasters_cursor_inherit_parent' => '',
 					'cmsmasters_cursor_special_active' => 'yes',
 					'cmsmasters_cursor_special_type'   => 'icon',
@@ -669,7 +669,7 @@ class Module extends Base_Module {
 				'range'     => array( 'px' => array( 'min' => 16, 'max' => 128, 'step' => 1 ) ),
 				'default'   => array( 'size' => 32, 'unit' => 'px' ),
 				'condition' => array(
-					'cmsmasters_cursor_hide'           => '',
+					'cmsmasters_cursor_show'           => 'yes',
 					'cmsmasters_cursor_inherit_parent' => '',
 					'cmsmasters_cursor_special_active' => 'yes',
 					'cmsmasters_cursor_special_type'   => 'icon',
@@ -685,7 +685,7 @@ class Module extends Base_Module {
 				'range'     => array( 'deg' => array( 'min' => -180, 'max' => 180, 'step' => 1 ) ),
 				'default'   => array( 'size' => 0, 'unit' => 'deg' ),
 				'condition' => array(
-					'cmsmasters_cursor_hide'           => '',
+					'cmsmasters_cursor_show'           => 'yes',
 					'cmsmasters_cursor_inherit_parent' => '',
 					'cmsmasters_cursor_special_active' => 'yes',
 					'cmsmasters_cursor_special_type'   => 'icon',
@@ -701,7 +701,7 @@ class Module extends Base_Module {
 				'type'      => Controls_Manager::HEADING,
 				'separator' => 'before',
 				'condition' => array(
-					'cmsmasters_cursor_hide'           => '',
+					'cmsmasters_cursor_show'           => 'yes',
 					'cmsmasters_cursor_inherit_parent' => '',
 					'cmsmasters_cursor_special_active' => 'yes',
 					'cmsmasters_cursor_special_type'   => 'icon',
@@ -717,7 +717,7 @@ class Module extends Base_Module {
 				'range'     => array( 'px' => array( 'min' => 16, 'max' => 128, 'step' => 1 ) ),
 				'default'   => array( 'size' => 48, 'unit' => 'px' ),
 				'condition' => array(
-					'cmsmasters_cursor_hide'           => '',
+					'cmsmasters_cursor_show'           => 'yes',
 					'cmsmasters_cursor_inherit_parent' => '',
 					'cmsmasters_cursor_special_active' => 'yes',
 					'cmsmasters_cursor_special_type'   => 'icon',
@@ -733,7 +733,7 @@ class Module extends Base_Module {
 				'range'     => array( 'deg' => array( 'min' => -180, 'max' => 180, 'step' => 1 ) ),
 				'default'   => array( 'size' => 0, 'unit' => 'deg' ),
 				'condition' => array(
-					'cmsmasters_cursor_hide'           => '',
+					'cmsmasters_cursor_show'           => 'yes',
 					'cmsmasters_cursor_inherit_parent' => '',
 					'cmsmasters_cursor_special_active' => 'yes',
 					'cmsmasters_cursor_special_type'   => 'icon',
@@ -748,7 +748,7 @@ class Module extends Base_Module {
 				'type'      => Controls_Manager::HEADING,
 				'separator' => 'before',
 				'condition' => array(
-					'cmsmasters_cursor_hide'           => '',
+					'cmsmasters_cursor_show'           => 'yes',
 					'cmsmasters_cursor_inherit_parent' => '',
 					'cmsmasters_cursor_special_active' => 'yes',
 					'cmsmasters_cursor_special_type'   => 'icon',
@@ -765,7 +765,7 @@ class Module extends Base_Module {
 				'label_off' => __( 'No', 'cmsmasters-elementor' ),
 				'label_on'  => __( 'Yes', 'cmsmasters-elementor' ),
 				'condition' => array(
-					'cmsmasters_cursor_hide'           => '',
+					'cmsmasters_cursor_show'           => 'yes',
 					'cmsmasters_cursor_inherit_parent' => '',
 					'cmsmasters_cursor_special_active' => 'yes',
 					'cmsmasters_cursor_special_type'   => 'icon',
@@ -781,7 +781,7 @@ class Module extends Base_Module {
 				'range'     => array( 'px' => array( 'min' => 0, 'max' => 50, 'step' => 1 ) ),
 				'default'   => array( 'size' => 10, 'unit' => 'px' ),
 				'condition' => array(
-					'cmsmasters_cursor_hide'            => '',
+					'cmsmasters_cursor_show'            => 'yes',
 					'cmsmasters_cursor_inherit_parent'  => '',
 					'cmsmasters_cursor_special_active'  => 'yes',
 					'cmsmasters_cursor_special_type'    => 'icon',
@@ -798,7 +798,7 @@ class Module extends Base_Module {
 				'size_units' => array( 'px', '%' ),
 				'default'    => array( 'top' => '8', 'right' => '8', 'bottom' => '8', 'left' => '8', 'unit' => 'px' ),
 				'condition'  => array(
-					'cmsmasters_cursor_hide'            => '',
+					'cmsmasters_cursor_show'            => 'yes',
 					'cmsmasters_cursor_inherit_parent'  => '',
 					'cmsmasters_cursor_special_active'  => 'yes',
 					'cmsmasters_cursor_special_type'    => 'icon',
@@ -815,7 +815,7 @@ class Module extends Base_Module {
 				'size_units' => array( 'px' ),
 				'default'    => array( 'top' => '8', 'right' => '8', 'bottom' => '8', 'left' => '8', 'unit' => 'px' ),
 				'condition'  => array(
-					'cmsmasters_cursor_hide'            => '',
+					'cmsmasters_cursor_show'            => 'yes',
 					'cmsmasters_cursor_inherit_parent'  => '',
 					'cmsmasters_cursor_special_active'  => 'yes',
 					'cmsmasters_cursor_special_type'    => 'icon',
@@ -838,7 +838,7 @@ class Module extends Base_Module {
 					'strong' => __( 'Strong (High Contrast)', 'cmsmasters-elementor' ),
 				),
 				'condition'   => array(
-					'cmsmasters_cursor_hide'           => '',
+					'cmsmasters_cursor_show'           => 'yes',
 					'cmsmasters_cursor_inherit_parent' => '',
 					'cmsmasters_cursor_special_active' => 'yes',
 				),
@@ -863,7 +863,7 @@ class Module extends Base_Module {
 				'description' => __( 'Animation effect for cursor.', 'cmsmasters-elementor' ),
 				'separator'   => 'before',
 				'condition'   => array(
-					'cmsmasters_cursor_hide'           => '',
+					'cmsmasters_cursor_show'           => 'yes',
 					'cmsmasters_cursor_inherit_parent' => '',
 				),
 			)
@@ -1215,8 +1215,18 @@ class Module extends Base_Module {
 	 * @param \Elementor\Element_Base $element
 	 */
 	public function apply_cursor_attributes( $element ) {
-		$settings = $element->get_settings_for_display();
+		// PERF: Check Show toggle from raw settings FIRST (cheap).
+		// Only call expensive get_settings_for_display() if show=yes.
 		$raw_settings = $element->get_settings();
+		$show = $raw_settings['cmsmasters_cursor_show'] ?? '';
+		if ( 'yes' !== $show ) {
+			return; // No cursor attributes — skip expensive settings resolution
+		}
+
+		$settings = $element->get_settings_for_display();
+
+		// Add show zone marker (JS uses this in widget-only mode)
+		$element->add_render_attribute( '_wrapper', 'data-cursor-show', 'yes' );
 
 		// Inherit mode — element is transparent for cursor type cascade
 		$inherit = ! empty( $settings['cmsmasters_cursor_inherit_parent'] )
@@ -1441,11 +1451,7 @@ class Module extends Base_Module {
 	 * @param array                   $raw_settings
 	 */
 	private function apply_core_cursor_attributes( $element, $settings, $raw_settings ) {
-		$hide = ! empty( $settings['cmsmasters_cursor_hide'] ) ? $settings['cmsmasters_cursor_hide'] : '';
-		if ( 'yes' === $hide ) {
-			$element->add_render_attribute( '_wrapper', 'data-cursor', 'hide' );
-			return;
-		}
+		// Note: Show gate is in apply_cursor_attributes() dispatcher — no hide check needed here
 
 		// Hover style
 		$hover_style = ! empty( $settings['cmsmasters_cursor_hover_style'] ) ? $settings['cmsmasters_cursor_hover_style'] : '';

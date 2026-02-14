@@ -343,6 +343,18 @@ class Settings_Page extends ElementorSettingsPage {
 								'desc' => __( 'Elastic rubber-like deformation based on cursor velocity.', 'cmsmasters-elementor' ),
 							),
 						),
+						'custom_cursor_widget_override' => array(
+							'label' => __( 'Widget Override', 'cmsmasters-elementor' ),
+							'field_args' => array(
+								'type' => 'select',
+								'default' => '',
+								'options' => array(
+									''    => __( 'Disabled', 'cmsmasters-elementor' ),
+									'yes' => __( 'Enabled', 'cmsmasters-elementor' ),
+								),
+								'desc' => __( 'Allow per-widget cursor when globally or page-level disabled. Cursor appears only on widgets with "Show Custom Cursor" enabled. Existing widgets with cursor customization must be re-enabled manually (Show Custom Cursor: Yes).', 'cmsmasters-elementor' ),
+							),
+						),
 					),
 				),
 			),

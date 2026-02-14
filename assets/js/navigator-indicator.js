@@ -352,20 +352,13 @@
 		}
 
 
-		// When addon cursor is DISABLED, check for "show cursor" setting
-		if (!config.cursorEnabled) {
-			// In disabled mode, cmsmasters_cursor_hide becomes "Show Custom Cursor"
-			// If element has it enabled, show indicator
-			var showCursor = settings.get('cmsmasters_cursor_hide');
-			if (showCursor === 'yes') {
-				return { type: 'show' };
-			}
-
-			return null;
+		// Show toggle gates all cursor indicators (mirrors PHP apply_cursor_attributes)
+		var showCursor = settings.get('cmsmasters_cursor_show');
+		if (showCursor !== 'yes') {
+			return null; // No cursor settings — no indicator
 		}
 
-
-		// === When addon cursor is ENABLED ===
+		// === Show is ON — determine indicator type ===
 
 		// Priority 1: Special cursor (highest priority indicator)
 		var specialActive = settings.get('cmsmasters_cursor_special_active');
@@ -382,12 +375,6 @@
 		var inheritParent = settings.get('cmsmasters_cursor_inherit_parent');
 		if (inheritParent === 'yes') {
 			return { type: 'inherit' };
-		}
-
-		// Priority 2: Hidden cursor
-		var hideCursor = settings.get('cmsmasters_cursor_hide');
-		if (hideCursor === 'yes') {
-			return { type: 'hidden' };
 		}
 
 

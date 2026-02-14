@@ -615,7 +615,7 @@
     }
 
     function clearAttributes(el) {
-        ['data-cursor','data-cursor-color','data-cursor-blend','data-cursor-effect',
+        ['data-cursor-show','data-cursor','data-cursor-color','data-cursor-blend','data-cursor-effect',
          'data-cursor-inherit','data-cursor-inherit-blend','data-cursor-inherit-effect',
          'data-cursor-image','data-cursor-image-size','data-cursor-image-size-hover',
          'data-cursor-image-rotate','data-cursor-image-rotate-hover','data-cursor-image-effect',
@@ -636,7 +636,9 @@
         var element = findElement(elementId);
         if (!element) return;
         clearAttributes(element);
-        if (settings.cmsmasters_cursor_hide === 'yes') { element.setAttribute('data-cursor', 'hide'); return; }
+        // Show toggle gates all cursor attributes (mirrors PHP apply_cursor_attributes)
+        if (settings.cmsmasters_cursor_show !== 'yes') { clearAttributes(element); return; }
+        element.setAttribute('data-cursor-show', 'yes');
         if (settings.cmsmasters_cursor_inherit_parent === 'yes') {
             element.setAttribute('data-cursor-inherit', 'yes');
             if (settings.cmsmasters_cursor_inherit_blend) element.setAttribute('data-cursor-inherit-blend', settings.cmsmasters_cursor_inherit_blend);
