@@ -2010,6 +2010,30 @@
         //      Inner content (no data-id) inherits from parent via DOM walk
         var selfBlend = el.getAttribute ? el.getAttribute('data-cursor-blend') : null;
 
+        // Inherit override for core cursor blend
+        // If no explicit blend on this element, check if an inherit ancestor overrides it
+        if (selfBlend === null) {
+            var inheritElForBlend = findClosestInheritEl(el);
+            if (inheritElForBlend) {
+                var inheritBlend = inheritElForBlend.getAttribute('data-cursor-inherit-blend');
+                if (inheritBlend !== null && inheritBlend !== '') {
+                    // Only override if no explicit blend between el and inheritEl
+                    var hasCloserBlend = false;
+                    var checkEl = el.parentElement;
+                    while (checkEl && checkEl !== inheritElForBlend && checkEl !== document.body) {
+                        if (checkEl.getAttribute && checkEl.getAttribute('data-cursor-blend')) {
+                            hasCloserBlend = true;
+                            break;
+                        }
+                        checkEl = checkEl.parentElement;
+                    }
+                    if (!hasCloserBlend) {
+                        selfBlend = inheritBlend;
+                    }
+                }
+            }
+        }
+
         if (selfBlend !== null) {
             // Element has EXPLICIT blend setting - use it
             if (selfBlend === 'off' || selfBlend === 'no') {
@@ -2030,8 +2054,8 @@
             // Inner content (no data-id) = walk up to find parent's blend
             var isWidget = el.getAttribute && el.getAttribute('data-id');
 
-            if (isWidget) {
-                // Widget without blend attribute = use true GLOBAL
+            if (isWidget && hasCursorSettings(el)) {
+                // Dirty widget without blend attribute = use true GLOBAL
                 if (currentBlendIntensity !== trueGlobalBlend) {
                     setBlendIntensity(trueGlobalBlend);
                 }
@@ -2087,12 +2111,24 @@
         var coreEffectElForValue = findWithBoundary(el, 'data-cursor-effect', null);
         if (coreEffectElForValue) {
             coreEffect = coreEffectElForValue.getAttribute('data-cursor-effect') || '';
-            // For backwards compatibility: wobble effect also sets perElementWobble
-            perElementWobble = (coreEffect === 'wobble') ? true : null;
         } else {
             coreEffect = '';
-            perElementWobble = null;
         }
+
+        // Inherit override for core cursor effect
+        var inheritElForEffect = findClosestInheritEl(el);
+        if (inheritElForEffect) {
+            var inheritEffect = inheritElForEffect.getAttribute('data-cursor-inherit-effect');
+            if (inheritEffect !== null && inheritEffect !== '') {
+                // Only override if effect source is at/above inherit element (not a more specific child)
+                if (!coreEffectElForValue || !inheritElForEffect.contains(coreEffectElForValue)) {
+                    coreEffect = inheritEffect;
+                }
+            }
+        }
+
+        // For backwards compatibility: wobble effect also sets perElementWobble
+        perElementWobble = (coreEffect === 'wobble') ? true : null;
 
         // Adaptive background detection (only if enabled)
         if (adaptive) {
