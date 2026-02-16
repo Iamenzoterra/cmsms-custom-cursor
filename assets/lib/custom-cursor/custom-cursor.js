@@ -2019,13 +2019,15 @@
                 if (inheritBlend !== null && inheritBlend !== '') {
                     // Only override if no explicit blend between el and inheritEl
                     var hasCloserBlend = false;
-                    var checkEl = el.parentElement;
-                    while (checkEl && checkEl !== inheritElForBlend && checkEl !== document.body) {
-                        if (checkEl.getAttribute && checkEl.getAttribute('data-cursor-blend')) {
-                            hasCloserBlend = true;
-                            break;
+                    if (el !== inheritElForBlend) {
+                        var checkEl = el.parentElement;
+                        while (checkEl && checkEl !== inheritElForBlend && checkEl !== document.body) {
+                            if (checkEl.getAttribute && checkEl.getAttribute('data-cursor-blend')) {
+                                hasCloserBlend = true;
+                                break;
+                            }
+                            checkEl = checkEl.parentElement;
                         }
-                        checkEl = checkEl.parentElement;
                     }
                     if (!hasCloserBlend) {
                         selfBlend = inheritBlend;
