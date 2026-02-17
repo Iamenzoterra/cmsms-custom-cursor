@@ -264,10 +264,12 @@ CursorState.transition({ hover: true }, 'mouseover');
 **CSS Effect:**
 ```css
 body.cmsmasters-cursor-hover .cmsmasters-cursor-ring {
-    width: 60px;
-    height: 60px;
-    margin-left: -30px;
-    margin-top: -30px;
+    /* hover ring = dot-hover-size + 20px (e.g. 40px + 20px = 60px) */
+    --_ring-hover: calc(var(--cmsmasters-cursor-dot-hover-size) + 20px);
+    width: var(--_ring-hover);
+    height: var(--_ring-hover);
+    margin-left: calc(var(--_ring-hover) / -2);
+    margin-top: calc(var(--_ring-hover) / -2);
     opacity: 0.5;
     background-color: color-mix(in srgb, var(--cmsmasters-cursor-color) 10%, transparent);
 }
@@ -294,10 +296,12 @@ CursorState.transition({ down: false }, 'mouseup');
 **CSS Effect:**
 ```css
 body.cmsmasters-cursor-down .cmsmasters-cursor-ring {
-    width: 30px;
-    height: 30px;
-    margin-left: -15px;
-    margin-top: -15px;
+    /* down ring = dot-size + ring-offset * 0.7 (e.g. 8px + 22.4px ≈ 30px) */
+    --_ring-down: calc(var(--cmsmasters-cursor-dot-size) + var(--cmsmasters-cursor-ring-offset) * 0.7);
+    width: var(--_ring-down);
+    height: var(--_ring-down);
+    margin-left: calc(var(--_ring-down) / -2);
+    margin-top: calc(var(--_ring-down) / -2);
     background-color: color-mix(in srgb, var(--cmsmasters-cursor-color) 90%, transparent);
 }
 
@@ -648,4 +652,4 @@ CursorState.transition({
 
 ---
 
-*Last Updated: February 6, 2026 | Version: 5.6*
+*Last Updated: February 17, 2026 | Version: 5.6*

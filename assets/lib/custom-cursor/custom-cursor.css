@@ -12,7 +12,8 @@
     --cmsmasters-cursor-color-light:#fff;
     --cmsmasters-cursor-color-dark:#222;
     --cmsmasters-cursor-dot-size:8px;
-    --cmsmasters-cursor-dot-hover-size:8px
+    --cmsmasters-cursor-dot-hover-size:40px;
+    --cmsmasters-cursor-ring-offset:32px
 }
 
 body.cmsmasters-cursor-on-dark {
@@ -141,12 +142,13 @@ body.cmsmasters-cursor-on-light {
 }
 
 .cmsmasters-cursor-ring {
-    width:40px;
-    height:40px;
+    --_ring:calc(var(--cmsmasters-cursor-dot-size) + var(--cmsmasters-cursor-ring-offset));
+    width:var(--_ring);
+    height:var(--_ring);
     border:2px solid var(--cmsmasters-cursor-color);
     border-radius:50%;
-    margin-left:-20px;
-    margin-top:-20px;
+    margin-left:calc(var(--_ring) / -2);
+    margin-top:calc(var(--_ring) / -2);
     box-sizing:border-box;
     transition:width .2s cubic-bezier(.25, 1, .5, 1),height .2s cubic-bezier(.25, 1, .5, 1),margin .2s cubic-bezier(.25, 1, .5, 1),opacity .2s ease,background-color .2s ease,border-color .15s ease-out
 }
@@ -185,19 +187,21 @@ body.cmsmasters-cursor-blend-strong #cmsmasters-cursor-container {
    ========================================================================== */
 
 body.cmsmasters-cursor-hover .cmsmasters-cursor-ring {
-    width:60px;
-    height:60px;
-    margin-left:-30px;
-    margin-top:-30px;
+    --_ring-hover:calc(var(--cmsmasters-cursor-dot-hover-size) + 20px);
+    width:var(--_ring-hover);
+    height:var(--_ring-hover);
+    margin-left:calc(var(--_ring-hover) / -2);
+    margin-top:calc(var(--_ring-hover) / -2);
     opacity:.5;
     background-color:color-mix(in srgb,var(--cmsmasters-cursor-color) 10%,transparent)
 }
 
 body.cmsmasters-cursor-down .cmsmasters-cursor-ring {
-    width:30px;
-    height:30px;
-    margin-left:-15px;
-    margin-top:-15px;
+    --_ring-down:calc(var(--cmsmasters-cursor-dot-size) + var(--cmsmasters-cursor-ring-offset) * 0.7);
+    width:var(--_ring-down);
+    height:var(--_ring-down);
+    margin-left:calc(var(--_ring-down) / -2);
+    margin-top:calc(var(--_ring-down) / -2);
     background-color:color-mix(in srgb,var(--cmsmasters-cursor-color) 90%,transparent)
 }
 

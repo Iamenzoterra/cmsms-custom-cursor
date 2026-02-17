@@ -1,6 +1,6 @@
 # Custom Cursor v5.6 - CSS API Reference
 
-**Last Updated:** February 6, 2026
+**Last Updated:** February 17, 2026
 
 ---
 
@@ -23,9 +23,18 @@
 | `--cmsmasters-cursor-color-light` | #fff | Light mode color (adaptive) |
 | `--cmsmasters-cursor-color-dark` | #222 | Dark mode color (adaptive) |
 | `--cmsmasters-cursor-dot-size` | 8px | Dot diameter |
-| `--cmsmasters-cursor-dot-hover-size` | 8px | Dot hover diameter (default, theme-dot uses 20px) |
+| `--cmsmasters-cursor-dot-hover-size` | 40px | Dot hover diameter (default, classic theme uses 40px, theme-dot uses 20px) |
+| `--cmsmasters-cursor-ring-offset` | 32px | Gap between dot edge and ring edge; ring diameter = dot size + offset |
 | `--cmsmasters-cursor-z-default` | 999999 | Default z-index (high but not max-int) |
 | `--cmsmasters-cursor-z-blend` | 9999 | Z-index when blend modes active |
+
+**Scoped Properties (inside `.cmsmasters-cursor-ring` rules — not user-overridable):**
+
+| Property | Formula | Description |
+|----------|---------|-------------|
+| `--_ring` | `calc(var(--cmsmasters-cursor-dot-size) + var(--cmsmasters-cursor-ring-offset))` | Default ring diameter (8 + 32 = 40px) |
+| `--_ring-hover` | `calc(var(--cmsmasters-cursor-dot-hover-size) + 20px)` | Hover ring diameter (40 + 20 = 60px) |
+| `--_ring-down` | `calc(var(--cmsmasters-cursor-dot-size) + var(--cmsmasters-cursor-ring-offset) * 0.7)` | Down ring diameter (8 + 22.4 = 30.4px) |
 
 ### Editor Navigator Variables (editor-navigator.css)
 
@@ -46,7 +55,8 @@
     --cmsmasters-cursor-color-light: #fff;
     --cmsmasters-cursor-color-dark: #222;
     --cmsmasters-cursor-dot-size: 8px;
-    --cmsmasters-cursor-dot-hover-size: 8px;
+    --cmsmasters-cursor-dot-hover-size: 40px;
+    --cmsmasters-cursor-ring-offset: 32px;
 }
 
 /* Override in custom CSS */
@@ -138,16 +148,18 @@ Center dot element. Uses CSS variables for sizing.
 
 ### .cmsmasters-cursor-ring
 
-Outer ring element. **Hardcoded sizes** (not CSS variables).
+Outer ring element. Ring sizing uses CSS custom properties and `calc()` — no hardcoded pixel values.
 
 ```css
 .cmsmasters-cursor-ring {
-    width: 40px;                    /* Default size - hardcoded */
-    height: 40px;
+    /* Scoped property: dot-size + ring-offset (e.g. 8px + 32px = 40px) */
+    --_ring: calc(var(--cmsmasters-cursor-dot-size) + var(--cmsmasters-cursor-ring-offset));
+    width: var(--_ring);
+    height: var(--_ring);
     border: 2px solid var(--cmsmasters-cursor-color);
     border-radius: 50%;
-    margin-left: -20px;
-    margin-top: -20px;
+    margin-left: calc(var(--_ring) / -2);
+    margin-top: calc(var(--_ring) / -2);
     box-sizing: border-box;
     transition: width 0.2s cubic-bezier(0.25, 1, 0.5, 1),
                 height 0.2s cubic-bezier(0.25, 1, 0.5, 1),
@@ -158,15 +170,22 @@ Outer ring element. **Hardcoded sizes** (not CSS variables).
 }
 ```
 
-**Ring Size States:**
+**Ring Size States (defaults with 8px dot, 32px offset, 40px hover-size):**
 
-| State | Width/Height | Margin |
-|-------|--------------|--------|
-| Default | 40px | -20px |
-| Hover | 60px | -30px |
-| Down (click) | 30px | -15px |
-| Size SM | 20px | -10px |
-| Size LG | 80px | -40px |
+| State | Formula | Computed | Margin |
+|-------|---------|----------|--------|
+| Default | `dot-size + ring-offset` | 40px | -20px |
+| Hover | `dot-hover-size + 20px` | 60px | -30px |
+| Down (click) | `dot-size + ring-offset * 0.7` | ~30px | ~-15px |
+| Size SM | hardcoded | 20px | -10px |
+| Size LG | hardcoded | 80px | -40px |
+
+**To resize the ring**, override `--cmsmasters-cursor-ring-offset` in `:root`:
+```css
+:root {
+    --cmsmasters-cursor-ring-offset: 20px; /* tighter ring */
+}
+```
 
 ---
 
@@ -236,26 +255,30 @@ body.cmsmasters-cursor-theme-dot.cmsmasters-cursor-hover .cmsmasters-cursor-dot 
 
 | Class | Trigger | Effect |
 |-------|---------|--------|
-| `cmsmasters-cursor-hover` | mouseover link/button | Ring expands to 60px, 50% opacity, 10% fill |
-| `cmsmasters-cursor-down` | mousedown | Ring shrinks to 30px, 90% fill |
+| `cmsmasters-cursor-hover` | mouseover link/button | Ring expands to `dot-hover-size + 20px` (default 60px), 50% opacity, 10% fill |
+| `cmsmasters-cursor-down` | mousedown | Ring shrinks to `dot-size + ring-offset * 0.7` (default ~30px), 90% fill |
 | `cmsmasters-cursor-text` | hover text input | I-beam style (4x24px bar) |
 | `cmsmasters-cursor-hidden` | forms/video/leave | Hide cursor |
 
 ```css
 body.cmsmasters-cursor-hover .cmsmasters-cursor-ring {
-    width: 60px;
-    height: 60px;
-    margin-left: -30px;
-    margin-top: -30px;
+    /* hover ring = dot-hover-size + 20px (e.g. 40px + 20px = 60px) */
+    --_ring-hover: calc(var(--cmsmasters-cursor-dot-hover-size) + 20px);
+    width: var(--_ring-hover);
+    height: var(--_ring-hover);
+    margin-left: calc(var(--_ring-hover) / -2);
+    margin-top: calc(var(--_ring-hover) / -2);
     opacity: 0.5;
     background-color: color-mix(in srgb, var(--cmsmasters-cursor-color) 10%, transparent);
 }
 
 body.cmsmasters-cursor-down .cmsmasters-cursor-ring {
-    width: 30px;
-    height: 30px;
-    margin-left: -15px;
-    margin-top: -15px;
+    /* down ring = dot-size + ring-offset * 0.7 (e.g. 8px + 22.4px = 30.4px) */
+    --_ring-down: calc(var(--cmsmasters-cursor-dot-size) + var(--cmsmasters-cursor-ring-offset) * 0.7);
+    width: var(--_ring-down);
+    height: var(--_ring-down);
+    margin-left: calc(var(--_ring-down) / -2);
+    margin-top: calc(var(--_ring-down) / -2);
     background-color: color-mix(in srgb, var(--cmsmasters-cursor-color) 90%, transparent);
 }
 
@@ -941,4 +964,4 @@ body.cmsmasters-cursor-enabled.cmsmasters-cursor-hidden
 
 ---
 
-*Last Updated: February 6, 2026 | Version: 5.6*
+*Last Updated: February 17, 2026 | Version: 5.6*

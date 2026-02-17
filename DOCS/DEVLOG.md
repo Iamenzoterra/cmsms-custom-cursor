@@ -4,6 +4,31 @@ Living document tracking development sessions, decisions, and iterations.
 
 ---
 
+## 2026-02-17 — Fix: Ring proportional sizing + rename Radius→Diameter
+
+**Problem:** In "Dot + Ring" theme, ring was hardcoded at 40px. When admin set dot size to 40+, dot covered the ring completely. Hover setting (`--cmsmasters-cursor-dot-hover-size`) was wired only to dot-only theme, never used in classic. Labels said "Radius" but values were used as diameter. CSS `:root` default for hover-size was 8px but PHP default was 40.
+
+**Root cause:** Ring dimensions were hardcoded px values (40/60/30) instead of being derived from dot size.
+
+**Approach:** Introduced `--cmsmasters-cursor-ring-offset: 32px` so ring = dot + offset. This keeps ring always visible regardless of dot size. Used CSS scoped custom properties (`--_ring`, `--_ring-hover`, `--_ring-down`) for clean calc expressions.
+
+**Math verification (default dot=8, hover=40):**
+- Normal: 8 + 32 = 40px (was 40px — identical)
+- Hover: 40 + 20 = 60px (was 60px — identical)
+- Down: 8 + 32×0.7 = 30.4px (was 30px — ~identical)
+
+**Key decisions:**
+- Fixed `:root` hover default from 8px → 40px to match PHP default of 40
+- Hover ring uses `hover-size + 20px` (not offset-based) — matches current 60px at default
+- Down ring uses `dot-size + offset × 0.7` — proportional squeeze
+- Renamed "Normal Radius" → "Dot Diameter", "Hover Radius" → "Hover Diameter" in settings
+
+**Files changed:**
+- `assets/lib/custom-cursor/custom-cursor.css` — `:root` defaults, ring base/hover/down sizing via calc
+- `modules/settings/settings-page.php` — label/description renames
+
+---
+
 ## 2026-02-14 — Feat: Conditional settings controls (grey out invalid combos)
 
 **Problem:** Settings page has 3 linked controls (Custom Cursor, Widget Override, Editor Preview) but no visual dependency between them. User can enable "Show in Editor Preview" when cursor is OFF and Widget Override is OFF — a broken state where no scripts load and no preloader appears in editor.

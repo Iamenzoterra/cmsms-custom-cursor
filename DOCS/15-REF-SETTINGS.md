@@ -1,6 +1,6 @@
 # Custom Cursor v5.5 - Settings Reference
 
-**Last Updated:** February 5, 2026
+**Last Updated:** February 17, 2026
 
 ---
 
@@ -110,8 +110,8 @@ $theme = get_option('elementor_custom_cursor_theme', 'classic');
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `elementor_custom_cursor_dot_size` | string | `'8'` | Normal radius in pixels |
-| `elementor_custom_cursor_dot_hover_size` | string | `'40'` | Hover radius in pixels |
+| `elementor_custom_cursor_dot_size` | string | `'8'` | Dot diameter in pixels; ring scales proportionally via `--cmsmasters-cursor-ring-offset` |
+| `elementor_custom_cursor_dot_hover_size` | string | `'40'` | Hover dot diameter in pixels; hover ring = this value + 20px |
 
 **PHP Usage:**
 ```php
@@ -122,8 +122,8 @@ $dot_hover_size = get_option('elementor_custom_cursor_dot_hover_size', '40');
 **Output as CSS Variables:**
 ```css
 body.cmsm-cursor-enabled[class] {
-    --cmsm-cursor-dot-size: 8px;
-    --cmsm-cursor-dot-hover-size: 40px;
+    --cmsmasters-cursor-dot-size: 8px;
+    --cmsmasters-cursor-dot-hover-size: 40px;
 }
 ```
 
@@ -201,8 +201,8 @@ $wobble = get_option('elementor_custom_cursor_wobble', '') === 'yes';
 | `elementor_custom_cursor_color` | text | `'#222222'` | Custom Color |
 | `elementor_custom_cursor_adaptive` | checkbox | `''` | Adaptive Color |
 | `elementor_custom_cursor_theme` | select | `'classic'` | Cursor Theme |
-| `elementor_custom_cursor_dot_size` | text | `'8'` | Normal Radius |
-| `elementor_custom_cursor_dot_hover_size` | text | `'40'` | Hover Radius |
+| `elementor_custom_cursor_dot_size` | text | `'8'` | Dot Diameter |
+| `elementor_custom_cursor_dot_hover_size` | text | `'40'` | Hover Diameter |
 | `elementor_custom_cursor_smoothness` | select | `'normal'` | Cursor Smoothness |
 | `elementor_custom_cursor_blend_mode` | select | `''` | Blend Mode |
 | `elementor_custom_cursor_wobble` | checkbox | `''` | Wobble Effect |
@@ -286,4 +286,4 @@ add_filter('cmsmasters_custom_cursor_theme', function($theme) {
 
 ---
 
-*Last Updated: February 5, 2026 | Version: 5.5*
+*Last Updated: February 17, 2026 | Version: 5.6*

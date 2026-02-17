@@ -287,19 +287,19 @@ class Settings_Page extends ElementorSettingsPage {
 							),
 						),
 						'custom_cursor_dot_size' => array(
-							'label' => __( 'Normal Radius', 'cmsmasters-elementor' ),
+							'label' => __( 'Dot Diameter', 'cmsmasters-elementor' ),
 							'field_args' => array(
 								'type' => 'text',
 								'default' => '8',
-								'desc' => __( 'Radius in pixels. Default: 8px.', 'cmsmasters-elementor' ),
+								'desc' => __( 'Dot diameter in pixels. Ring scales proportionally. Default: 8px.', 'cmsmasters-elementor' ),
 							),
 						),
 						'custom_cursor_dot_hover_size' => array(
-							'label' => __( 'Hover Radius', 'cmsmasters-elementor' ),
+							'label' => __( 'Hover Diameter', 'cmsmasters-elementor' ),
 							'field_args' => array(
 								'type' => 'text',
 								'default' => '40',
-								'desc' => __( 'Radius on hover in pixels. Default: 40px.', 'cmsmasters-elementor' ),
+								'desc' => __( 'Hover diameter in pixels. Default: 40px.', 'cmsmasters-elementor' ),
 							),
 						),
 						'custom_cursor_smoothness' => array(

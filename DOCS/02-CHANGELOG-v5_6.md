@@ -1,6 +1,6 @@
 # Custom Cursor v5.6 - Changelog
 
-**Last Updated:** February 12, 2026
+**Last Updated:** February 17, 2026
 
 ---
 
@@ -8,10 +8,81 @@
 
 | Version | Date | Type | Summary |
 |---------|------|------|---------|
+| Fix | 2026-02-17 | CSS Refactor + Settings | Ring sizing calc-based; Radius → Diameter labels |
 | PR #144 | 2026-02-12 | Cleanup + Vendor | Code review: prefix rename, extract inline assets, vendor Pickr |
 | v5.6 | 2026-02-06 | Refactor + Fix | Constants, CursorState, z-index consolidation |
 | v5.5 | 2026-02-05 | Feature | P4 v2 Forms/popups + P5 Video/iframe auto-hide |
 | v5.5-SEC | 2026-02-05 | Security | SVG sanitization for XSS prevention |
+
+---
+
+## Fix: Ring Sizing — CSS Variables + Settings Labels (February 17, 2026)
+
+### Type: CSS Refactor + Settings Label Fix
+
+#### 1. CSS Ring Sizing — Replaced Hardcoded Values with `calc()`
+
+Replaced all hardcoded ring pixel sizes in `custom-cursor.css` with dynamic `calc()` expressions driven by CSS custom properties.
+
+**New `:root` property:**
+```css
+--cmsmasters-cursor-ring-offset: 32px  /* gap between dot edge and ring edge */
+```
+
+**Fixed `:root` default:**
+```css
+--cmsmasters-cursor-dot-hover-size: 40px  /* was incorrectly 8px */
+```
+
+**Before (hardcoded):**
+```css
+.cmsmasters-cursor-ring { width: 40px; height: 40px; margin-left: -20px; margin-top: -20px; }
+body.cmsmasters-cursor-hover .cmsmasters-cursor-ring { width: 60px; height: 60px; margin-left: -30px; margin-top: -30px; }
+body.cmsmasters-cursor-down  .cmsmasters-cursor-ring { width: 30px; height: 30px; margin-left: -15px; margin-top: -15px; }
+```
+
+**After (calc-based via scoped custom properties):**
+```css
+.cmsmasters-cursor-ring {
+    --_ring: calc(var(--cmsmasters-cursor-dot-size) + var(--cmsmasters-cursor-ring-offset));
+    width: var(--_ring);  /* 8 + 32 = 40px */
+}
+body.cmsmasters-cursor-hover .cmsmasters-cursor-ring {
+    --_ring-hover: calc(var(--cmsmasters-cursor-dot-hover-size) + 20px);
+    width: var(--_ring-hover);  /* 40 + 20 = 60px */
+}
+body.cmsmasters-cursor-down .cmsmasters-cursor-ring {
+    --_ring-down: calc(var(--cmsmasters-cursor-dot-size) + var(--cmsmasters-cursor-ring-offset) * 0.7);
+    width: var(--_ring-down);  /* 8 + 22.4 ≈ 30px */
+}
+```
+
+**Computed sizes remain identical** to previous hardcoded values at default settings. The refactor enables ring size to scale automatically when dot size or ring offset is customized.
+
+**Scoped properties** (`--_ring`, `--_ring-hover`, `--_ring-down`) are declared inside their rule block — they are not global overrides and do not pollute the `:root` namespace.
+
+#### 2. Settings Page — Renamed "Radius" Labels to "Diameter"
+
+Updated `modules/settings/settings-page.php` field labels:
+
+| Field | Before | After |
+|-------|--------|-------|
+| `custom_cursor_dot_size` label | Normal Radius | Dot Diameter |
+| `custom_cursor_dot_size` desc | (generic) | "Dot diameter in pixels. Ring scales proportionally. Default: 8px." |
+| `custom_cursor_dot_hover_size` label | Hover Radius | Hover Diameter |
+| `custom_cursor_dot_hover_size` desc | (generic) | "Hover diameter in pixels. Default: 40px." |
+
+**Rationale:** The settings control the dot *diameter* (the full width/height), not a radius. The previous "Radius" label was misleading — a user entering 8 would expect an 8px radius (16px dot), but actually gets an 8px diameter dot.
+
+### Files Changed
+
+| File | Changes |
+|------|---------|
+| `assets/lib/custom-cursor/custom-cursor.css` | Added `--cmsmasters-cursor-ring-offset: 32px` to `:root`; fixed `--cmsmasters-cursor-dot-hover-size` default to `40px`; replaced hardcoded 40/60/30px ring sizes with `calc()` + scoped properties |
+| `modules/settings/settings-page.php` | "Normal Radius" → "Dot Diameter"; "Hover Radius" → "Hover Diameter"; updated descriptions |
+| `DOCS/06-API-CSS.md` | Added `--cmsmasters-cursor-ring-offset` variable; documented scoped `--_ring*` properties; updated ring size state table; updated hover/down CSS snippets |
+| `DOCS/12-REF-BODY-CLASSES.md` | Updated hover and down ring CSS snippets to show calc-based sizing |
+| `DOCS/15-REF-SETTINGS.md` | Updated field labels and descriptions to "Diameter"; fixed CSS variable name in output example |
 
 ---
 
@@ -780,4 +851,4 @@ CSS transitions cause animation from old value to new value. While ring opacity 
 
 ---
 
-*Last Updated: February 12, 2026 | Version: 5.6*
+*Last Updated: February 17, 2026 | Version: 5.6*
