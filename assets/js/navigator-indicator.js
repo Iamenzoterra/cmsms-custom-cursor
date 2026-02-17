@@ -21,12 +21,11 @@
 	// === SEC-003 FIX: Origin validation for postMessage ===
 	var TRUSTED_ORIGIN = window.location.origin;
 
-	// Config passed from PHP
-	var config = window.cmsmastersNavigatorConfig || { cursorEnabled: true, widgetOverride: false };
-	var cursorEnabled = config.cursorEnabled;
-	var widgetOverride = config.widgetOverride;
-	var isShowMode = !cursorEnabled && widgetOverride;
-	var isDisabledMode = !cursorEnabled && !widgetOverride;
+	// Config passed from PHP — single cursorMode string: 'yes' | 'widgets' | ''
+	var config = window.cmsmastersNavigatorConfig || { cursorMode: 'yes' };
+	var cursorMode = config.cursorMode || '';
+	var isShowMode = cursorMode === 'widgets';
+	var isDisabledMode = cursorMode === '';
 
 	// Throttle helper
 	var throttleTimer = null;

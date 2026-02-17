@@ -176,13 +176,11 @@ class Editor extends Base_App {
 		);
 
 		// Pass config to Navigator Indicator script
-		// Default is '' (disabled) - consistent with settings-page.php
-		$cursor_enabled = get_option( 'elementor_custom_cursor_enabled', '' ) === 'yes';
+		// cursorMode: 'yes' (enabled), 'widgets' (widgets only), '' (disabled)
 		wp_add_inline_script(
 			'cmsmasters-navigator-indicator',
 			'window.cmsmastersNavigatorConfig = ' . wp_json_encode( array(
-				'cursorEnabled'  => $cursor_enabled,
-				'widgetOverride' => get_option( 'elementor_custom_cursor_widget_override', '' ) === 'yes',
+				'cursorMode' => $this->get_cursor_mode(),
 			) ) . ';',
 			'before'
 		);
@@ -199,12 +197,11 @@ class Editor extends Base_App {
 	 * @since 4.6
 	 */
 	public function enqueue_preview_scripts() {
-		$cursor_enabled  = get_option( 'elementor_custom_cursor_enabled', '' ) === 'yes';
-		$editor_preview  = get_option( 'elementor_custom_cursor_editor_preview', '' ) === 'yes';
-		$widget_override = get_option( 'elementor_custom_cursor_widget_override', '' ) === 'yes';
+		$mode           = $this->get_cursor_mode();
+		$editor_preview = get_option( 'elementor_custom_cursor_editor_preview', '' ) === 'yes';
 
-		// Load when: editor preview ON AND (cursor enabled OR widget override)
-		if ( ! $editor_preview || ( ! $cursor_enabled && ! $widget_override ) ) {
+		// Load when: editor preview ON AND cursor not disabled
+		if ( ! $editor_preview || '' === $mode ) {
 			return;
 		}
 
@@ -218,8 +215,7 @@ class Editor extends Base_App {
 		);
 
 		// Pass show-mode flag to sync script
-		$is_show_mode = ! $cursor_enabled && $widget_override;
-		if ( $is_show_mode ) {
+		if ( 'widgets' === $mode ) {
 			wp_add_inline_script(
 				'cmsmasters-cursor-editor-sync',
 				'window.cmsmCursorShowMode=true;',
@@ -346,6 +342,27 @@ class Editor extends Base_App {
 	 */
 	public function add_tab_settings( Settings $settings ) {
 		$settings->add_tab( 'cmsmasters', array( 'label' => __( 'CMSMasters', 'cmsmasters-elementor' ) ) );
+	}
+
+	/**
+	 * Get the current cursor mode from settings.
+	 *
+	 * Returns 'yes' (enabled), 'widgets' (widgets only), or '' (disabled).
+	 * Includes BC fallback for pre-migration widget_override option.
+	 *
+	 * @since 5.7
+	 * @return string 'yes'|'widgets'|''
+	 */
+	private function get_cursor_mode() {
+		$val = get_option( 'elementor_custom_cursor_enabled', '' );
+		if ( 'yes' === $val || 'widgets' === $val ) {
+			return $val;
+		}
+		// BC fallback: old widget_override option (pre-migration)
+		if ( 'yes' === get_option( 'elementor_custom_cursor_widget_override', '' ) ) {
+			return 'widgets';
+		}
+		return '';
 	}
 
 	/**

@@ -149,13 +149,11 @@ jQuery(function($) {
 	$colorRow.hide();
 
 	// --- Conditional field dependencies ---
-	var $cursorSelect  = $('select[name="elementor_custom_cursor_enabled"]');
-	var $editorSelect  = $('select[name="elementor_custom_cursor_editor_preview"]');
-	var $widgetSelect  = $('select[name="elementor_custom_cursor_widget_override"]');
+	var $cursorSelect = $('select[name="elementor_custom_cursor_enabled"]');
+	var $editorSelect = $('select[name="elementor_custom_cursor_editor_preview"]');
 
-	if ($cursorSelect.length && $editorSelect.length && $widgetSelect.length) {
+	if ($cursorSelect.length && $editorSelect.length) {
 		var $editorRow = $editorSelect.closest('tr');
-		var $widgetRow = $widgetSelect.closest('tr');
 
 		function setRowDisabled($row, $select, disabled, hint) {
 			if (disabled) {
@@ -172,17 +170,12 @@ jQuery(function($) {
 		}
 
 		function updateFieldStates() {
-			var cursorOn = $cursorSelect.val() === 'yes';
-			var widgetOn = $widgetSelect.val() === 'yes';
-
-			setRowDisabled($editorRow, $editorSelect, !cursorOn && !widgetOn,
-				'Enable Custom Cursor or Widget Override to use this setting.');
-			setRowDisabled($widgetRow, $widgetSelect, cursorOn,
-				'Only available when Custom Cursor is disabled globally.');
+			var cursorMode = $cursorSelect.val(); // 'yes', 'widgets', ''
+			setRowDisabled($editorRow, $editorSelect, cursorMode === '',
+				'Enable Custom Cursor to use this setting.');
 		}
 
 		updateFieldStates();
 		$cursorSelect.on('change', updateFieldStates);
-		$widgetSelect.on('change', updateFieldStates);
 	}
 });

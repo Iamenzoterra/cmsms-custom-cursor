@@ -1201,45 +1201,47 @@ class Frontend extends Base_App {
 	}
 
 	/**
+	 * Get the current cursor mode from settings.
+	 *
+	 * Returns 'yes' (enabled), 'widgets' (widgets only), or '' (disabled).
+	 * Includes BC fallback for pre-migration widget_override option.
+	 *
+	 * @since 5.7
+	 * @return string 'yes'|'widgets'|''
+	 */
+	private function get_cursor_mode() {
+		$val = get_option( 'elementor_custom_cursor_enabled', '' );
+		if ( 'yes' === $val || 'widgets' === $val ) {
+			return $val;
+		}
+		// BC fallback: old widget_override option (pre-migration, first load before admin visit)
+		if ( 'yes' === get_option( 'elementor_custom_cursor_widget_override', '' ) ) {
+			return 'widgets';
+		}
+		return '';
+	}
+
+	/**
 	 * Check if widget override is enabled in settings.
 	 *
 	 * @since 5.7
 	 * @return bool
 	 */
 	private function is_widget_override_enabled() {
-		return 'yes' === get_option( 'elementor_custom_cursor_widget_override', '' );
+		return 'widgets' === $this->get_cursor_mode();
 	}
 
 	/**
 	 * Check if cursor is in widget-only mode.
 	 *
-	 * Widget-only mode activates when widget override is ON and either:
-	 * - Global cursor is disabled, OR
-	 * - Page-level cursor is disabled
-	 *
-	 * In this mode, cursor scripts load but cursor only appears on
-	 * widgets with "Show Custom Cursor" enabled.
+	 * Widget-only mode is active when the global setting is 'widgets'.
+	 * In 'yes' (enabled) mode, page-disable means fully disabled (no widget-only fallback).
 	 *
 	 * @since 5.7
 	 * @return bool
 	 */
 	private function is_widget_only_mode() {
-		if ( ! $this->is_widget_override_enabled() ) {
-			return false;
-		}
-
-		// Widget-only when global is OFF
-		if ( 'yes' !== get_option( 'elementor_custom_cursor_enabled', '' ) ) {
-			return true;
-		}
-
-		// Widget-only when page has cursor disabled
-		$document = $this->get_current_page_document();
-		if ( $document && 'yes' === $document->get_settings_for_display( 'cmsmasters_page_cursor_disable' ) ) {
-			return true;
-		}
-
-		return false;
+		return 'widgets' === $this->get_cursor_mode();
 	}
 
 	/**
@@ -1250,10 +1252,18 @@ class Frontend extends Base_App {
 	 * @return bool Whether custom cursor should be enabled.
 	 */
 	private function should_enable_custom_cursor() {
-		// Check addon setting — allow widget-only mode if override enabled
-		if ( 'yes' !== get_option( 'elementor_custom_cursor_enabled', '' ) ) {
-			return $this->is_widget_only_mode();
+		// Check cursor mode — disabled means no cursor at all
+		$mode = $this->get_cursor_mode();
+		if ( '' === $mode ) {
+			return false;
 		}
+
+		// 'widgets' mode always enables scripts (cursor hidden by default, shown per-widget)
+		if ( 'widgets' === $mode ) {
+			return true;
+		}
+
+		// From here: mode is 'yes' (fully enabled)
 
 		// Check if we're in Elementor preview iframe
 		$in_elementor_preview = isset( $_GET['elementor-preview'] );
@@ -1288,9 +1298,9 @@ class Frontend extends Base_App {
 							return false;
 						}
 
-						// Page-level disable check (editor preview) — allow widget-only mode
+						// Page-level disable check (editor preview) — fully disabled
 						if ( 'yes' === $document->get_settings_for_display( 'cmsmasters_page_cursor_disable' ) ) {
-							return $this->is_widget_only_mode();
+							return false;
 						}
 					}
 				}
@@ -1317,10 +1327,10 @@ class Frontend extends Base_App {
 			}
 		}
 
-		// Page-level disable check — allow widget-only mode
+		// Page-level disable check — fully disabled (no widget-only fallback in 'yes' mode)
 		$document = $this->get_current_page_document();
 		if ( $document && 'yes' === $document->get_settings_for_display( 'cmsmasters_page_cursor_disable' ) ) {
-			return $this->is_widget_only_mode();
+			return false;
 		}
 
 		// Frontend - allow

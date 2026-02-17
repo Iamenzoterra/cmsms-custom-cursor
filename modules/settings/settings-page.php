@@ -42,6 +42,9 @@ class Settings_Page extends ElementorSettingsPage {
 
 		parent::__construct();
 
+		// One-time migration: merge old widget_override into 3-option enabled field
+		$this->maybe_migrate_widget_override();
+
 		add_action( 'admin_menu', array( $this, 'register_admin_menu' ) );
 
 		if ( is_admin() && Utils::is_pro() ) {
@@ -50,6 +53,29 @@ class Settings_Page extends ElementorSettingsPage {
 
 		// Enqueue admin scripts on our settings page
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_scripts' ) );
+	}
+
+	/**
+	 * Migrate old widget_override option into the 3-option enabled field.
+	 *
+	 * Old combo: enabled='' + widget_override='yes' → new: enabled='widgets'.
+	 * Runs once on admin load, then deletes the legacy option.
+	 *
+	 * @since 5.7
+	 */
+	private function maybe_migrate_widget_override() {
+		$legacy = get_option( 'elementor_custom_cursor_widget_override', '' );
+		if ( 'yes' !== $legacy ) {
+			return;
+		}
+
+		$current = get_option( 'elementor_custom_cursor_enabled', '' );
+		// Only migrate if cursor was disabled (the only combo that used widget_override)
+		if ( '' === $current ) {
+			update_option( 'elementor_custom_cursor_enabled', 'widgets' );
+		}
+
+		delete_option( 'elementor_custom_cursor_widget_override' );
 	}
 
 	/**
@@ -204,15 +230,16 @@ class Settings_Page extends ElementorSettingsPage {
 					'label' => '',
 					'fields' => array(
 						'custom_cursor_enabled' => array(
-							'label' => __( 'Enable Custom Cursor', 'cmsmasters-elementor' ),
+							'label' => __( 'Custom Cursor', 'cmsmasters-elementor' ),
 							'field_args' => array(
 								'type' => 'select',
 								'options' => array(
-									'' => __( 'Disabled', 'cmsmasters-elementor' ),
-									'yes' => __( 'Enabled', 'cmsmasters-elementor' ),
+									''        => __( 'Disabled', 'cmsmasters-elementor' ),
+									'widgets' => __( 'Widgets Only', 'cmsmasters-elementor' ),
+									'yes'     => __( 'Enabled', 'cmsmasters-elementor' ),
 								),
 								'default' => '',
-								'desc' => __( 'Enable animated cursor on frontend. Disabled on mobile/touch devices.', 'cmsmasters-elementor' ),
+								'desc' => __( 'Disabled: no cursor. Widgets Only: cursor appears only on widgets with "Show Custom Cursor" enabled. Enabled: cursor everywhere (per-widget "Hide" toggle available). Disabled on mobile/touch devices.', 'cmsmasters-elementor' ),
 							),
 						),
 						'custom_cursor_editor_preview' => array(
@@ -341,18 +368,6 @@ class Settings_Page extends ElementorSettingsPage {
 									'yes' => __( 'Enabled', 'cmsmasters-elementor' ),
 								),
 								'desc' => __( 'Elastic rubber-like deformation based on cursor velocity.', 'cmsmasters-elementor' ),
-							),
-						),
-						'custom_cursor_widget_override' => array(
-							'label' => __( 'Widget Override', 'cmsmasters-elementor' ),
-							'field_args' => array(
-								'type' => 'select',
-								'default' => '',
-								'options' => array(
-									''    => __( 'Disabled', 'cmsmasters-elementor' ),
-									'yes' => __( 'Enabled', 'cmsmasters-elementor' ),
-								),
-								'desc' => __( 'Allow per-widget cursor when globally or page-level disabled. Cursor appears only on widgets with "Show Custom Cursor" enabled. Existing widgets with cursor customization must be re-enabled manually (Show Custom Cursor: Yes).', 'cmsmasters-elementor' ),
 							),
 						),
 					),

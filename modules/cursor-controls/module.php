@@ -80,10 +80,9 @@ class Module extends Base_Module {
 		}
 
 		// === Mode detection ===
-		$global_enabled  = 'yes' === get_option( 'elementor_custom_cursor_enabled', '' );
-		$widget_override = 'yes' === get_option( 'elementor_custom_cursor_widget_override', '' );
-		$is_show_mode    = ! $global_enabled && $widget_override;
-		$is_disabled     = ! $global_enabled && ! $widget_override;
+		$mode         = self::get_cursor_mode();
+		$is_show_mode = 'widgets' === $mode;
+		$is_disabled  = '' === $mode;
 
 		$element->start_controls_section(
 			'cmsmasters_section_cursor',
@@ -116,7 +115,7 @@ class Module extends Base_Module {
 				'cmsmasters_cursor_disabled_notice',
 				array(
 					'type'            => Controls_Manager::RAW_HTML,
-					'raw'             => __( 'Enable "Custom Cursor" globally or enable "Widget Override" in Custom Cursor settings to use cursor controls. Existing settings are preserved.', 'cmsmasters-elementor' ),
+					'raw'             => __( 'Set "Custom Cursor" to "Widgets Only" or "Enabled" in Addon Settings to use cursor controls. Existing settings are preserved.', 'cmsmasters-elementor' ),
 					'content_classes' => 'elementor-panel-alert elementor-panel-alert-info',
 				)
 			);
@@ -1198,29 +1197,34 @@ class Module extends Base_Module {
 	/**
 	 * Check if current context is "show render mode" (widget-only).
 	 *
-	 * Show mode: global OFF + widget override ON, or global ON + page disabled + override ON.
-	 * In show mode, toggle=yes means "show cursor" (opt-in).
-	 * In full mode, toggle=yes means "hide cursor" (opt-out).
+	 * Widgets-only mode: toggle=yes means "show cursor" (opt-in).
+	 * Enabled mode: toggle=yes means "hide cursor" (opt-out).
 	 *
 	 * @return bool
 	 */
 	private function is_show_render_mode() {
-		if ( 'yes' !== get_option( 'elementor_custom_cursor_widget_override', '' ) ) {
-			return false;
-		}
+		return 'widgets' === self::get_cursor_mode();
+	}
 
-		// Global OFF => show mode
-		if ( 'yes' !== get_option( 'elementor_custom_cursor_enabled', '' ) ) {
-			return true;
+	/**
+	 * Get the current cursor mode from settings.
+	 *
+	 * Returns 'yes' (enabled), 'widgets' (widgets only), or '' (disabled).
+	 * Includes BC fallback for pre-migration widget_override option.
+	 *
+	 * @since 5.7
+	 * @return string 'yes'|'widgets'|''
+	 */
+	private static function get_cursor_mode() {
+		$val = get_option( 'elementor_custom_cursor_enabled', '' );
+		if ( 'yes' === $val || 'widgets' === $val ) {
+			return $val;
 		}
-
-		// Global ON + page disabled => show mode
-		$document = \Elementor\Plugin::$instance->documents->get_current();
-		if ( $document && 'yes' === $document->get_settings_for_display( 'cmsmasters_page_cursor_disable' ) ) {
-			return true;
+		// BC fallback: old widget_override option (pre-migration)
+		if ( 'yes' === get_option( 'elementor_custom_cursor_widget_override', '' ) ) {
+			return 'widgets';
 		}
-
-		return false;
+		return '';
 	}
 
 	/**

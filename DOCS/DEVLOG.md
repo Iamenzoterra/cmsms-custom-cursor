@@ -4,6 +4,30 @@ Living document tracking development sessions, decisions, and iterations.
 
 ---
 
+## 2026-02-17 — Merge Widget Override into 3-option Enable/Disable control
+
+**Problem:** Two separate settings (Enable Custom Cursor + Widget Override) combined into 3 effective states but required confusing interaction logic — widget override was greyed out when cursor was enabled, and the dual-control UX caused user confusion.
+
+**Solution:** Replaced with single 3-option select: Disabled / Widgets Only / Enabled. Removed widget override control entirely.
+
+**Key decisions:**
+- Page-disable in "Enabled" mode now fully disables cursor (no widget-only fallback). This simplifies the mental model: "Widgets Only" is a global mode choice, not a per-page fallback.
+- One-time migration in `settings-page.php` constructor: detects old combo (`enabled='' + widget_override='yes'`) and migrates to `enabled='widgets'`.
+- BC fallback in all `get_cursor_mode()` helpers: checks legacy `widget_override` option as fallback for first frontend load before admin visit triggers migration.
+- PHP helper `get_cursor_mode()` added to frontend.php, editor.php, and module.php (returns 'yes'|'widgets'|'').
+- Navigator config simplified from two booleans (`cursorEnabled`, `widgetOverride`) to single `cursorMode` string.
+
+**Files changed (7):**
+- `modules/settings/settings-page.php` — 3-option select, migration, removed widget_override control
+- `includes/frontend.php` — `get_cursor_mode()`, simplified `is_widget_only_mode()`, updated `should_enable_custom_cursor()`
+- `includes/editor.php` — `get_cursor_mode()`, `cursorMode` config, simplified preview scripts
+- `modules/cursor-controls/module.php` — `get_cursor_mode()` static, simplified mode detection + notice text
+- `assets/js/admin-settings.js` — removed widget override dependency logic
+- `assets/js/navigator-indicator.js` — switched from dual booleans to `cursorMode` string
+- `DOCS/DEVLOG.md` — this entry
+
+---
+
 ## 2026-02-17 — Fix: Ring proportional sizing + rename Radius→Diameter
 
 **Problem:** In "Dot + Ring" theme, ring was hardcoded at 40px. When admin set dot size to 40+, dot covered the ring completely. Hover setting (`--cmsmasters-cursor-dot-hover-size`) was wired only to dot-only theme, never used in classic. Labels said "Radius" but values were used as diameter. CSS `:root` default for hover-size was 8px but PHP default was 40.
