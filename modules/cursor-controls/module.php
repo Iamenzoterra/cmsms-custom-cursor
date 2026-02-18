@@ -92,6 +92,25 @@ class Module extends Base_Module {
 			)
 		);
 
+		// === Disabled mode — notice only, no toggle or sub-controls ===
+		if ( $is_disabled ) {
+			$settings_url = admin_url( 'admin.php?page=cmsmasters-addon-settings#tab-advanced' );
+			$element->add_control(
+				'cmsmasters_cursor_disabled_notice',
+				array(
+					'type'            => Controls_Manager::RAW_HTML,
+					'raw'             => sprintf(
+						/* translators: %s: URL to Addon Settings page */
+						__( 'Set "Custom Cursor" to "Widgets Only" or "Enabled" in <a href="%s" target="_blank">Addon Settings</a> to use cursor controls. Existing settings are preserved.', 'cmsmasters-elementor' ),
+						esc_url( $settings_url )
+					),
+					'content_classes' => 'elementor-panel-alert elementor-panel-alert-info',
+				)
+			);
+			$element->end_controls_section();
+			return; // No sub-controls registered — settings persist in DB silently
+		}
+
 		// === HIDE / SHOW TOGGLE (contextual label) ===
 		$element->add_control(
 			'cmsmasters_cursor_hide',
@@ -108,20 +127,6 @@ class Module extends Base_Module {
 					: __( 'Show system cursor instead of custom cursor on this element.', 'cmsmasters-elementor' ),
 			)
 		);
-
-		// === Disabled mode — notice only, sub-controls NOT registered ===
-		if ( $is_disabled ) {
-			$element->add_control(
-				'cmsmasters_cursor_disabled_notice',
-				array(
-					'type'            => Controls_Manager::RAW_HTML,
-					'raw'             => __( 'Set "Custom Cursor" to "Widgets Only" or "Enabled" in Addon Settings to use cursor controls. Existing settings are preserved.', 'cmsmasters-elementor' ),
-					'content_classes' => 'elementor-panel-alert elementor-panel-alert-info',
-				)
-			);
-			$element->end_controls_section();
-			return; // No sub-controls registered — settings persist in DB silently
-		}
 
 		// === Toggle condition (contextual) ===
 		// Show mode: controls visible when toggle=yes (opt-in)
