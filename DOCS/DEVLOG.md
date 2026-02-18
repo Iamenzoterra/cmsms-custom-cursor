@@ -4,6 +4,26 @@ Living document tracking development sessions, decisions, and iterations.
 
 ---
 
+## 2026-02-18 — Fix: Blend Mode Cursor Invisible on Some Themes (3 iterations)
+
+**Problem:** On Pixel Craft theme (and similar themes with stacked Elementor containers), enabling any global blend mode (soft / medium / strong) made the custom cursor completely invisible — it went behind images, templates, and sidebars.
+
+**Iteration 1 — Z-index too low (a5c567f):**
+`--cmsmasters-cursor-z-blend` was `9999`. Many Elementor theme elements have z-index above 9999, so the cursor went behind them. Raised to `999999` to match `--cmsmasters-cursor-z-default`. This fixed layering but cursor remained invisible on light backgrounds.
+
+**Iteration 2 — Black cursor + exclusion = invisible (e3049dc):**
+The default cursor color is `#222` (near-black). The `mix-blend-mode: exclusion` formula is `result = base + blend - 2*base*blend`. With `blend = 0` (black), this collapses to `result = base` — the cursor produces zero visible change on any background. It is mathematically invisible. Added `--cmsmasters-cursor-color: #fff` to all three blend-mode body rules. White (`blend = 1`) gives `result = 1 - base`, which inverts correctly on all backgrounds. This fixed the color math but the cursor still vanished in gap areas between Elementor containers (plain body background zones).
+
+**Iteration 3 — `isolation: isolate` trapped the blend (b6a67b2):**
+The blend-mode body rules included `isolation: isolate` (added during the PR #144 CSS cleanup phase). This creates a stacking context. When a child uses `mix-blend-mode`, the blend is confined to compositing within that stacking context — it blends against the stacking context boundary, not the page backdrop. In Elementor, sections/containers are painted as stacked blocks; the gutters between them expose the raw body background. In those gap zones, `isolation: isolate` on body caused the cursor to blend against its own stacking context (blank) rather than the visible page, making it invisible. Removed `isolation: isolate` from all three blend-mode body rules. Now `mix-blend-mode` blends against the full viewport backdrop as intended.
+
+**Key insight:** Two independent math-level gotchas compound here: (1) black is the identity element for inversion blend modes — never use a dark cursor with exclusion/difference; (2) `isolation: isolate` on a parent blocks `mix-blend-mode` from reaching the page backdrop — a common antipattern when trying to "contain" blend effects on a child.
+
+**Files changed:**
+- `assets/lib/custom-cursor/custom-cursor.css` — `--cmsmasters-cursor-z-blend: 999999`; added `--cmsmasters-cursor-color:#fff` to blend body rules; removed `isolation:isolate` from blend body rules
+
+---
+
 ## 2026-02-18 — Research: Demo Content Settings Transfer
 
 **Problem:** When a customer installs a CMSMasters demo, the custom cursor doesn't appear. Global cursor options are stored in `wp_options`, but the standard WXR import only transfers posts/pages. The most critical gap: `elementor_custom_cursor_enabled` defaults to `''` (disabled).

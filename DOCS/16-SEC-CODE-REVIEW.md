@@ -178,16 +178,17 @@ window.addEventListener('beforeunload', function() {
 
 ---
 
-### CSS-001: Z-Index Conflicts [CRITICAL]
-**File:** `custom-cursor.css` lines 23, 123, 339
-```css
-#cmsm-cursor-container { z-index: 2147483647 }           /* Line 23 */
-body.cmsm-cursor-blend-medium #cmsm-cursor-container { z-index: 9999 }  /* Line 123 */
-.elementor-popup-modal #cmsm-cursor-container { z-index: 999999!important }  /* Line 339 */
-```
-**Problem:** Three conflicting z-index values create unpredictable layering.
+### CSS-001: Z-Index Conflicts [CRITICAL] ✅ RESOLVED v5.6 + Feb 2026
+**File:** `custom-cursor.css`
 
-**Fix:** Consolidate to single strategy (use stacking context, not competing z-index).
+**Original Problem:** Three conflicting z-index values created unpredictable layering.
+
+**Resolution (v5.6):** Replaced hardcoded values with CSS custom properties: `--cmsmasters-cursor-z-default: 999999`, `--cmsmasters-cursor-z-blend`. Popup override uses variable (removed `!important`).
+
+**Further fix (February 2026 — blend mode cursor invisible on themes like Pixel Craft):**
+1. `--cmsmasters-cursor-z-blend` raised from `9999` to `999999` — theme elements with z-index > 9999 were covering the cursor
+2. Added `--cmsmasters-cursor-color: #fff` to blend-mode body rules — black (#222) is the identity element for exclusion/difference blend math and produces no visible change on any background
+3. Removed `isolation: isolate` from blend-mode body rules — it created a stacking context that prevented mix-blend-mode from blending with the body background in gap areas between Elementor containers
 
 ---
 
@@ -485,8 +486,8 @@ navigator-indicator.js
 5. [~] BUG-001: Monitor cross-origin iframe behavior (downgraded, current impl works)
 6. [x] BUG-002: ~~Sync appendChild with RAF~~ RESOLVED - P4 v1 removed
 7. [x] BUG-003: ~~Guard against multiple instances~~ **RESOLVED v5.5-SEC** - singleton guard
-8. [ ] CSS-001: Unify z-index strategy
-9. [ ] CSS-002: Add color-mix() fallback
+8. [x] CSS-001: ~~Unify z-index strategy~~ **RESOLVED v5.6** — CSS custom properties; blend z-index raised to 999999; forced white cursor for blend modes; removed isolation:isolate (Feb 2026)
+9. [x] CSS-002: ~~Add color-mix() fallback~~ **RESOLVED v5.6** — @supports rgba fallback added
 
 ### Phase 3: Memory (High Priority)
 10. [x] MEM-001: ~~Disconnect Navigator MutationObserver~~ **RESOLVED v5.5-SEC** - preview:destroyed cleanup

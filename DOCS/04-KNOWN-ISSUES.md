@@ -130,11 +130,16 @@ window.cmsmCursorInstanceActive = true;
 | **Fixed** | February 6, 2026 |
 
 **Resolution:** Replaced three hardcoded z-index values with CSS custom properties:
-- Default: `--cmsm-cursor-z-default: 999999` (was `2147483647`)
-- Blend: `--cmsm-cursor-z-blend: 9999` (unchanged value, now via variable)
-- Popup: uses `--cmsm-cursor-z-default` (removed `!important`)
+- Default: `--cmsmasters-cursor-z-default: 999999` (was `2147483647`)
+- Blend: `--cmsmasters-cursor-z-blend: 9999` (unchanged value, now via variable)
+- Popup: uses `--cmsmasters-cursor-z-default` (removed `!important`)
 
-Users can override via custom CSS: `#cmsm-cursor-container { --cmsm-cursor-z-default: 99999; }`
+Users can override via custom CSS: `#cmsmasters-cursor-container { --cmsmasters-cursor-z-default: 99999; }`
+
+**Further fix (February 18, 2026 — 3 iterations):** Blend mode cursor was invisible on themes with stacked elements (e.g. Pixel Craft):
+1. `--cmsmasters-cursor-z-blend` raised from `9999` to `999999` (matched default z-index)
+2. Added `--cmsmasters-cursor-color: #fff` to blend body rules — black cursor is identity element of exclusion/difference math and produces no visual change; white inverts correctly
+3. Removed `isolation: isolate` from blend body rules — it was creating a stacking context that prevented blending with body background in gaps between Elementor containers
 
 ---
 
@@ -835,7 +840,7 @@ Latest v5.5-SEC fixes: SEC-001/002/003 (security), BUG-002/003, MEM-001/002/003 
 
 | ID | Description | Resolution | Version |
 |----|-------------|------------|---------|
-| CSS-001 | z-index 2147483647 conflicts | CSS custom properties (999999) | v5.6 |
+| CSS-001 | z-index 2147483647 conflicts; blend mode cursor invisible | CSS custom properties; z-blend raised to 999999; forced white color; removed isolation:isolate | v5.6 |
 | CSS-002 | color-mix() no fallback | @supports rgba fallback | v5.6 |
 | MEM-004 | Special cursor DOM accumulation | SpecialCursorManager | v5.6 |
 | CODE-002 | Console.log in production | Debug mode infrastructure | v5.6 |
@@ -936,4 +941,4 @@ If applicable.
 
 ---
 
-*Last Updated: February 9, 2026 | Version: 5.6*
+*Last Updated: February 18, 2026 | Version: 5.6*

@@ -17,6 +17,126 @@
 
 ---
 
+## Fix: Blend Mode Cursor Invisible on Some Themes (February 18, 2026)
+
+### Type: Bug Fix (custom-cursor.css) — 3 iterations
+
+#### Problem
+
+On themes like Pixel Craft, enabling any global blend mode (soft / medium / strong) made the cursor completely invisible — it went behind images, sidebars, and Elementor containers.
+
+Three separate root causes were found and fixed across three commits (a5c567f, e3049dc, b6a67b2).
+
+#### Iteration 1 — Z-Index Too Low
+
+`--cmsmasters-cursor-z-blend` was `9999`, far below the default `999999`. Theme elements with z-index above 9999 covered the cursor entirely.
+
+**Fix:** Raised `--cmsmasters-cursor-z-blend` from `9999` to `999999` to match the default.
+
+```css
+/* Before */
+#cmsmasters-cursor-container {
+    --cmsmasters-cursor-z-blend: 9999;
+}
+
+/* After */
+#cmsmasters-cursor-container {
+    --cmsmasters-cursor-z-blend: 999999;
+}
+```
+
+This fixed visibility behind most elements but the cursor was still invisible on light backgrounds.
+
+#### Iteration 2 — Black Cursor + Exclusion = Invisible
+
+The default cursor color is `#222` (near-black). The math for `mix-blend-mode: exclusion` is:
+
+```
+result = base + blend_color - 2 * base * blend_color
+```
+
+With `blend_color = 0` (black), this simplifies to `result = base`, meaning the cursor produces zero visual change — it is mathematically invisible on any background.
+
+**Fix:** Added `--cmsmasters-cursor-color: #fff` to all three blend-mode body rules. White (`blend_color = 1`) correctly inverts any background: `result = base + 1 - 2 * base = 1 - base`.
+
+```css
+body.cmsmasters-cursor-blend-medium,
+body.cmsmasters-cursor-blend-soft,
+body.cmsmasters-cursor-blend-strong {
+    --cmsmasters-cursor-color: #fff;
+}
+```
+
+This fixed the color math but the cursor still vanished in gap areas between Elementor containers (empty body background).
+
+#### Iteration 3 — `isolation: isolate` Trapped the Blend
+
+`isolation: isolate` on the body created a stacking context that prevented `mix-blend-mode` from blending with the body's own background. In Elementor, containers are stacked elements; the gaps between them are plain body background. Inside those gaps, the cursor blended against the stacking context boundary rather than the actual page backdrop.
+
+**Fix:** Removed `isolation: isolate` from the blend-mode body rules entirely.
+
+```css
+/* Before */
+body.cmsmasters-cursor-blend-soft,
+body.cmsmasters-cursor-blend-medium,
+body.cmsmasters-cursor-blend-strong {
+    isolation: isolate;
+}
+
+/* After — rule removed */
+```
+
+With `isolation: isolate` gone, `mix-blend-mode` blends against the full viewport backdrop as intended.
+
+#### Final State (Blend Modes section, lines ~156-183 of custom-cursor.css)
+
+```css
+body.cmsmasters-cursor-blend-medium,
+body.cmsmasters-cursor-blend-soft,
+body.cmsmasters-cursor-blend-strong {
+    --cmsmasters-cursor-color: #fff;
+}
+
+body.cmsmasters-cursor-blend-medium #cmsmasters-cursor-container,
+body.cmsmasters-cursor-blend-soft #cmsmasters-cursor-container,
+body.cmsmasters-cursor-blend-strong #cmsmasters-cursor-container {
+    z-index: var(--cmsmasters-cursor-z-blend);  /* 999999 */
+}
+
+body.cmsmasters-cursor-blend-soft #cmsmasters-cursor-container {
+    mix-blend-mode: exclusion;
+}
+
+body.cmsmasters-cursor-blend-medium #cmsmasters-cursor-container {
+    mix-blend-mode: difference;
+}
+
+body.cmsmasters-cursor-blend-strong #cmsmasters-cursor-container {
+    mix-blend-mode: difference;
+    filter: contrast(1.5);
+}
+```
+
+#### Key Insight
+
+Black is the identity element for `mix-blend-mode: exclusion` and `difference`. A black cursor produces no visible change on any background. White is the correct color for inversion-based blend modes. Additionally, `isolation: isolate` on a parent containing a child with `mix-blend-mode` is a common antipattern — it creates a compositing boundary that confines blending to within the isolated stacking context, preventing blending with the page backdrop.
+
+### Files Changed
+
+| File | Changes |
+|------|---------|
+| `assets/lib/custom-cursor/custom-cursor.css` | `--cmsmasters-cursor-z-blend` raised to 999999; added `--cmsmasters-cursor-color:#fff` to blend body rules; removed `isolation:isolate` from blend body rules |
+
+### Commits
+
+| Commit | Change |
+|--------|--------|
+| a5c567f | Raise blend mode z-index to 999999 |
+| e3049dc | Force white cursor color for blend modes |
+| b6a67b2 | Remove isolation:isolate from blend body rules |
+
+---
+
 ## Fix: Navigator Indicator — 'show' Type Replaced with 'core' + Mode-Conditional Legend (February 18, 2026)
 
 ### Type: Bug Fix (navigator-indicator.js)
@@ -905,4 +1025,4 @@ CSS transitions cause animation from old value to new value. While ring opacity 
 
 ---
 
-*Last Updated: February 17, 2026 | Version: 5.6*
+*Last Updated: February 18, 2026 | Version: 5.6*

@@ -26,7 +26,7 @@
 | `--cmsmasters-cursor-dot-hover-size` | 40px | Dot hover diameter (default, classic theme uses 40px, theme-dot uses 20px) |
 | `--cmsmasters-cursor-ring-offset` | 32px | Gap between dot edge and ring edge; ring diameter = dot size + offset |
 | `--cmsmasters-cursor-z-default` | 999999 | Default z-index (high but not max-int) |
-| `--cmsmasters-cursor-z-blend` | 9999 | Z-index when blend modes active |
+| `--cmsmasters-cursor-z-blend` | 999999 | Z-index when blend modes active (same as default — raised from 9999 in Feb 2026 fix) |
 
 **Scoped Properties (inside `.cmsmasters-cursor-ring` rules — not user-overridable):**
 
@@ -77,12 +77,12 @@ Main container element. Z-index uses CSS custom properties for easy override.
 ```css
 #cmsmasters-cursor-container {
     --cmsmasters-cursor-z-default: 999999;
-    --cmsmasters-cursor-z-blend: 9999;
+    --cmsmasters-cursor-z-blend: 999999;
     z-index: var(--cmsmasters-cursor-z-default);
 }
 ```
 
-**Note:** When blend modes are active, z-index drops to blend value:
+**Note:** When blend modes are active, z-index uses `--cmsmasters-cursor-z-blend` (currently equal to the default):
 
 ```css
 body.cmsmasters-cursor-blend-soft #cmsmasters-cursor-container,
@@ -362,31 +362,40 @@ body.cmsmasters-cursor-on-light {
 
 ### Blend Mode Classes
 
-| Class | Mix Blend Mode | Filter | Z-Index |
-|-------|----------------|--------|---------|
-| `cmsmasters-cursor-blend-soft` | exclusion | none | 9999 |
-| `cmsmasters-cursor-blend-medium` | difference | none | 9999 |
-| `cmsmasters-cursor-blend-strong` | difference | contrast(1.5) | 9999 |
+| Class | Mix Blend Mode | Filter | Z-Index | Cursor Color |
+|-------|----------------|--------|---------|--------------|
+| `cmsmasters-cursor-blend-soft` | exclusion | none | 999999 | forced #fff |
+| `cmsmasters-cursor-blend-medium` | difference | none | 999999 | forced #fff |
+| `cmsmasters-cursor-blend-strong` | difference | contrast(1.5) | 999999 | forced #fff |
+
+**Why white cursor color is forced:** Black (`#222`) is the identity element for `exclusion` and `difference` blend math. With black, `result = base + 0 - 0 = base`, meaning the cursor produces no visible change on any background. White (`#fff`) correctly inverts: `result = 1 - base`. The `--cmsmasters-cursor-color: #fff` override on the body ensures proper blending regardless of the global color setting.
+
+**Why `isolation: isolate` was removed (February 2026):** `isolation: isolate` on the body created a stacking context that confined `mix-blend-mode` to blend only within that context boundary. In Elementor pages, gap areas between containers expose the plain body background. Within those gaps, the cursor blended against the isolated stacking context instead of the actual page backdrop, making it invisible or incorrectly colored. Removing `isolation: isolate` lets `mix-blend-mode` blend against the full viewport backdrop as intended.
 
 ```css
-body.cmsmasters-cursor-blend-soft,
+/* Forces white cursor for correct inversion math on all backgrounds */
 body.cmsmasters-cursor-blend-medium,
+body.cmsmasters-cursor-blend-soft,
 body.cmsmasters-cursor-blend-strong {
-    isolation: isolate;
+    --cmsmasters-cursor-color: #fff;
+}
+
+/* All blend modes use same z-index as default (no longer lower) */
+body.cmsmasters-cursor-blend-medium #cmsmasters-cursor-container,
+body.cmsmasters-cursor-blend-soft #cmsmasters-cursor-container,
+body.cmsmasters-cursor-blend-strong #cmsmasters-cursor-container {
+    z-index: var(--cmsmasters-cursor-z-blend); /* 999999 */
 }
 
 body.cmsmasters-cursor-blend-soft #cmsmasters-cursor-container {
-    z-index: 9999;
     mix-blend-mode: exclusion;
 }
 
 body.cmsmasters-cursor-blend-medium #cmsmasters-cursor-container {
-    z-index: 9999;
     mix-blend-mode: difference;
 }
 
 body.cmsmasters-cursor-blend-strong #cmsmasters-cursor-container {
-    z-index: 9999;
     mix-blend-mode: difference;
     filter: contrast(1.5);
 }
@@ -852,7 +861,7 @@ Dark mode colors (applied via `.elementor-editor-dark` or auto dark mode):
 | Element | Z-Index | Condition |
 |---------|---------|-----------|
 | #cmsmasters-cursor-container | 999999 | Default (via `--cmsmasters-cursor-z-default`) |
-| #cmsmasters-cursor-container | 9999 | Blend modes active (via `--cmsmasters-cursor-z-blend`) |
+| #cmsmasters-cursor-container | 999999 | Blend modes active (via `--cmsmasters-cursor-z-blend` — raised from 9999 in Feb 2026) |
 | .cmsmasters-nav-cursor-legend-wrapper | 10 | Navigator legend |
 | .elementor-navigator__element__indicators | 1 | Navigator indicators |
 
