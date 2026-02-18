@@ -43,7 +43,7 @@
 | `--cmsmasters-indicator-core` | #b07cc5 | Purple indicator (dark mode) |
 | `--cmsmasters-indicator-special` | #5dade2 | Blue indicator (dark mode) |
 | `--cmsmasters-indicator-hidden` | #a0adb5 | Gray indicator (dark mode) |
-| `--cmsmasters-indicator-show` | #4caf50 | Green indicator (dark mode) |
+| `--cmsmasters-indicator-show` | #4caf50 | Green indicator (dark mode) — **Deprecated; CSS class retained but JS no longer assigns it** |
 | `--cmsmasters-legend-border` | rgba(255, 255, 255, 0.1) | Legend border color |
 
 ### Usage
@@ -677,13 +677,14 @@ Cursor completely hidden on touch devices:
 
 ### Indicator Base Classes
 
-| Class | Purpose |
-|-------|---------|
-| `.cmsmasters-nav-cursor-indicator` | Base indicator class |
-| `.cmsmasters-nav-cursor-core` | Purple dot - Core settings active |
-| `.cmsmasters-nav-cursor-special` | Blue dot - Special cursor active |
-| `.cmsmasters-nav-cursor-hidden` | Gray dot - Cursor hidden on element |
-| `.cmsmasters-nav-cursor-show` | Green dot - Cursor shown (when globally disabled) |
+| Class | Purpose | Active? |
+|-------|---------|---------|
+| `.cmsmasters-nav-cursor-indicator` | Base indicator class | Yes |
+| `.cmsmasters-nav-cursor-core` | Purple dot - Core settings active, or cursor active in Widgets Only mode | Yes |
+| `.cmsmasters-nav-cursor-special` | Blue dot - Special cursor active | Yes |
+| `.cmsmasters-nav-cursor-hidden` | Gray dot - Cursor hidden on element (Enabled Globally mode only) | Yes |
+| `.cmsmasters-nav-cursor-inherit` | Inherit parent cursor settings | Yes |
+| `.cmsmasters-nav-cursor-show` | Green dot - **Deprecated** (Feb 2026). Was used for Widgets Only active cursors. JS now emits `core` instead. CSS rule kept for backward compatibility. | No (unused) |
 
 ```css
 .cmsmasters-nav-cursor-indicator {
@@ -716,6 +717,7 @@ Cursor completely hidden on touch devices:
     opacity: 0.8;
 }
 
+/* Deprecated — no longer assigned by JS (Feb 2026) */
 .cmsmasters-nav-cursor-show {
     background: #27ae60 !important;
 }
@@ -814,12 +816,12 @@ Cursor completely hidden on touch devices:
 
 Dark mode colors (applied via `.elementor-editor-dark` or auto dark mode):
 
-| Indicator | Light Mode | Dark Mode |
-|-----------|------------|-----------|
-| Core | #9b59b6 | #b07cc5 |
-| Special | #3498db | #5dade2 |
-| Hidden | #95a5a6 | #a0adb5 |
-| Show | #27ae60 | #4caf50 |
+| Indicator | Light Mode | Dark Mode | Status |
+|-----------|------------|-----------|--------|
+| Core | #9b59b6 | #b07cc5 | Active |
+| Special | #3498db | #5dade2 | Active |
+| Hidden | #95a5a6 | #a0adb5 | Active (full mode only) |
+| Show | #27ae60 | #4caf50 | Deprecated (Feb 2026) |
 
 ```css
 .elementor-editor-dark,
@@ -964,4 +966,4 @@ body.cmsmasters-cursor-enabled.cmsmasters-cursor-hidden
 
 ---
 
-*Last Updated: February 17, 2026 | Version: 5.6*
+*Last Updated: February 18, 2026 | Version: 5.6*

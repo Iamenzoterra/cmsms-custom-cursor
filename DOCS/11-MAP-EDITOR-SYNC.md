@@ -520,10 +520,11 @@ window.addEventListener('message', function(event) {
 
 **Configuration** passed via inline script:
 ```js
-window.cmsmastersNavigatorConfig = { cursorEnabled: bool };
+window.cmsmastersNavigatorConfig = { cursorMode: 'yes'|'widgets'|'' };
 ```
-- `cursorEnabled: true` — shows core/special/hidden indicators (normal mode)
-- `cursorEnabled: false` — shows only "show" indicators (elements that override disabled cursor)
+- `cursorMode: 'yes'` — Enabled Globally: shows core/special/hidden/inherit indicators
+- `cursorMode: 'widgets'` — Widgets Only: shows core/special/inherit indicators (no Hidden)
+- `cursorMode: ''` — Disabled: no indicators, no legend
 
 **Legend visibility conditions:**
 1. Legend HTML is **always** injected into Navigator panel
@@ -560,7 +561,7 @@ Settings change detected (via channels.editor, $e.hooks, or model.on('change'))
 │     ├─▶ settings = container.model.get('settings')                         │
 │     │                                                                       │
 │     ├─▶ cursorInfo = hasNonDefaultCursor(settings)                         │
-│     │   └─▶ Returns { type: 'core'|'special'|'hidden'|'show', ... }        │
+│     │   └─▶ Returns { type: 'core'|'special'|'hidden'|'inherit', ... }     │
 │     │                                                                       │
 │     └─▶ If cursorInfo:                                                      │
 │         │                                                                   │
@@ -595,50 +596,53 @@ Based on `hasNonDefaultCursor()` function in navigator-indicator.js:
 │                         NAVIGATOR INDICATORS                                │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│  Type: 'core' - Core cursor settings changed                                │
+│  Type: 'core' - Core cursor settings changed (or active in Widgets Only)   │
 │  ┌─────────┐                                                               │
-│  │ Section │ [●] ←── cmsm-nav-cursor-core                                  │
-│  └─────────┘     Triggers: hover_style, force_color, blend_mode, effect    │
+│  │ Section │ [●] ←── cmsm-nav-cursor-core (purple)                         │
+│  └─────────┘     Full mode: hover_style, force_color, blend_mode, effect   │
+│       │           Widgets Only: toggle=yes, no special/inherit              │
 │       │                                                                     │
 │  Type: 'special' - Special cursor active                                    │
 │       ├── ┌─────────┐                                                       │
-│       │   │ Column  │ [◆] ←── cmsm-nav-cursor-special                      │
+│       │   │ Column  │ [◆] ←── cmsm-nav-cursor-special (blue)               │
 │       │   └─────────┘     Triggers: cmsmasters_cursor_special_active='yes' │
 │       │                   Subtypes: 'image', 'text', 'icon'                │
 │       │                                                                     │
-│  Type: 'hidden' - Cursor hidden on element                                  │
+│  Type: 'hidden' - Cursor hidden on element (full mode only)                 │
+│       ├── ┌─────────┐                                                       │
+│       │   │ Button  │ [○] ←── cmsm-nav-cursor-hidden (gray)                │
+│       │   └─────────┘     Triggers: cmsmasters_cursor_hide='yes'           │
+│       │                             (Enabled Globally mode only)           │
+│       │                                                                     │
+│  Type: 'inherit' - Inherit parent cursor settings                           │
 │       └── ┌─────────┐                                                       │
-│           │ Button  │ [○] ←── cmsm-nav-cursor-hidden                       │
-│           └─────────┘     Triggers: cmsmasters_cursor_hide='yes'           │
-│                                     (when cursor addon is ENABLED)         │
+│           │ Widget  │ [◑] ←── cmsm-nav-cursor-inherit                      │
+│           └─────────┘     Triggers: cmsmasters_cursor_inherit_parent='yes' │
 │                                                                             │
-│  Type: 'show' - Show cursor override (when addon disabled globally)         │
-│           ┌─────────┐                                                       │
-│           │ Heading │ [◐] ←── cmsm-nav-cursor-show                         │
-│           └─────────┘     Triggers: cmsmasters_cursor_hide='yes'           │
-│                                     (when cursor addon is DISABLED)        │
-│                                                                             │
+│  LEGEND — mode-conditional (visible when indicators exist):                 │
 │  ┌───────────────────────────────────────────────────────────────────────┐ │
-│  │ LEGEND (visible when indicators exist):                               │ │
-│  │ .cmsm-nav-cursor-legend-wrapper                                       │ │
-│  │                                                                       │ │
-│  │ [●] Core    [◆] Special    [○] Hidden                                 │ │
+│  │ Widgets Only:  [●] Core    [◆] Special    [◑] Inherit                 │ │
+│  │ Enabled:       [●] Core    [◆] Special    [○] Hidden    [◑] Inherit   │ │
 │  └───────────────────────────────────────────────────────────────────────┘ │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-**Indicator Priority Order:**
-1. Special (highest) - `cmsmasters_cursor_special_active === 'yes'`
-2. Hidden - `cmsmasters_cursor_hide === 'yes'` (when addon enabled)
-3. Core - Any of: `hover_style`, `force_color`, `blend_mode`, `effect`
+**Indicator Priority Order (both modes):**
+1. Special (highest) — `cmsmasters_cursor_special_active === 'yes'`
+2. Inherit — `cmsmasters_cursor_inherit_parent === 'yes'`
+3. Hidden — `cmsmasters_cursor_hide === 'yes'` (Enabled Globally mode only)
+4. Core — Any of: `hover_style`, `force_color`, `blend_mode`, `effect` (full mode), or toggle=yes with no special/inherit (Widgets Only)
+
+**Note on removed 'show' type (February 2026):** The `'show'` indicator type was removed. In Widgets Only mode, elements with the cursor active but no special/inherit setting now receive `{ type: 'core' }` (purple dot) instead of `{ type: 'show' }` (green dot). The green dot `.cmsm-nav-cursor-show` CSS class remains in `editor-navigator.css` for backward compatibility but is no longer assigned by JavaScript.
 
 **CSS Classes:**
 - `.cmsm-nav-cursor-indicator` - Base class
-- `.cmsm-nav-cursor-core` - Core settings indicator
-- `.cmsm-nav-cursor-special` - Special cursor indicator
-- `.cmsm-nav-cursor-hidden` - Hidden cursor indicator
-- `.cmsm-nav-cursor-show` - Show cursor override indicator
+- `.cmsm-nav-cursor-core` - Core settings indicator (purple)
+- `.cmsm-nav-cursor-special` - Special cursor indicator (blue)
+- `.cmsm-nav-cursor-hidden` - Hidden cursor indicator (gray, full mode only)
+- `.cmsm-nav-cursor-inherit` - Inherit parent indicator
+- `.cmsm-nav-cursor-show` - Deprecated (was green; no longer assigned by JS)
 
 ---
 
@@ -1032,4 +1036,4 @@ var settingsCache = {};    // Settings cache by ID (for P2 re-sync)
 
 ---
 
-*Last Updated: February 5, 2026 | Version: 5.5*
+*Last Updated: February 18, 2026 | Version: 5.6*

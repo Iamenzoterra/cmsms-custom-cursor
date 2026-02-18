@@ -1,6 +1,6 @@
 # Custom Cursor v5.6 - Changelog
 
-**Last Updated:** February 17, 2026
+**Last Updated:** February 18, 2026
 
 ---
 
@@ -8,11 +8,65 @@
 
 | Version | Date | Type | Summary |
 |---------|------|------|---------|
+| Fix | 2026-02-18 | Navigator JS | Indicator type 'show' → 'core'; mode-conditional legend |
 | Fix | 2026-02-17 | CSS Refactor + Settings | Ring sizing calc-based; Radius → Diameter labels |
 | PR #144 | 2026-02-12 | Cleanup + Vendor | Code review: prefix rename, extract inline assets, vendor Pickr |
 | v5.6 | 2026-02-06 | Refactor + Fix | Constants, CursorState, z-index consolidation |
 | v5.5 | 2026-02-05 | Feature | P4 v2 Forms/popups + P5 Video/iframe auto-hide |
 | v5.5-SEC | 2026-02-05 | Security | SVG sanitization for XSS prevention |
+
+---
+
+## Fix: Navigator Indicator — 'show' Type Replaced with 'core' + Mode-Conditional Legend (February 18, 2026)
+
+### Type: Bug Fix (navigator-indicator.js)
+
+#### Problem
+
+In Widgets Only mode, elements with the cursor toggle enabled but no special cursor or inherit setting received a green indicator dot of type `'show'`. This type was:
+- Not present in the legend (users saw a dot with no explanation)
+- Inconsistent with the rest of the indicator vocabulary
+- A dead code path — `getTooltip()` had a `case 'show':` that never matched because the type was checked before reaching that branch
+
+#### S1 — Indicator Type Fix
+
+**File:** `assets/js/navigator-indicator.js`
+
+**Line 379:** Changed the Widgets Only mode final fallback:
+
+```javascript
+// Before:
+return { type: 'show' };
+
+// After:
+return { type: 'core' };
+```
+
+**Line 350 (JSDoc):** Return type updated:
+
+```javascript
+// Before:
+// @returns {Object|null} - { type: 'core'|'special'|'hidden'|'show'|'inherit', subtype?: string }
+
+// After:
+// @returns {Object|null} - { type: 'core'|'special'|'hidden'|'inherit', subtype?: string }
+```
+
+**`getTooltip()` switch:** Dead `case 'show':` removed. The existing `case 'core':` returns "Custom Cursor" for both full-mode core settings and widget-only active elements.
+
+#### S2 — Mode-Conditional Legend
+
+**File:** `assets/js/navigator-indicator.js`, function `addLegend()`
+
+The legend now adapts to cursor mode:
+
+| Mode | Legend Items |
+|------|-------------|
+| Widgets Only (`isShowMode=true`) | Core / Special / Inherit (no Hidden) |
+| Enabled Globally (`isShowMode=false`) | Core / Special / Hidden / Inherit |
+| Disabled (`isDisabledMode=true`) | No indicators, no legend |
+
+Hidden is excluded in Widgets Only mode because "hiding" the cursor is not possible there — the toggle controls whether the cursor is shown, not hidden.
 
 ---
 

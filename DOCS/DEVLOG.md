@@ -4,6 +4,29 @@ Living document tracking development sessions, decisions, and iterations.
 
 ---
 
+## 2026-02-18 — Fix: Navigator indicator type 'show' replaced with 'core' + mode-conditional legend
+
+**Problem:** In Widgets Only mode, elements with cursor enabled (toggle=yes) but no special cursor or inherit setting received a green "show" dot. This dot was not present in the legend and used a type name (`'show'`) that was inconsistent with the rest of the indicator vocabulary.
+
+**S1 — Indicator type fix:**
+- `hasNonDefaultCursor()` line 379: `{ type: 'show' }` changed to `{ type: 'core' }` in the Show Mode branch's final fallback
+- JSDoc on line 350 updated: return type changed from `'core'|'special'|'hidden'|'show'|'inherit'` to `'core'|'special'|'hidden'|'inherit'`
+- Dead `case 'show':` removed from `getTooltip()` switch — `case 'core':` already returns "Custom Cursor" for the widget-only scenario
+
+**S2 — Mode-conditional legend:**
+- `addLegend()` now builds `legendItems` conditionally based on `isShowMode`
+- Widgets Only (`isShowMode=true`) → 3 legend items: Core / Special / Inherit (no Hidden row)
+- Enabled Globally (`isShowMode=false`) → 4 legend items: Core / Special / Hidden / Inherit
+- Disabled (`isDisabledMode=true`) → no indicators, no legend (unchanged)
+
+**Key insight:** "Hidden" (cursor disabled on an element via toggle) is not meaningful in Widgets Only mode. In that mode, the toggle controls whether the cursor is *shown*, not *hidden*. So a widget whose toggle is ON gets "core" (cursor is active), and one whose toggle is OFF simply has no indicator (cursor not active on that widget). There is no "hidden" concept.
+
+**Files changed:**
+- `assets/js/navigator-indicator.js` — S1: line 379 type, line 350 JSDoc, removed `case 'show':` in getTooltip(); S2: conditional legendItems build in addLegend()
+- `DOCS/DEVLOG.md` — this entry
+
+---
+
 ## 2026-02-17 — Merge Widget Override into 3-option Enable/Disable control
 
 **Problem:** Two separate settings (Enable Custom Cursor + Widget Override) combined into 3 effective states but required confusing interaction logic — widget override was greyed out when cursor was enabled, and the dual-control UX caused user confusion.

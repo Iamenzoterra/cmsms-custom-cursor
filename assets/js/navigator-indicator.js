@@ -347,7 +347,7 @@
 	 * Check if element has non-default cursor settings
 	 *
 	 * @param {Object} settings - Backbone model settings
-	 * @returns {Object|null} - { type: 'core'|'special'|'hidden'|'show', subtype?: string } or null
+	 * @returns {Object|null} - { type: 'core'|'special'|'hidden'|'inherit', subtype?: string } or null
 	 */
 	function hasNonDefaultCursor(settings) {
 		if (!settings || typeof settings.get !== 'function') return null;
@@ -375,8 +375,8 @@
 				return { type: 'inherit' };
 			}
 
-			// Show mode active with no special/inherit = "show" indicator
-			return { type: 'show' };
+			// Show mode active with no special/inherit = core indicator
+			return { type: 'core' };
 		}
 
 		// === FULL MODE (existing logic) ===
@@ -471,9 +471,6 @@
 
 			case 'hidden':
 				return 'Cursor Hidden';
-
-			case 'show':
-				return 'Show Cursor (override)';
 
 			case 'core':
 				var parts = [];
@@ -697,6 +694,28 @@
 		// Info icon SVG
 		var infoIcon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>';
 
+		// Build legend items based on cursor mode
+		var legendItems =
+			'<span class="cmsmasters-legend-item">' +
+				'<span class="cmsmasters-nav-cursor-indicator cmsmasters-nav-cursor-core"></span> Core' +
+			'</span>' +
+			'<span class="cmsmasters-legend-item">' +
+				'<span class="cmsmasters-nav-cursor-indicator cmsmasters-nav-cursor-special"></span> Special' +
+			'</span>';
+
+		// Hidden indicator only exists in full mode (not in show/widgets-only mode)
+		if (!isShowMode) {
+			legendItems +=
+				'<span class="cmsmasters-legend-item">' +
+					'<span class="cmsmasters-nav-cursor-indicator cmsmasters-nav-cursor-hidden"></span> Hidden' +
+				'</span>';
+		}
+
+		legendItems +=
+			'<span class="cmsmasters-legend-item">' +
+				'<span class="cmsmasters-nav-cursor-indicator cmsmasters-nav-cursor-inherit"></span> Inherit' +
+			'</span>';
+
 		// Create legend HTML with wrapper and header
 		var legendHtml = '<div class="cmsmasters-nav-cursor-legend-wrapper">' +
 			'<div class="cmsmasters-nav-cursor-legend-header">' +
@@ -704,18 +723,7 @@
 				'<a href="https://cmsmasters.studio" target="_blank" rel="noopener" title="Learn more">' + infoIcon + '</a>' +
 			'</div>' +
 			'<div class="cmsmasters-nav-cursor-legend">' +
-				'<span class="cmsmasters-legend-item">' +
-					'<span class="cmsmasters-nav-cursor-indicator cmsmasters-nav-cursor-core"></span> Core' +
-				'</span>' +
-				'<span class="cmsmasters-legend-item">' +
-					'<span class="cmsmasters-nav-cursor-indicator cmsmasters-nav-cursor-special"></span> Special' +
-				'</span>' +
-				'<span class="cmsmasters-legend-item">' +
-					'<span class="cmsmasters-nav-cursor-indicator cmsmasters-nav-cursor-hidden"></span> Hidden' +
-				'</span>' +
-				'<span class="cmsmasters-legend-item">' +
-					'<span class="cmsmasters-nav-cursor-indicator cmsmasters-nav-cursor-inherit"></span> Inherit' +
-				'</span>' +
+				legendItems +
 			'</div>' +
 		'</div>';
 

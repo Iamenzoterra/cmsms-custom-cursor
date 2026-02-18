@@ -1986,11 +1986,21 @@ Checks if element has non-default cursor settings.
 | settings | object | Backbone model settings |
 
 **Returns:** `object | null`
-- `{ type: 'special', subtype: 'image'|'text'|'icon' }` - Special cursor
-- `{ type: 'hidden' }` - Hidden cursor
-- `{ type: 'show' }` - Show cursor (when addon disabled)
-- `{ type: 'core', details: {...} }` - Core settings modified
-- `null` - No cursor settings
+- `{ type: 'special', subtype: 'image'|'text'|'icon' }` - Special cursor active
+- `{ type: 'hidden' }` - Cursor hidden on element (full mode only — `cmsmasters_cursor_hide='yes'`)
+- `{ type: 'core', details: {...} }` - Core settings changed, or cursor active in Widgets Only mode with no special/inherit
+- `{ type: 'inherit' }` - Inherit parent cursor settings
+- `null` - No cursor settings / toggle off
+
+**Mode Behavior:**
+
+| Mode | Logic |
+|------|-------|
+| Disabled | Always returns `null` |
+| Widgets Only (`isShowMode`) | Returns `null` if toggle off; checks special → inherit → `core` if toggle on |
+| Enabled Globally (full mode) | Checks special → inherit → hidden → core |
+
+**Note:** The `'show'` type was removed in February 2026. Widgets Only elements that previously returned `{ type: 'show' }` now return `{ type: 'core' }`, consistent with the purple indicator shown for active core settings.
 
 ---
 
@@ -2449,4 +2459,4 @@ Main initialization function.
 
 ---
 
-*Last Updated: February 6, 2026 | Version: 5.6*
+*Last Updated: February 18, 2026 | Version: 5.6*

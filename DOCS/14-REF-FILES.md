@@ -294,7 +294,7 @@
 | Section | Lines | Purpose |
 |---------|-------|---------|
 | Base indicator | 20-28 | .cmsm-nav-cursor-indicator base |
-| Indicator types | 33-52 | core, special, hidden, show colors |
+| Indicator types | 33-52 | core, special, hidden colors; show (deprecated, unused) |
 | Tooltips | 58-60 | title attribute tooltip |
 | Legend bar | 68-141 | Legend wrapper, header, items |
 | Dark mode | 147-212 | Dark theme support |
