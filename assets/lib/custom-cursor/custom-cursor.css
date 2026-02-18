@@ -160,6 +160,7 @@ body.cmsmasters-cursor-on-light {
 body.cmsmasters-cursor-blend-medium,
 body.cmsmasters-cursor-blend-soft,
 body.cmsmasters-cursor-blend-strong {
+    --cmsmasters-cursor-color:#fff;
     isolation:isolate
 }
 
