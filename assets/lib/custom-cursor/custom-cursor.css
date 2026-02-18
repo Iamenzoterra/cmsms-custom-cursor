@@ -30,7 +30,7 @@ body.cmsmasters-cursor-on-light {
 
 #cmsmasters-cursor-container {
     --cmsmasters-cursor-z-default: 999999;
-    --cmsmasters-cursor-z-blend: 9999;
+    --cmsmasters-cursor-z-blend: 999999;
     z-index: var(--cmsmasters-cursor-z-default)
 }
 
