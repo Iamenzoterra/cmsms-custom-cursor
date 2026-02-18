@@ -4,6 +4,30 @@ Living document tracking development sessions, decisions, and iterations.
 
 ---
 
+## 2026-02-18 — Research: Demo Content Settings Transfer
+
+**Problem:** When a customer installs a CMSMasters demo, the custom cursor doesn't appear. Global cursor options are stored in `wp_options`, but the standard WXR import only transfers posts/pages. The most critical gap: `elementor_custom_cursor_enabled` defaults to `''` (disabled).
+
+**Research findings:**
+- Per-widget controls and page-level overrides transfer automatically via WXR XML
+- Elementor Kit colors transfer via `elementor-kit.php` importer
+- 12 global `wp_options` values do NOT transfer — cursor is off on fresh demo import
+- The original plan listed 9 options; actual count is 12 (3 added since: `editor_preview`, `dual_mode`, `color_source`)
+
+**Architecture review:**
+- CMSMasters Merlin wizard (`admin/installer/importer/theme-options.php`) already calls `update_option()` during demo import
+- Our cursor options just need to be included in each demo's data package — no addon code changes needed
+- Sanitization is safe: `frontend.php` validates all values on read (hex regex, `is_numeric()`, strict `in_array()`)
+
+**Deliverable:** `DOCS/DEMO-SETTINGS-TRANSFER.md` — complete reference for the theme team with all 12 option keys, types, allowed values, defaults, and example config snippets.
+
+**Key insight:** This is a coordination task, not a code task. The addon already handles externally-written option values safely. Only the demo data packaging needs updating.
+
+**Files created:**
+- `DOCS/DEMO-SETTINGS-TRANSFER.md` — option reference for theme team
+
+---
+
 ## 2026-02-18 — Fix: Navigator indicator type 'show' replaced with 'core' + mode-conditional legend
 
 **Problem:** In Widgets Only mode, elements with cursor enabled (toggle=yes) but no special cursor or inherit setting received a green "show" dot. This dot was not present in the legend and used a type name (`'show'`) that was inconsistent with the rest of the indicator vocabulary.
