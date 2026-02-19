@@ -910,7 +910,7 @@ class Module extends Base_Module {
 		}
 
 		// Prevent duplicate registration (critical — multiple sections may trigger this)
-		if ( $element->get_controls( 'cmsmasters_page_cursor_disable' ) || $element->get_controls( 'cmsmasters_page_cursor_disabled_notice' ) ) {
+		if ( $element->get_controls( 'cmsmasters_page_cursor_disable' ) || $element->get_controls( 'cmsmasters_page_cursor_disabled_notice' ) || $element->get_controls( 'cmsmasters_page_cursor_widgets_notice' ) ) {
 			return;
 		}
 
@@ -934,6 +934,27 @@ class Module extends Base_Module {
 						__( 'Set Custom Cursor to "Widgets Only" or "Enabled" in <a href="%s" target="_blank">Addon Settings</a> to use cursor controls. Existing settings are preserved.', 'cmsmasters-elementor' ),
 						esc_url( $settings_url )
 					),
+					'content_classes' => 'elementor-panel-alert elementor-panel-alert-info',
+				)
+			);
+			$element->end_controls_section();
+			return;
+		}
+
+		// === Widgets Only mode — no page-level cursor, controls per-widget only ===
+		if ( 'widgets' === $mode ) {
+			$element->start_controls_section(
+				'cmsmasters_section_page_cursor',
+				array(
+					'label' => __( 'Custom Cursor', 'cmsmasters-elementor' ),
+					'tab'   => Controls_Manager::TAB_ADVANCED,
+				)
+			);
+			$element->add_control(
+				'cmsmasters_page_cursor_widgets_notice',
+				array(
+					'type'            => Controls_Manager::RAW_HTML,
+					'raw'             => __( 'Custom Cursor is set to "Widgets Only". Cursor is controlled per-widget using the "Show Custom Cursor" toggle in each widget\'s Advanced tab. Page-level overrides are not available in this mode.', 'cmsmasters-elementor' ),
 					'content_classes' => 'elementor-panel-alert elementor-panel-alert-info',
 				)
 			);
