@@ -902,7 +902,34 @@ class Module extends Base_Module {
 		}
 
 		// Prevent duplicate registration (critical — multiple sections may trigger this)
-		if ( $element->get_controls( 'cmsmasters_page_cursor_disable' ) ) {
+		if ( $element->get_controls( 'cmsmasters_page_cursor_disable' ) || $element->get_controls( 'cmsmasters_page_cursor_disabled_notice' ) ) {
+			return;
+		}
+
+		// === Disabled mode — notice only, no page cursor controls ===
+		$mode = self::get_cursor_mode();
+		if ( '' === $mode ) {
+			$settings_url = admin_url( 'admin.php?page=cmsmasters-addon-settings#tab-advanced' );
+			$element->start_controls_section(
+				'cmsmasters_section_page_cursor',
+				array(
+					'label' => __( 'Custom Cursor', 'cmsmasters-elementor' ),
+					'tab'   => Controls_Manager::TAB_ADVANCED,
+				)
+			);
+			$element->add_control(
+				'cmsmasters_page_cursor_disabled_notice',
+				array(
+					'type'            => Controls_Manager::RAW_HTML,
+					'raw'             => sprintf(
+						/* translators: %s: URL to Addon Settings page */
+						__( 'Set Custom Cursor to "Widgets Only" or "Enabled" in <a href="%s" target="_blank">Addon Settings</a> to use cursor controls. Existing settings are preserved.', 'cmsmasters-elementor' ),
+						esc_url( $settings_url )
+					),
+					'content_classes' => 'elementor-panel-alert elementor-panel-alert-info',
+				)
+			);
+			$element->end_controls_section();
 			return;
 		}
 

@@ -4,6 +4,20 @@ Living document tracking development sessions, decisions, and iterations.
 
 ---
 
+## 2026-02-19 — UX: Show disabled notice in Page Settings when cursor is globally disabled
+
+**Problem:** Widget-level cursor controls already show an info notice when the global cursor mode is disabled (`get_cursor_mode()` returns `''`). Page Settings controls (`register_page_cursor_controls()`) lacked this check — they always registered the full control set, showing users controls they can't use.
+
+**Solution:** Added the same disabled-mode pattern to `register_page_cursor_controls()` in `module.php`:
+- After the duplicate-registration guard, check `self::get_cursor_mode()`
+- If disabled: open the "Custom Cursor" section, show a RAW_HTML info notice with a link to Addon Settings, close section, early return
+- Also extended the duplicate-registration guard to check for `cmsmasters_page_cursor_disabled_notice` (the notice control ID) to prevent double-registration in disabled mode
+- Existing page-level cursor settings in DB are preserved (not deleted) — they reappear when cursor is re-enabled
+
+**Key detail:** The duplicate-registration guard originally only checked for `cmsmasters_page_cursor_disable` (the switcher). Since disabled mode registers a different control (`cmsmasters_page_cursor_disabled_notice`), the guard needed to check both IDs to prevent duplicate section registration when the callback fires multiple times.
+
+---
+
 ## 2026-02-18 — Fix: Blend Mode Cursor Invisible on Some Themes (3 iterations)
 
 **Problem:** On Pixel Craft theme (and similar themes with stacked Elementor containers), enabling any global blend mode (soft / medium / strong) made the custom cursor completely invisible — it went behind images, templates, and sidebars.
