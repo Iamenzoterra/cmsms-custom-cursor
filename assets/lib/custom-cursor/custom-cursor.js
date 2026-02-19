@@ -2544,6 +2544,13 @@
             var showZone = t.closest ? t.closest(SHOW_ZONE_SELECTOR) : null;
             if (showZone) {
                 if (CursorState.get('hidden')) {
+                    // Detect blend/color/effect BEFORE showing cursor
+                    // so it appears with the correct state (not stale global)
+                    var zoneX = e.clientX, zoneY = e.clientY;
+                    detectCursorMode(zoneX, zoneY);
+                    lastDetect = Date.now();
+                    lastDetectX = zoneX;
+                    lastDetectY = zoneY;
                     CursorState.transition({ hidden: false }, 'mouseover:show-zone');
                 }
                 // Fall through to hover/special cursor detection below

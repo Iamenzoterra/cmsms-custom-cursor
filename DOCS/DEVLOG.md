@@ -4,6 +4,18 @@ Living document tracking development sessions, decisions, and iterations.
 
 ---
 
+## 2026-02-19 — Fix: Widget settings (blend/color/effect) not applied on show zone entry
+
+**Problem:** In Widgets Only mode, when the cursor enters a show zone, it appears with the GLOBAL blend/color/effect instead of the widget's override. The widget settings only apply after the user moves the mouse further (triggering `detectCursorMode` via throttled `mousemove`). This affects both frontend and editor preview.
+
+**Root cause:** `mouseover:show-zone` handler (custom-cursor.js:2547) called `CursorState.transition({ hidden: false })` to show the cursor, but did NOT call `detectCursorMode()` first. The cursor appeared with stale `currentBlendIntensity` (global). `detectCursorMode` only ran on the next `mousemove` (throttled 100ms + 5px movement). For special cursor zones this was already fixed (line 2508-2515 calls `detectCursorMode` on mouseover), but core cursor show zones were missing it.
+
+**Fix:** Call `detectCursorMode(e.clientX, e.clientY)` BEFORE `{ hidden: false }` transition in the show zone mouseover handler. This detects blend/color/effect/hover style before the cursor becomes visible, so it appears with the correct state from the first frame. Also sync throttle state (`lastDetect`, `lastDetectX/Y`) to prevent redundant detection on the next `mousemove`.
+
+**Iteration 1 (failed):** Tried `skipClear` in editor sync `cmsmasters:cursor:init` to preserve PHP-rendered attributes. Didn't help because the issue was in the JS timing, not the attribute presence — attributes were correct in the DOM all along.
+
+---
+
 ## 2026-02-19 — Fix: Widget blend mode not applied on editor initial load
 
 **Problem:** In Widgets Only mode, when opening a page in the Elementor editor, a widget with blend mode set to "Disabled" showed the global blend (e.g. Soft) instead. Changing any widget setting fixed it. The saved setting didn't load on first open.
