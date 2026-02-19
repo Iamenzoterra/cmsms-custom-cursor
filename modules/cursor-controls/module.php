@@ -910,7 +910,7 @@ class Module extends Base_Module {
 		}
 
 		// Prevent duplicate registration (critical — multiple sections may trigger this)
-		if ( $element->get_controls( 'cmsmasters_page_cursor_disable' ) || $element->get_controls( 'cmsmasters_page_cursor_disabled_notice' ) || $element->get_controls( 'cmsmasters_page_cursor_widgets_notice' ) ) {
+		if ( $element->get_controls( 'cmsmasters_page_cursor_disable' ) || $element->get_controls( 'cmsmasters_page_cursor_disabled_notice' ) ) {
 			return;
 		}
 
@@ -941,26 +941,8 @@ class Module extends Base_Module {
 			return;
 		}
 
-		// === Widgets Only mode — no page-level cursor, controls per-widget only ===
-		if ( 'widgets' === $mode ) {
-			$element->start_controls_section(
-				'cmsmasters_section_page_cursor',
-				array(
-					'label' => __( 'Custom Cursor', 'cmsmasters-elementor' ),
-					'tab'   => Controls_Manager::TAB_ADVANCED,
-				)
-			);
-			$element->add_control(
-				'cmsmasters_page_cursor_widgets_notice',
-				array(
-					'type'            => Controls_Manager::RAW_HTML,
-					'raw'             => __( 'Custom Cursor is set to "Widgets Only". Cursor is controlled per-widget using the "Show Custom Cursor" toggle in each widget\'s Advanced tab. Page-level overrides are not available in this mode.', 'cmsmasters-elementor' ),
-					'content_classes' => 'elementor-panel-alert elementor-panel-alert-info',
-				)
-			);
-			$element->end_controls_section();
-			return;
-		}
+		// === Mode detection ===
+		$is_show_mode = 'widgets' === $mode;
 
 		// === Document type label for descriptions ===
 		$doc_type_label = $this->get_document_type_label( $element );
@@ -973,19 +955,33 @@ class Module extends Base_Module {
 			)
 		);
 
+		// === SHOW / DISABLE TOGGLE (contextual label) ===
 		$element->add_control(
 			'cmsmasters_page_cursor_disable',
 			array(
-				/* translators: %s: document type (Page, Header, Footer, Popup, etc.) */
-				'label'       => sprintf( __( 'Disable Cursor on This %s', 'cmsmasters-elementor' ), $doc_type_label ),
+				'label'       => $is_show_mode
+					/* translators: %s: document type (Page, Header, Footer, Popup, etc.) */
+					? sprintf( __( 'Show Custom Cursor on This %s', 'cmsmasters-elementor' ), $doc_type_label )
+					/* translators: %s: document type (Page, Header, Footer, Popup, etc.) */
+					: sprintf( __( 'Disable Cursor on This %s', 'cmsmasters-elementor' ), $doc_type_label ),
 				'type'        => Controls_Manager::SWITCHER,
 				'default'     => '',
 				'label_off'   => __( 'No', 'cmsmasters-elementor' ),
 				'label_on'    => __( 'Yes', 'cmsmasters-elementor' ),
-				/* translators: %s: document type (Page, Header, Footer, Popup, etc.) */
-				'description' => sprintf( __( 'Completely disable custom cursor on this %s.', 'cmsmasters-elementor' ), strtolower( $doc_type_label ) ),
+				'description' => $is_show_mode
+					/* translators: %s: document type (Page, Header, Footer, Popup, etc.) */
+					? sprintf( __( 'Enable custom cursor on this %s.', 'cmsmasters-elementor' ), strtolower( $doc_type_label ) )
+					/* translators: %s: document type (Page, Header, Footer, Popup, etc.) */
+					: sprintf( __( 'Completely disable custom cursor on this %s.', 'cmsmasters-elementor' ), strtolower( $doc_type_label ) ),
 			)
 		);
+
+		// === Toggle condition (contextual) ===
+		// Show mode: settings visible when toggle=yes (opt-in)
+		// Full mode: settings visible when toggle='' (not disabled, opt-out)
+		$page_toggle_condition = $is_show_mode
+			? array( 'cmsmasters_page_cursor_disable' => 'yes' )
+			: array( 'cmsmasters_page_cursor_disable' => '' );
 
 		$element->add_control(
 			'cmsmasters_page_cursor_theme',
@@ -998,9 +994,7 @@ class Module extends Base_Module {
 					'classic' => __( 'Dot + Ring', 'cmsmasters-elementor' ),
 					'dot'     => __( 'Dot Only', 'cmsmasters-elementor' ),
 				),
-				'condition' => array(
-					'cmsmasters_page_cursor_disable' => '',
-				),
+				'condition' => $page_toggle_condition,
 			)
 		);
 
@@ -1018,9 +1012,7 @@ class Module extends Base_Module {
 					'smooth'  => __( 'Smooth', 'cmsmasters-elementor' ),
 					'fluid'   => __( 'Fluid', 'cmsmasters-elementor' ),
 				),
-				'condition' => array(
-					'cmsmasters_page_cursor_disable' => '',
-				),
+				'condition' => $page_toggle_condition,
 			)
 		);
 
@@ -1037,9 +1029,7 @@ class Module extends Base_Module {
 					'medium' => __( 'Medium (Difference)', 'cmsmasters-elementor' ),
 					'strong' => __( 'Strong (High Contrast)', 'cmsmasters-elementor' ),
 				),
-				'condition' => array(
-					'cmsmasters_page_cursor_disable' => '',
-				),
+				'condition' => $page_toggle_condition,
 			)
 		);
 
@@ -1057,9 +1047,7 @@ class Module extends Base_Module {
 					'shake'  => __( 'Shake', 'cmsmasters-elementor' ),
 					'buzz'   => __( 'Buzz', 'cmsmasters-elementor' ),
 				),
-				'condition' => array(
-					'cmsmasters_page_cursor_disable' => '',
-				),
+				'condition' => $page_toggle_condition,
 			)
 		);
 
@@ -1074,9 +1062,7 @@ class Module extends Base_Module {
 					'yes' => __( 'Enabled', 'cmsmasters-elementor' ),
 					'no'  => __( 'Disabled', 'cmsmasters-elementor' ),
 				),
-				'condition' => array(
-					'cmsmasters_page_cursor_disable' => '',
-				),
+				'condition' => $page_toggle_condition,
 			)
 		);
 
@@ -1089,9 +1075,7 @@ class Module extends Base_Module {
 				                   . '</button>',
 				'content_classes' => 'elementor-control-field',
 				'separator'       => 'before',
-				'condition'       => array(
-					'cmsmasters_page_cursor_disable' => '',
-				),
+				'condition'       => $page_toggle_condition,
 			)
 		);
 
@@ -1103,9 +1087,7 @@ class Module extends Base_Module {
 				'default'     => '',
 				'global'      => array( 'default' => '' ),
 				'separator'   => 'before',
-				'condition'   => array(
-					'cmsmasters_page_cursor_disable' => '',
-				),
+				'condition'   => $page_toggle_condition,
 			)
 		);
 
