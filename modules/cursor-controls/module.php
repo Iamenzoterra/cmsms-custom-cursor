@@ -84,6 +84,9 @@ class Module extends Base_Module {
 		$is_show_mode = 'widgets' === $mode;
 		$is_disabled  = '' === $mode;
 
+		// === Element type label for descriptions ===
+		$type_label = $this->get_element_type_label( $element );
+
 		$element->start_controls_section(
 			'cmsmasters_section_cursor',
 			array(
@@ -123,8 +126,10 @@ class Module extends Base_Module {
 				'label_off'   => __( 'No', 'cmsmasters-elementor' ),
 				'label_on'    => __( 'Yes', 'cmsmasters-elementor' ),
 				'description' => $is_show_mode
-					? __( 'Enable custom cursor on this widget.', 'cmsmasters-elementor' )
-					: __( 'Show system cursor instead of custom cursor on this element.', 'cmsmasters-elementor' ),
+					/* translators: %s: element type (widget, container, section, column) */
+					? sprintf( __( 'Enable custom cursor on this %s.', 'cmsmasters-elementor' ), $type_label )
+					/* translators: %s: element type (widget, container, section, column) */
+					: sprintf( __( 'Show system cursor instead of custom cursor on this %s.', 'cmsmasters-elementor' ), $type_label ),
 			)
 		);
 
@@ -232,7 +237,8 @@ class Module extends Base_Module {
 					''      => __( 'Default (Global)', 'cmsmasters-elementor' ),
 					'hover' => __( 'Enlarged', 'cmsmasters-elementor' ),
 				),
-				'description' => __( 'Cursor style when hovering this element.', 'cmsmasters-elementor' ),
+				/* translators: %s: element type (widget, container, section, column) */
+				'description' => sprintf( __( 'Cursor style when hovering this %s.', 'cmsmasters-elementor' ), $type_label ),
 				'condition'   => array_merge( $toggle_condition, array(
 					'cmsmasters_cursor_inherit_parent' => '',
 					'cmsmasters_cursor_special_active' => '',
@@ -248,7 +254,8 @@ class Module extends Base_Module {
 				'default'      => '',
 				'label_off'    => __( 'No', 'cmsmasters-elementor' ),
 				'label_on'     => __( 'Yes', 'cmsmasters-elementor' ),
-				'description'  => __( 'Override cursor color on this element.', 'cmsmasters-elementor' ),
+				/* translators: %s: element type (widget, container, section, column) */
+				'description'  => sprintf( __( 'Override cursor color on this %s.', 'cmsmasters-elementor' ), $type_label ),
 				'condition'    => array_merge( $toggle_condition, array(
 					'cmsmasters_cursor_inherit_parent' => '',
 					'cmsmasters_cursor_special_active' => '',
@@ -283,7 +290,8 @@ class Module extends Base_Module {
 					'medium' => __( 'Medium (Difference)', 'cmsmasters-elementor' ),
 					'strong' => __( 'Strong (High Contrast)', 'cmsmasters-elementor' ),
 				),
-				'description' => __( 'Override global blend mode on this element.', 'cmsmasters-elementor' ),
+				/* translators: %s: element type (widget, container, section, column) */
+				'description' => sprintf( __( 'Override global blend mode on this %s.', 'cmsmasters-elementor' ), $type_label ),
 				'condition'   => array_merge( $toggle_condition, array(
 					'cmsmasters_cursor_inherit_parent' => '',
 					'cmsmasters_cursor_special_active' => '',
@@ -933,6 +941,9 @@ class Module extends Base_Module {
 			return;
 		}
 
+		// === Document type label for descriptions ===
+		$doc_type_label = $this->get_document_type_label( $element );
+
 		$element->start_controls_section(
 			'cmsmasters_section_page_cursor',
 			array(
@@ -944,12 +955,14 @@ class Module extends Base_Module {
 		$element->add_control(
 			'cmsmasters_page_cursor_disable',
 			array(
-				'label'       => __( 'Disable Cursor on This Page', 'cmsmasters-elementor' ),
+				/* translators: %s: document type (Page, Header, Footer, Popup, etc.) */
+				'label'       => sprintf( __( 'Disable Cursor on This %s', 'cmsmasters-elementor' ), $doc_type_label ),
 				'type'        => Controls_Manager::SWITCHER,
 				'default'     => '',
 				'label_off'   => __( 'No', 'cmsmasters-elementor' ),
 				'label_on'    => __( 'Yes', 'cmsmasters-elementor' ),
-				'description' => __( 'Completely disable custom cursor on this page.', 'cmsmasters-elementor' ),
+				/* translators: %s: document type (Page, Header, Footer, Popup, etc.) */
+				'description' => sprintf( __( 'Completely disable custom cursor on this %s.', 'cmsmasters-elementor' ), strtolower( $doc_type_label ) ),
 			)
 		);
 
@@ -1236,6 +1249,70 @@ class Module extends Base_Module {
 	 */
 	private function is_show_render_mode() {
 		return 'widgets' === self::get_cursor_mode();
+	}
+
+	/**
+	 * Get human-readable element type label for control descriptions.
+	 *
+	 * @param \Elementor\Controls_Stack $element The element instance.
+	 * @return string Lowercase type label (widget, container, section, column).
+	 */
+	private function get_element_type_label( $element ) {
+		$type = $element->get_type();
+
+		switch ( $type ) {
+			case 'container':
+				return __( 'container', 'cmsmasters-elementor' );
+			case 'section':
+				return __( 'section', 'cmsmasters-elementor' );
+			case 'column':
+				return __( 'column', 'cmsmasters-elementor' );
+			case 'widget':
+			default:
+				return __( 'widget', 'cmsmasters-elementor' );
+		}
+	}
+
+	/**
+	 * Get human-readable document type label for page-level control descriptions.
+	 *
+	 * Uses Elementor's document get_title() which returns "Header", "Footer", "Popup", etc.
+	 * Falls back to "Page" for unknown document types.
+	 *
+	 * @param \Elementor\Core\Base\Document $element The document instance.
+	 * @return string Capitalized type label (Page, Header, Footer, Popup, etc.).
+	 */
+	private function get_document_type_label( $element ) {
+		$doc_name = $element->get_name();
+
+		// Map known document type slugs to labels
+		$known_types = array(
+			'wp-page'              => __( 'Page', 'cmsmasters-elementor' ),
+			'wp-post'              => __( 'Post', 'cmsmasters-elementor' ),
+			'page'                 => __( 'Template', 'cmsmasters-elementor' ),
+			'header'               => __( 'Header', 'cmsmasters-elementor' ),
+			'footer'               => __( 'Footer', 'cmsmasters-elementor' ),
+			'popup'                => __( 'Popup', 'cmsmasters-elementor' ),
+			'single'               => __( 'Template', 'cmsmasters-elementor' ),
+			'archive'              => __( 'Archive', 'cmsmasters-elementor' ),
+			'cmsmasters_header'    => __( 'Header', 'cmsmasters-elementor' ),
+			'cmsmasters_footer'    => __( 'Footer', 'cmsmasters-elementor' ),
+			'cmsmasters_popup'     => __( 'Popup', 'cmsmasters-elementor' ),
+			'cmsmasters_singular'  => __( 'Template', 'cmsmasters-elementor' ),
+			'cmsmasters_archive'   => __( 'Archive', 'cmsmasters-elementor' ),
+		);
+
+		if ( isset( $known_types[ $doc_name ] ) ) {
+			return $known_types[ $doc_name ];
+		}
+
+		// Fallback: try Elementor's own get_title() (returns type label like "Header")
+		$title = $element::get_title();
+		if ( ! empty( $title ) ) {
+			return $title;
+		}
+
+		return __( 'Page', 'cmsmasters-elementor' );
 	}
 
 	/**
