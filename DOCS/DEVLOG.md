@@ -4,6 +4,25 @@ Living document tracking development sessions, decisions, and iterations.
 
 ---
 
+## 2026-02-19 — Fix: CursorState/DOM desync — widget blend ignored on initial load
+
+**Problem:** In Widgets Only mode, widget-level blend override (`data-cursor-blend="off"`) is ignored on initial page load. The cursor shows the global blend (e.g. "soft") instead of disabled. Affects both frontend and editor. Changing any setting in the editor fixes it.
+
+**Root cause:** `CursorState._state.blend` initializes as `null` (line 413), but PHP already renders body with `cmsmasters-cursor-blend-soft` class. The JS variable `currentBlendIntensity` is correctly synced to 'soft' (from body class), but the state machine is not. When `detectCursorMode` finds `data-cursor-blend="off"` and calls `setBlendIntensity('')` → `CursorState.transition({blend: null})` — this is a NO-OP because `_state.blend` is already `null`. The body retains the PHP-rendered blend classes.
+
+Why editor settings change fixes it: changing blend to 'soft' first sets `_state.blend = 'soft'`, then changing to 'off' sets `_state.blend = null` — the transition detects the change and removes classes.
+
+**Fix:** After computing `globalBlendIntensity` from body classes (line 699), sync `CursorState._state.blend = globalBlendIntensity`. Now `_state.blend` starts as 'soft', so transitioning to `null` correctly removes the classes.
+
+**Iteration history:**
+1. skipClear in editor sync init — wrong target (JS timing, not attribute presence)
+2. detectCursorMode before show cursor — correct optimization but didn't fix root cause
+3. CursorState sync — **this was the fix** (state/DOM desync)
+
+**Key insight:** When state machines shadow external DOM, ALWAYS sync initial state from existing DOM classes, not just from code defaults. Compare: `hidden` was properly synced at line 604 (`init:widget-only`), but `blend` was missed.
+
+---
+
 ## 2026-02-19 — Fix: Widget settings (blend/color/effect) not applied on show zone entry
 
 **Problem:** In Widgets Only mode, when the cursor enters a show zone, it appears with the GLOBAL blend/color/effect instead of the widget's override. The widget settings only apply after the user moves the mouse further (triggering `detectCursorMode` via throttled `mousemove`). This affects both frontend and editor preview.

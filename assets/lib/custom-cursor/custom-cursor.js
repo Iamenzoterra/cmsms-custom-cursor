@@ -698,6 +698,14 @@
     }
     var currentBlendIntensity = globalBlendIntensity;
 
+    // Sync CursorState.blend with PHP-rendered body classes.
+    // PHP sets cmsmasters-cursor-blend-{soft|medium|strong} on body,
+    // but CursorState._state.blend inits as null. Without this sync,
+    // transitioning to blend:null (="off") is a no-op → classes stay.
+    if (globalBlendIntensity) {
+        CursorState._state.blend = globalBlendIntensity;
+    }
+
     // True WP Admin global blend (ignores page settings).
     // Widgets with "Default (Global)" use this, not the page override.
     var trueGlobalBlend = window.cmsmCursorTrueGlobalBlend || '';
