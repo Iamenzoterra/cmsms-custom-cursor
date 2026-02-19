@@ -4,6 +4,24 @@ Living document tracking development sessions, decisions, and iterations.
 
 ---
 
+## 2026-02-19 — Fix: Native cursor disappears in editor preview (Widgets Only, preview OFF)
+
+**Problem:** In Widgets Only mode, when Custom Cursor Preview is OFF in the Elementor editor, hovering over a show zone widget makes the native (system) cursor disappear. No cursor at all is visible — custom cursor not running (preview OFF) and native cursor hidden by CSS.
+
+**Root cause:** CSS specificity conflict. `custom-cursor.css` has `.cmsmasters-cursor-widget-only [data-cursor-show] *` at specificity (0,2,0) with `cursor:none!important`. The editor sync's override `body.cmsmasters-cursor-disabled *` only has (0,1,1) — lower specificity, so `cursor:none` wins even when disabled.
+
+**Fix:** Added explicit override in `cursor-editor-sync.js` injected styles with higher specificity (0,3,1):
+```css
+body.cmsmasters-cursor-disabled.cmsmasters-cursor-widget-only [data-cursor-show],
+body.cmsmasters-cursor-disabled.cmsmasters-cursor-widget-only [data-cursor-show] * {
+  cursor: inherit !important;
+}
+```
+
+**Key insight:** Other `cursor:none` selectors (`[data-cursor-image] *`, `.cmsmasters-cursor-enabled *`) have specificity (0,1,0) which is already beaten by the existing disabled override at (0,1,1). Only the widget-only show zone selector needed the explicit fix because it combines class + attribute selector = (0,2,0).
+
+---
+
 ## 2026-02-19 — Fix: Dot/hover sizes ignored in Widgets Only mode
 
 **Problem:** In "Widgets Only" mode, global dot diameter and hover diameter from Addon Settings were not applied. Cursor used hardcoded CSS defaults (8px dot, 40px hover) instead of user-configured values. All other global settings (theme, color, blend, effects, smoothness, adaptive) worked fine.

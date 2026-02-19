@@ -86,6 +86,11 @@
         '',
         'body.cmsmasters-cursor-disabled { cursor: auto !important; }',
         'body.cmsmasters-cursor-disabled * { cursor: inherit !important; }',
+        // Widget-only show zones have higher specificity (0,2,0) — override them explicitly
+        'body.cmsmasters-cursor-disabled.cmsmasters-cursor-widget-only [data-cursor-show],',
+        'body.cmsmasters-cursor-disabled.cmsmasters-cursor-widget-only [data-cursor-show] * {',
+        '  cursor: inherit !important;',
+        '}',
         '',
         // Panel - always visible, draggable
         '#cmsmasters-cursor-panel {',
