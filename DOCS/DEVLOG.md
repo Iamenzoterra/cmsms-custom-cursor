@@ -4,6 +4,16 @@ Living document tracking development sessions, decisions, and iterations.
 
 ---
 
+## 2026-02-19 — Fix: Dot/hover sizes ignored in Widgets Only mode
+
+**Problem:** In "Widgets Only" mode, global dot diameter and hover diameter from Addon Settings were not applied. Cursor used hardcoded CSS defaults (8px dot, 40px hover) instead of user-configured values. All other global settings (theme, color, blend, effects, smoothness, adaptive) worked fine.
+
+**Root cause:** `frontend.php:1379` generated inline CSS with selector `body.cmsmasters-cursor-enabled[class]`, but in Widgets Only mode the body class is `cmsmasters-cursor-widget-only` — selector didn't match. Color worked because it used `:root` (always matches).
+
+**Fix:** Added `body.cmsmasters-cursor-widget-only[class]` to the CSS selector so size custom properties apply in both modes.
+
+---
+
 ## 2026-02-19 — UX: Show disabled notice in Page Settings when cursor is globally disabled
 
 **Problem:** Widget-level cursor controls already show an info notice when the global cursor mode is disabled (`get_cursor_mode()` returns `''`). Page Settings controls (`register_page_cursor_controls()`) lacked this check — they always registered the full control set, showing users controls they can't use.

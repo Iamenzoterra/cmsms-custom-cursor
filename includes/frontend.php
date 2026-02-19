@@ -1376,7 +1376,7 @@ class Frontend extends Base_App {
 		}
 
 		if ( ! empty( $size_vars ) ) {
-			$inline_css_parts[] = 'body.cmsmasters-cursor-enabled[class] { ' . implode( '; ', $size_vars ) . '; }';
+			$inline_css_parts[] = 'body.cmsmasters-cursor-enabled[class], body.cmsmasters-cursor-widget-only[class] { ' . implode( '; ', $size_vars ) . '; }';
 		}
 
 		if ( ! empty( $inline_css_parts ) ) {
