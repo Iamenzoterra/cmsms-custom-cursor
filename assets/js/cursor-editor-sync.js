@@ -366,7 +366,7 @@
                 els.forEach(function(el) {
                     if (el.id && el.settings) {
                         settingsCache[el.id] = el.settings;  // P2 fix: Cache settings
-                        applySettings(el.id, el.settings);
+                        applySettings(el.id, el.settings, true);  // skipClear: preserve PHP attrs
                     }
                 });
             }
@@ -640,10 +640,12 @@
     function getSize(v, d) { return v ? (typeof v === 'object' && v.size !== undefined ? v.size : v) : d; }
     function fmtDims(d) { if (!d) return ''; var u = d.unit || 'px'; return (d.top||0)+u+' '+(d.right||0)+u+' '+(d.bottom||0)+u+' '+(d.left||0)+u; }
 
-    function applySettings(elementId, settings) {
+    function applySettings(elementId, settings, skipClear) {
         var element = findElement(elementId);
         if (!element) return;
-        clearAttributes(element);
+        // Init: don't clear PHP-rendered attributes — editor model may be incomplete.
+        // Update: always clear — user explicitly changed settings, model is fully loaded.
+        if (!skipClear) clearAttributes(element);
 
         var toggle = settings.cmsmasters_cursor_hide;
 

@@ -4,6 +4,18 @@ Living document tracking development sessions, decisions, and iterations.
 
 ---
 
+## 2026-02-19 — Fix: Widget blend mode not applied on editor initial load
+
+**Problem:** In Widgets Only mode, when opening a page in the Elementor editor, a widget with blend mode set to "Disabled" showed the global blend (e.g. Soft) instead. Changing any widget setting fixed it. The saved setting didn't load on first open.
+
+**Root cause:** `cursor-editor-sync.js` handles `cmsmasters:cursor:init` by calling `clearAttributes()` (removes all PHP-rendered data attributes) then re-applying from the editor model via `applyCoreSettings()`. But on initial load, Elementor's `settingsModel.toJSON()` may not include all settings yet (model not fully populated). So `cmsmasters_cursor_blend_mode` could be `undefined` → the truthiness check `if (s.cmsmasters_cursor_blend_mode)` fails → `data-cursor-blend="off"` is not re-added → JS falls back to global blend.
+
+When the user changes ANY setting, Elementor sends `cmsmasters:cursor:update` with the fully loaded model → blend_mode is present → attribute correctly set.
+
+**Fix:** Added `skipClear` parameter to `applySettings()`. During `cmsmasters:cursor:init`, skip `clearAttributes()` — overlay editor settings on top of PHP-rendered attributes. This preserves PHP attributes when the editor model is incomplete. The `cmsmasters:cursor:update` path (explicit user changes) still clears and re-applies normally.
+
+---
+
 ## 2026-02-19 — Fix: Native cursor disappears in editor preview (Widgets Only, preview OFF)
 
 **Problem:** In Widgets Only mode, when Custom Cursor Preview is OFF in the Elementor editor, hovering over a show zone widget makes the native (system) cursor disappear. No cursor at all is visible — custom cursor not running (preview OFF) and native cursor hidden by CSS.
