@@ -101,7 +101,7 @@ class Module extends Base_Module {
 					'type'            => Controls_Manager::RAW_HTML,
 					'raw'             => sprintf(
 						/* translators: %s: URL to Addon Settings page */
-						__( 'Set "Custom Cursor" to "Widgets Only" or "Enabled" in <a href="%s" target="_blank">Addon Settings</a> to use cursor controls. Existing settings are preserved.', 'cmsmasters-elementor' ),
+						__( 'Set Custom Cursor to "Widgets Only" or "Enabled" in <a href="%s" target="_blank">Addon Settings</a> to use cursor controls. Existing settings are preserved.', 'cmsmasters-elementor' ),
 						esc_url( $settings_url )
 					),
 					'content_classes' => 'elementor-panel-alert elementor-panel-alert-info',
