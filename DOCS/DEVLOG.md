@@ -4,6 +4,36 @@ Living document tracking development sessions, decisions, and iterations.
 
 ---
 
+## 2026-02-24 — WP-020 Phase 2: Read Migration — wp_options → Kit
+
+**Problem:** All global cursor settings were read via `get_option('elementor_custom_cursor_*')`. Phase 1 registered 11 Kit controls in the Kuzmich theme with prefix `cmsmasters_custom_cursor_`. Need to migrate all reads to Kit.
+
+**Key discovery:** CSS var names MISMATCH — Kit selectors output `--cmsmasters-custom-cursor-cursor-color` but `custom-cursor.css` expects `--cmsmasters-cursor-color`. Decision: keep PHP inline CSS bridge that reads Kit values and outputs old var names. No CSS/JS file changes needed.
+
+**Changes across 3 files:**
+
+- **frontend.php** (8 call sites):
+  - Added `use CmsmastersElementor\Utils as AddonUtils` (avoids conflict with `Elementor\Utils`)
+  - `get_page_cursor_setting()` — Kit read with key mapping (`adaptive→adaptive_color`, `theme→cursor_style`) and value mapping (`dot_ring→classic`, `disabled→''`)
+  - `get_cursor_mode()` — `visibility` Kit control with `show→yes`, `elements→widgets`, `hide→''` mapping. Removed BC `widget_override` fallback
+  - `should_enable_custom_cursor()` — `editor_preview` Kit read
+  - `get_cursor_color()` — Simplified: `$kit->get_settings_for_display()` resolves `__globals__` automatically. Removed `color_source` + `system_colors` iteration
+  - `enqueue_custom_cursor()` — dot sizes (`cursor_size`, `size_on_hover`), blend mode Kit reads. Added `disabled→''` mapping for blend
+  - `add_cursor_body_class()` — `show_system_cursor` and `wobble_effect` Kit reads
+
+- **editor.php** (2 call sites):
+  - `get_cursor_mode()` — same Kit read as frontend
+  - `enqueue_preview_scripts()` — `editor_preview` Kit read
+
+- **module.php** (1 call site + 2 notice updates):
+  - Added `use CmsmastersElementor\Utils`
+  - `get_cursor_mode()` — same Kit read (static version)
+  - Disabled notices: replaced `<a href>` to admin settings with plain text "Site Settings → Custom Cursor"
+
+**Verification:** Zero `get_option('elementor_custom_cursor_*')` remaining in `includes/` and `modules/cursor-controls/`. Only `settings-page.php` retains them (Phase 3 scope).
+
+---
+
 ## 2026-02-19 — Fix: CursorState/DOM desync — widget blend ignored on initial load
 
 **Problem:** In Widgets Only mode, widget-level blend override (`data-cursor-blend="off"`) is ignored on initial page load. The cursor shows the global blend (e.g. "soft") instead of disabled. Affects both frontend and editor. Changing any setting in the editor fixes it.

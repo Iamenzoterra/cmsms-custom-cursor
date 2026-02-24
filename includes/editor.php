@@ -198,7 +198,7 @@ class Editor extends Base_App {
 	 */
 	public function enqueue_preview_scripts() {
 		$mode           = $this->get_cursor_mode();
-		$editor_preview = get_option( 'elementor_custom_cursor_editor_preview', '' ) === 'yes';
+		$editor_preview = 'yes' === Utils::get_kit_option( 'cmsmasters_custom_cursor_editor_preview', '' );
 
 		// Load when: editor preview ON AND cursor not disabled
 		if ( ! $editor_preview || '' === $mode ) {
@@ -354,15 +354,16 @@ class Editor extends Base_App {
 	 * @return string 'yes'|'widgets'|''
 	 */
 	private function get_cursor_mode() {
-		$val = get_option( 'elementor_custom_cursor_enabled', '' );
-		if ( 'yes' === $val || 'widgets' === $val ) {
-			return $val;
-		}
-		// BC fallback: old widget_override option (pre-migration)
-		if ( 'yes' === get_option( 'elementor_custom_cursor_widget_override', '' ) ) {
-			return 'widgets';
-		}
-		return '';
+		$visibility = Utils::get_kit_option( 'cmsmasters_custom_cursor_visibility', 'elements' );
+
+		// Kit: show/elements/hide → Internal: yes/widgets/''
+		static $mode_map = array(
+			'show'     => 'yes',
+			'elements' => 'widgets',
+			'hide'     => '',
+		);
+
+		return isset( $mode_map[ $visibility ] ) ? $mode_map[ $visibility ] : '';
 	}
 
 	/**

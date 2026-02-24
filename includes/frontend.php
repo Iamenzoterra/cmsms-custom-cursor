@@ -11,6 +11,7 @@ use Elementor\Core\Responsive\Files\Frontend as ResponsiveFrontendFile;
 use Elementor\Core\Responsive\Responsive;
 use Elementor\Fonts;
 use Elementor\Utils;
+use CmsmastersElementor\Utils as AddonUtils;
 
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -1179,7 +1180,7 @@ class Frontend extends Base_App {
 	 * @since 5.7
 	 *
 	 * @param string $page_key   Page setting suffix (after 'cmsmasters_page_cursor_').
-	 * @param string $global_key Global option suffix (after 'elementor_custom_cursor_'). Empty = no global fallback.
+	 * @param string $global_key Global Kit option key (mapped to 'cmsmasters_custom_cursor_*'). Empty = no global fallback.
 	 * @param string $default    Default value if neither page nor global is set.
 	 * @return string Setting value.
 	 */
@@ -1197,7 +1198,25 @@ class Frontend extends Base_App {
 			return $default;
 		}
 
-		return get_option( 'elementor_custom_cursor_' . $global_key, $default );
+		// Map legacy global keys → Kit control suffixes
+		static $kit_key_map = array(
+			'adaptive' => 'adaptive_color',
+			'theme'    => 'cursor_style',
+		);
+		$kit_suffix = isset( $kit_key_map[ $global_key ] ) ? $kit_key_map[ $global_key ] : $global_key;
+
+		$value = AddonUtils::get_kit_option( 'cmsmasters_custom_cursor_' . $kit_suffix, $default );
+
+		// Map Kit values → internal values consumed by frontend code
+		static $kit_value_map = array(
+			'cursor_style' => array( 'dot_ring' => 'classic', 'dot' => 'dot-only' ),
+			'blend_mode'   => array( 'disabled' => '' ),
+		);
+		if ( isset( $kit_value_map[ $kit_suffix ][ $value ] ) ) {
+			return $kit_value_map[ $kit_suffix ][ $value ];
+		}
+
+		return $value;
 	}
 
 	/**
@@ -1210,15 +1229,16 @@ class Frontend extends Base_App {
 	 * @return string 'yes'|'widgets'|''
 	 */
 	private function get_cursor_mode() {
-		$val = get_option( 'elementor_custom_cursor_enabled', '' );
-		if ( 'yes' === $val || 'widgets' === $val ) {
-			return $val;
-		}
-		// BC fallback: old widget_override option (pre-migration, first load before admin visit)
-		if ( 'yes' === get_option( 'elementor_custom_cursor_widget_override', '' ) ) {
-			return 'widgets';
-		}
-		return '';
+		$visibility = AddonUtils::get_kit_option( 'cmsmasters_custom_cursor_visibility', 'elements' );
+
+		// Kit: show/elements/hide → Internal: yes/widgets/''
+		static $mode_map = array(
+			'show'     => 'yes',
+			'elements' => 'widgets',
+			'hide'     => '',
+		);
+
+		return isset( $mode_map[ $visibility ] ) ? $mode_map[ $visibility ] : '';
 	}
 
 	/**
@@ -1277,7 +1297,7 @@ class Frontend extends Base_App {
 
 		// If in Elementor preview iframe, check editor preview option
 		if ( $in_elementor_preview ) {
-			if ( 'yes' !== get_option( 'elementor_custom_cursor_editor_preview', '' ) ) {
+			if ( 'yes' !== AddonUtils::get_kit_option( 'cmsmasters_custom_cursor_editor_preview', '' ) ) {
 				return false;
 			}
 
@@ -1364,8 +1384,8 @@ class Frontend extends Base_App {
 		}
 
 		// Dot sizes (high specificity to override theme defaults)
-		$dot_size = get_option( 'elementor_custom_cursor_dot_size', '' );
-		$dot_hover_size = get_option( 'elementor_custom_cursor_dot_hover_size', '' );
+		$dot_size = AddonUtils::get_kit_option( 'cmsmasters_custom_cursor_cursor_size', '' );
+		$dot_hover_size = AddonUtils::get_kit_option( 'cmsmasters_custom_cursor_size_on_hover', '' );
 
 		$size_vars = array();
 		if ( ! empty( $dot_size ) && is_numeric( $dot_size ) ) {
@@ -1421,7 +1441,10 @@ class Frontend extends Base_App {
 
 		// True global blend (for widget fallback — NOT page > global).
 		// Widgets with "Default (Global)" use this instead of the page override.
-		$global_blend_only = get_option( 'elementor_custom_cursor_blend_mode', '' );
+		$global_blend_only = AddonUtils::get_kit_option( 'cmsmasters_custom_cursor_blend_mode', '' );
+		if ( 'disabled' === $global_blend_only ) {
+			$global_blend_only = '';
+		}
 		if ( 'yes' === $global_blend_only ) {
 			$global_blend_only = 'medium'; // legacy
 		}
@@ -1469,7 +1492,7 @@ class Frontend extends Base_App {
 		}
 
 		// Dual cursor mode - show system cursor alongside custom cursor
-		$dual_mode = get_option( 'elementor_custom_cursor_dual_mode', '' );
+		$dual_mode = AddonUtils::get_kit_option( 'cmsmasters_custom_cursor_show_system_cursor', '' );
 		if ( 'yes' === $dual_mode ) {
 			$classes[] = 'cmsmasters-cursor-dual';
 		}
@@ -1498,7 +1521,7 @@ class Frontend extends Base_App {
 			// (even if global wobble is enabled)
 		} else {
 			// Page effect is '' (inherit) → fall back to global wobble setting
-			$wobble = get_option( 'elementor_custom_cursor_wobble', '' );
+			$wobble = AddonUtils::get_kit_option( 'cmsmasters_custom_cursor_wobble_effect', '' );
 			if ( 'yes' === $wobble ) {
 				$classes[] = 'cmsmasters-cursor-wobble';
 			}
@@ -1631,44 +1654,16 @@ class Frontend extends Base_App {
 			}
 		}
 
-		$color_source = get_option( 'elementor_custom_cursor_color_source', 'custom' );
-
-		// If custom, return the hex color directly
-		if ( 'custom' === $color_source ) {
-			return $this->validate_hex_color( get_option( 'elementor_custom_cursor_color', self::DEFAULT_CURSOR_COLOR ) );
-		}
-
-		// Map source to Kit color ID
-		$global_color_map = array(
-			'primary'   => 'primary',
-			'secondary' => 'secondary',
-			'text'      => 'text',
-			'accent'    => 'accent',
-		);
-
-		if ( ! isset( $global_color_map[ $color_source ] ) ) {
-			return self::DEFAULT_CURSOR_COLOR;
-		}
-
-		$color_id = $global_color_map[ $color_source ];
-
-		// Get kit settings
+		// Kit global color — use get_settings_for_display to resolve __globals__
 		$kit = \Elementor\Plugin::$instance->kits_manager->get_active_kit_for_frontend();
-		if ( ! $kit ) {
-			return self::DEFAULT_CURSOR_COLOR;
-		}
-
-		$kit_settings = $kit->get_settings_for_display();
-		$system_colors = $kit_settings['system_colors'] ?? array();
-
-		// Search for the color
-		foreach ( $system_colors as $color_data ) {
-			if ( isset( $color_data['_id'] ) && $color_data['_id'] === $color_id ) {
-				return $color_data['color'] ?? self::DEFAULT_CURSOR_COLOR;
+		if ( $kit ) {
+			$color = $kit->get_settings_for_display( 'cmsmasters_custom_cursor_cursor_color' );
+			if ( ! empty( $color ) ) {
+				return $this->validate_hex_color( $color );
 			}
 		}
 
-		return self::DEFAULT_CURSOR_COLOR;
+		return '';
 	}
 
 }

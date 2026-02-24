@@ -2,6 +2,7 @@
 namespace CmsmastersElementor\Modules\CursorControls;
 
 use CmsmastersElementor\Base\Base_Module;
+use CmsmastersElementor\Utils;
 use Elementor\Controls_Manager;
 use Elementor\Group_Control_Typography;
 
@@ -97,16 +98,11 @@ class Module extends Base_Module {
 
 		// === Disabled mode — notice only, no toggle or sub-controls ===
 		if ( $is_disabled ) {
-			$settings_url = admin_url( 'admin.php?page=cmsmasters-addon-settings#tab-advanced' );
 			$element->add_control(
 				'cmsmasters_cursor_disabled_notice',
 				array(
 					'type'            => Controls_Manager::RAW_HTML,
-					'raw'             => sprintf(
-						/* translators: %s: URL to Addon Settings page */
-						__( 'Set Custom Cursor to "Widgets Only" or "Enabled" in <a href="%s" target="_blank">Addon Settings</a> to use cursor controls. Existing settings are preserved.', 'cmsmasters-elementor' ),
-						esc_url( $settings_url )
-					),
+					'raw'             => __( 'Set Custom Cursor to "Show" or "Elements" in Site Settings → Custom Cursor to use cursor controls.', 'cmsmasters-elementor' ),
 					'content_classes' => 'elementor-panel-alert elementor-panel-alert-info',
 				)
 			);
@@ -917,7 +913,6 @@ class Module extends Base_Module {
 		// === Disabled mode — notice only, no page cursor controls ===
 		$mode = self::get_cursor_mode();
 		if ( '' === $mode ) {
-			$settings_url = admin_url( 'admin.php?page=cmsmasters-addon-settings#tab-advanced' );
 			$element->start_controls_section(
 				'cmsmasters_section_page_cursor',
 				array(
@@ -929,11 +924,7 @@ class Module extends Base_Module {
 				'cmsmasters_page_cursor_disabled_notice',
 				array(
 					'type'            => Controls_Manager::RAW_HTML,
-					'raw'             => sprintf(
-						/* translators: %s: URL to Addon Settings page */
-						__( 'Set Custom Cursor to "Widgets Only" or "Enabled" in <a href="%s" target="_blank">Addon Settings</a> to use cursor controls. Existing settings are preserved.', 'cmsmasters-elementor' ),
-						esc_url( $settings_url )
-					),
+					'raw'             => __( 'Set Custom Cursor to "Show" or "Elements" in Site Settings → Custom Cursor to use cursor controls.', 'cmsmasters-elementor' ),
 					'content_classes' => 'elementor-panel-alert elementor-panel-alert-info',
 				)
 			);
@@ -1328,15 +1319,16 @@ class Module extends Base_Module {
 	 * @return string 'yes'|'widgets'|''
 	 */
 	private static function get_cursor_mode() {
-		$val = get_option( 'elementor_custom_cursor_enabled', '' );
-		if ( 'yes' === $val || 'widgets' === $val ) {
-			return $val;
-		}
-		// BC fallback: old widget_override option (pre-migration)
-		if ( 'yes' === get_option( 'elementor_custom_cursor_widget_override', '' ) ) {
-			return 'widgets';
-		}
-		return '';
+		$visibility = Utils::get_kit_option( 'cmsmasters_custom_cursor_visibility', 'elements' );
+
+		// Kit: show/elements/hide → Internal: yes/widgets/''
+		static $mode_map = array(
+			'show'     => 'yes',
+			'elements' => 'widgets',
+			'hide'     => '',
+		);
+
+		return isset( $mode_map[ $visibility ] ) ? $mode_map[ $visibility ] : '';
 	}
 
 	/**
