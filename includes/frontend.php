@@ -1209,7 +1209,7 @@ class Frontend extends Base_App {
 
 		// Map Kit values → internal values consumed by frontend code
 		static $kit_value_map = array(
-			'cursor_style' => array( 'dot_ring' => 'classic', 'dot' => 'dot-only' ),
+			'cursor_style' => array( 'dot_ring' => 'classic' ),
 			'blend_mode'   => array( 'disabled' => '' ),
 		);
 		if ( isset( $kit_value_map[ $kit_suffix ][ $value ] ) ) {
@@ -1384,8 +1384,8 @@ class Frontend extends Base_App {
 		}
 
 		// Dot sizes (high specificity to override theme defaults)
-		$dot_size = AddonUtils::get_kit_option( 'cmsmasters_custom_cursor_cursor_size', '' );
-		$dot_hover_size = AddonUtils::get_kit_option( 'cmsmasters_custom_cursor_size_on_hover', '' );
+		$dot_size = AddonUtils::get_kit_option( 'cmsmasters_custom_cursor_cursor_size', 8 );
+		$dot_hover_size = AddonUtils::get_kit_option( 'cmsmasters_custom_cursor_size_on_hover', 40 );
 
 		$size_vars = array();
 		if ( ! empty( $dot_size ) && is_numeric( $dot_size ) ) {
@@ -1415,20 +1415,20 @@ class Frontend extends Base_App {
 		$inline_js_parts = array();
 
 		// Adaptive cursor setting (page > global)
-		$adaptive = $this->get_page_cursor_setting( 'adaptive', 'adaptive', '' );
+		$adaptive = $this->get_page_cursor_setting( 'adaptive', 'adaptive', 'yes' );
 		if ( 'yes' === $adaptive ) {
 			$inline_js_parts[] = 'window.cmsmCursorAdaptive = true;';
 		}
 
 		// Cursor theme setting (page > global)
-		$cursor_theme = $this->get_page_cursor_setting( 'theme', 'theme', 'classic' );
+		$cursor_theme = $this->get_page_cursor_setting( 'theme', 'theme', 'dot' );
 		$cursor_theme = apply_filters( 'cmsmasters_custom_cursor_theme', $cursor_theme );
 		if ( ! empty( $cursor_theme ) && 'classic' !== $cursor_theme ) {
 			$inline_js_parts[] = 'window.cmsmCursorTheme = "' . esc_js( $cursor_theme ) . '";';
 		}
 
 		// Cursor smoothness setting (page > global)
-		$smoothness = $this->get_page_cursor_setting( 'smoothness', 'smoothness', 'normal' );
+		$smoothness = $this->get_page_cursor_setting( 'smoothness', 'smoothness', 'smooth' );
 		if ( ! empty( $smoothness ) && 'normal' !== $smoothness ) {
 			$inline_js_parts[] = 'window.cmsmCursorSmooth = "' . esc_js( $smoothness ) . '";';
 		}
@@ -1441,7 +1441,7 @@ class Frontend extends Base_App {
 
 		// True global blend (for widget fallback — NOT page > global).
 		// Widgets with "Default (Global)" use this instead of the page override.
-		$global_blend_only = AddonUtils::get_kit_option( 'cmsmasters_custom_cursor_blend_mode', '' );
+		$global_blend_only = AddonUtils::get_kit_option( 'cmsmasters_custom_cursor_blend_mode', 'soft' );
 		if ( 'disabled' === $global_blend_only ) {
 			$global_blend_only = '';
 		}
@@ -1485,20 +1485,20 @@ class Frontend extends Base_App {
 		// Shared classes for both modes (show zones need theme/blend/wobble)
 
 		// Theme class via PHP (fallback if JS fails) - CRITICAL for correct styling (page > global)
-		$cursor_theme = $this->get_page_cursor_setting( 'theme', 'theme', 'classic' );
+		$cursor_theme = $this->get_page_cursor_setting( 'theme', 'theme', 'dot' );
 		$cursor_theme = apply_filters( 'cmsmasters_custom_cursor_theme', $cursor_theme );
 		if ( ! empty( $cursor_theme ) ) {
 			$classes[] = 'cmsmasters-cursor-theme-' . sanitize_html_class( $cursor_theme );
 		}
 
 		// Dual cursor mode - show system cursor alongside custom cursor
-		$dual_mode = AddonUtils::get_kit_option( 'cmsmasters_custom_cursor_show_system_cursor', '' );
+		$dual_mode = AddonUtils::get_kit_option( 'cmsmasters_custom_cursor_show_system_cursor', 'yes' );
 		if ( 'yes' === $dual_mode ) {
 			$classes[] = 'cmsmasters-cursor-dual';
 		}
 
 		// Add blend mode class based on intensity (page > global)
-		$blend_mode = $this->get_page_cursor_setting( 'blend_mode', 'blend_mode', '' );
+		$blend_mode = $this->get_page_cursor_setting( 'blend_mode', 'blend_mode', 'soft' );
 		if ( $blend_mode ) {
 			// Legacy support: 'yes' maps to 'medium'
 			if ( 'yes' === $blend_mode ) {
@@ -1521,7 +1521,7 @@ class Frontend extends Base_App {
 			// (even if global wobble is enabled)
 		} else {
 			// Page effect is '' (inherit) → fall back to global wobble setting
-			$wobble = AddonUtils::get_kit_option( 'cmsmasters_custom_cursor_wobble_effect', '' );
+			$wobble = AddonUtils::get_kit_option( 'cmsmasters_custom_cursor_wobble_effect', 'yes' );
 			if ( 'yes' === $wobble ) {
 				$classes[] = 'cmsmasters-cursor-wobble';
 			}
@@ -1640,9 +1640,13 @@ class Frontend extends Base_App {
 	/**
 	 * Get cursor color based on settings (global from Kit or custom hex).
 	 *
+	 * Reads raw Kit meta and manually resolves __globals__ references,
+	 * because get_settings_for_display() may not resolve __globals__ for
+	 * controls registered by the theme (not core Kit controls).
+	 *
 	 * @since 1.21.0
 	 *
-	 * @return string Hex color value.
+	 * @return string Hex color value or empty string.
 	 */
 	private function get_cursor_color() {
 		// Page-level color override (takes priority over global)
@@ -1654,16 +1658,80 @@ class Frontend extends Base_App {
 			}
 		}
 
-		// Kit global color — use get_settings_for_display to resolve __globals__
-		$kit = \Elementor\Plugin::$instance->kits_manager->get_active_kit_for_frontend();
-		if ( $kit ) {
-			$color = $kit->get_settings_for_display( 'cmsmasters_custom_cursor_cursor_color' );
-			if ( ! empty( $color ) ) {
-				return $this->validate_hex_color( $color );
+		// Kit global color — read raw meta + resolve __globals__ manually
+		$options = AddonUtils::get_kit_options();
+		if ( ! is_array( $options ) ) {
+			return '';
+		}
+
+		// Check for global color reference first (e.g., user picked Accent color)
+		$global_ref = isset( $options['__globals__']['cmsmasters_custom_cursor_cursor_color'] )
+			? $options['__globals__']['cmsmasters_custom_cursor_cursor_color']
+			: '';
+
+		if ( ! empty( $global_ref ) ) {
+			$resolved = $this->resolve_kit_global_color( $global_ref );
+			if ( ! empty( $resolved ) ) {
+				return $this->validate_hex_color( $resolved );
 			}
 		}
 
+		// Direct custom hex color value
+		$color = isset( $options['cmsmasters_custom_cursor_cursor_color'] )
+			? $options['cmsmasters_custom_cursor_cursor_color']
+			: '';
+
+		if ( ! empty( $color ) ) {
+			return $this->validate_hex_color( $color );
+		}
+
 		return '';
+	}
+
+	/**
+	 * Resolve a Kit global color reference to hex value.
+	 *
+	 * Parses "globals/colors?id=accent" and looks up the color in Kit
+	 * system_colors and custom_colors arrays.
+	 *
+	 * @since 5.7
+	 *
+	 * @param string $global_ref Global reference (e.g., "globals/colors?id=accent").
+	 * @return string|null Hex color or null if not found.
+	 */
+	private function resolve_kit_global_color( $global_ref ) {
+		if ( empty( $global_ref ) || false === strpos( $global_ref, 'globals/colors' ) ) {
+			return null;
+		}
+
+		$parsed = wp_parse_url( $global_ref );
+		if ( empty( $parsed['query'] ) ) {
+			return null;
+		}
+
+		parse_str( $parsed['query'], $query_params );
+		$color_id = isset( $query_params['id'] ) ? $query_params['id'] : null;
+		if ( ! $color_id ) {
+			return null;
+		}
+
+		$kit = \Elementor\Plugin::$instance->kits_manager->get_active_kit();
+		if ( ! $kit ) {
+			return null;
+		}
+
+		$kit_settings = $kit->get_settings_for_display();
+		$system_colors = isset( $kit_settings['system_colors'] ) ? $kit_settings['system_colors'] : array();
+		$custom_colors = isset( $kit_settings['custom_colors'] ) ? $kit_settings['custom_colors'] : array();
+		$all_colors = array_merge( $system_colors, $custom_colors );
+
+		foreach ( $all_colors as $color_data ) {
+			if ( isset( $color_data['_id'] ) && $color_data['_id'] === $color_id ) {
+				return isset( $color_data['color'] ) ? $color_data['color'] : null;
+			}
+		}
+
+		return null;
 	}
 
 }
