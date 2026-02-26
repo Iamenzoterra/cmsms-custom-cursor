@@ -812,7 +812,12 @@
             return;
         }
         if (p.disable === '') {
-            body.classList.remove('cmsmasters-cursor-disabled');
+            // Keep preview OFF authoritative: page settings must not force-enable cursor.
+            if (cursorEnabled) {
+                body.classList.remove('cmsmasters-cursor-disabled');
+            } else {
+                body.classList.add('cmsmasters-cursor-disabled');
+            }
         }
 
         // --- Theme ---
