@@ -102,7 +102,7 @@ class Module extends Base_Module {
 				'cmsmasters_cursor_disabled_notice',
 				array(
 					'type'            => Controls_Manager::RAW_HTML,
-					'raw'             => __( 'Set Custom Cursor to "Show" or "Elements" in Site Settings → Custom Cursor to use cursor controls.', 'cmsmasters-elementor' ),
+					'raw'             => __( 'Set Custom Cursor Visibility to "Show Sitewide" or "Show on Individual Elements" in Theme Settings → Custom Cursor to use cursor controls.', 'cmsmasters-elementor' ),
 					'content_classes' => 'elementor-panel-alert elementor-panel-alert-info',
 				)
 			);
@@ -924,7 +924,7 @@ class Module extends Base_Module {
 				'cmsmasters_page_cursor_disabled_notice',
 				array(
 					'type'            => Controls_Manager::RAW_HTML,
-					'raw'             => __( 'Set Custom Cursor to "Show" or "Elements" in Site Settings → Custom Cursor to use cursor controls.', 'cmsmasters-elementor' ),
+					'raw'             => __( 'Set Custom Cursor Visibility to "Show Sitewide" or "Show on Individual Elements" in Theme Settings → Custom Cursor to use cursor controls.', 'cmsmasters-elementor' ),
 					'content_classes' => 'elementor-panel-alert elementor-panel-alert-info',
 				)
 			);
