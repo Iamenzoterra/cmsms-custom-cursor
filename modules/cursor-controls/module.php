@@ -80,6 +80,11 @@ class Module extends Base_Module {
 			return;
 		}
 
+		// Popup templates never support custom cursor controls.
+		if ( $this->is_popup_editor_context( $element ) ) {
+			return;
+		}
+
 		// === Mode detection ===
 		$mode         = self::get_cursor_mode();
 		$is_show_mode = 'widgets' === $mode;
@@ -895,6 +900,11 @@ class Module extends Base_Module {
 			return;
 		}
 
+		// Popup templates never support custom cursor controls.
+		if ( $this->is_popup_document( $element ) ) {
+			return;
+		}
+
 		// Skip on admin pages that aren't the Elementor editor (fixes 504 timeout on Merlin wizard)
 		if ( ! $this->should_register_controls() ) {
 			return;
@@ -1307,6 +1317,44 @@ class Module extends Base_Module {
 		}
 
 		return __( 'Page', 'cmsmasters-elementor' );
+	}
+
+	/**
+	 * Check whether a document is a popup template.
+	 *
+	 * @param mixed $document Elementor document instance.
+	 * @return bool
+	 */
+	private function is_popup_document( $document ) {
+		if ( ! is_object( $document ) || ! method_exists( $document, 'get_name' ) ) {
+			return false;
+		}
+
+		return in_array( $document->get_name(), array( 'popup', 'cmsmasters_popup' ), true );
+	}
+
+	/**
+	 * Check whether the current editor context belongs to a popup template.
+	 *
+	 * @param \Elementor\Controls_Stack $element The element instance.
+	 * @return bool
+	 */
+	private function is_popup_editor_context( $element ) {
+		if ( is_object( $element ) && method_exists( $element, 'get_document' ) ) {
+			$document = $element->get_document();
+			if ( $this->is_popup_document( $document ) ) {
+				return true;
+			}
+		}
+
+		if ( class_exists( '\Elementor\Plugin' ) && isset( \Elementor\Plugin::$instance->documents ) ) {
+			$current_document = \Elementor\Plugin::$instance->documents->get_current();
+			if ( $this->is_popup_document( $current_document ) ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**
