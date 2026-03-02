@@ -1172,6 +1172,119 @@ class Frontend extends Base_App {
 	}
 
 	/**
+	 * Get the preview document when Elementor preview iframe is active.
+	 *
+	 * @since 5.7
+	 *
+	 * @return \Elementor\Core\Base\Document|null Document or null.
+	 */
+	private function get_preview_document() {
+		static $document = null;
+		static $checked = false;
+
+		if ( $checked ) {
+			return $document;
+		}
+		$checked = true;
+
+		if ( ! class_exists( '\Elementor\Plugin' ) ) {
+			return null;
+		}
+
+		$preview_id = isset( $_GET['elementor-preview'] ) ? absint( $_GET['elementor-preview'] ) : 0;
+		if ( ! $preview_id ) {
+			return null;
+		}
+
+		$document = \Elementor\Plugin::$instance->documents->get( $preview_id );
+
+		return $document;
+	}
+
+	/**
+	 * Get the document whose cursor settings should drive the current request.
+	 *
+	 * Page requests use the queried document. Template rendering and Elementor preview
+	 * should prefer the actual template document being rendered.
+	 *
+	 * @since 5.7
+	 *
+	 * @return \Elementor\Core\Base\Document|null Document or null.
+	 */
+	private function get_cursor_context_document() {
+		if ( $this->template_document ) {
+			return $this->template_document;
+		}
+
+		$preview_document = $this->get_preview_document();
+		if ( $preview_document ) {
+			return $preview_document;
+		}
+
+		return $this->get_current_page_document();
+	}
+
+	/**
+	 * Check whether a document type is excluded from cursor rendering.
+	 *
+	 * @since 5.7
+	 *
+	 * @param \Elementor\Core\Base\Document|null $document Document instance.
+	 * @return bool
+	 */
+	private function is_cursor_excluded_document( $document ) {
+		if ( ! $document || ! method_exists( $document, 'get_name' ) ) {
+			return false;
+		}
+
+		$doc_name = $document->get_name();
+
+		return 'cmsmasters_popup' === $doc_name || '_entry' === substr( $doc_name, -6 );
+	}
+
+	/**
+	 * Resolve document-level cursor toggle semantics for the current global mode.
+	 *
+	 * In full mode, toggle=yes means "disable on this document".
+	 * In widgets-only mode, toggle=yes means "enable on this document".
+	 *
+	 * @since 5.7
+	 *
+	 * @param \Elementor\Core\Base\Document|null $document Document instance.
+	 * @param string|null                        $mode     Optional internal mode ('yes'|'widgets'|'').
+	 * @return array{raw:string,enabled:?bool}
+	 */
+	private function get_document_cursor_state( $document, $mode = null ) {
+		if ( null === $mode ) {
+			$mode = $this->get_cursor_mode();
+		}
+
+		$raw_toggle = '';
+		if ( $document ) {
+			$raw_toggle = (string) $document->get_settings_for_display( 'cmsmasters_page_cursor_disable' );
+		}
+
+		if ( '' === $mode ) {
+			return array(
+				'raw'     => $raw_toggle,
+				'enabled' => false,
+			);
+		}
+
+		if ( 'widgets' === $mode ) {
+			return array(
+				'raw'     => $raw_toggle,
+				'enabled' => ( 'yes' === $raw_toggle ) ? true : null,
+			);
+		}
+
+		return array(
+			'raw'     => $raw_toggle,
+			'enabled' => 'yes' !== $raw_toggle,
+		);
+	}
+
+	/**
 	 * Get a cursor setting with page-level override.
 	 *
 	 * Checks page document settings first, falls back to global option.
@@ -1185,7 +1298,7 @@ class Frontend extends Base_App {
 	 * @return string Setting value.
 	 */
 	private function get_page_cursor_setting( $page_key, $global_key, $default = '' ) {
-		$document = $this->get_current_page_document();
+		$document = $this->get_cursor_context_document();
 
 		if ( $document ) {
 			$page_value = $document->get_settings_for_display( 'cmsmasters_page_cursor_' . $page_key );
@@ -1278,12 +1391,8 @@ class Frontend extends Base_App {
 			return false;
 		}
 
-		// 'widgets' mode always enables scripts (cursor hidden by default, shown per-widget)
-		if ( 'widgets' === $mode ) {
-			return true;
-		}
-
-		// From here: mode is 'yes' (fully enabled)
+		$cursor_document = $this->get_cursor_context_document();
+		$document_state = $this->get_document_cursor_state( $cursor_document, $mode );
 
 		// Check if we're in Elementor preview iframe
 		$in_elementor_preview = isset( $_GET['elementor-preview'] );
@@ -1301,29 +1410,12 @@ class Frontend extends Base_App {
 				return false;
 			}
 
-			// Skip cursor for Entry and Popup templates where cursor doesn't render in editor preview
-			// Entries: cmsmasters_entry, cmsmasters_product_entry, cmsmasters_tribe_events_entry
-			// Popup: cmsmasters_popup
-			// Other cmsmasters_ types (header, footer, archive, singular) DO support cursor
-			if ( class_exists( '\Elementor\Plugin' ) ) {
-				$preview_id = isset( $_GET['elementor-preview'] ) ? absint( $_GET['elementor-preview'] ) : 0;
+			if ( $this->is_cursor_excluded_document( $cursor_document ) ) {
+				return false;
+			}
 
-				if ( $preview_id ) {
-					$document = \Elementor\Plugin::$instance->documents->get( $preview_id );
-
-					if ( $document ) {
-						$doc_name = $document->get_name();
-
-						if ( 'cmsmasters_popup' === $doc_name || '_entry' === substr( $doc_name, -6 ) ) {
-							return false;
-						}
-
-						// Page-level disable check (editor preview) — fully disabled
-						if ( 'yes' === $document->get_settings_for_display( 'cmsmasters_page_cursor_disable' ) ) {
-							return false;
-						}
-					}
-				}
+			if ( 'yes' === $mode && false === $document_state['enabled'] ) {
+				return false;
 			}
 
 			return true;
@@ -1347,13 +1439,12 @@ class Frontend extends Base_App {
 			}
 		}
 
-		// Page-level disable check — fully disabled (no widget-only fallback in 'yes' mode)
-		$document = $this->get_current_page_document();
-		if ( $document && 'yes' === $document->get_settings_for_display( 'cmsmasters_page_cursor_disable' ) ) {
+		// Full mode: document-level opt-out fully disables cursor on that document.
+		if ( 'yes' === $mode && false === $document_state['enabled'] ) {
 			return false;
 		}
 
-		// Frontend - allow
+		// Widgets-only mode keeps runtime available for opt-in elements.
 		return true;
 	}
 
@@ -1650,7 +1741,7 @@ class Frontend extends Base_App {
 	 */
 	private function get_cursor_color() {
 		// Page-level color override (takes priority over global)
-		$document = $this->get_current_page_document();
+		$document = $this->get_cursor_context_document();
 		if ( $document ) {
 			$page_color = $document->get_settings_for_display( 'cmsmasters_page_cursor_color' );
 			if ( ! empty( $page_color ) ) {

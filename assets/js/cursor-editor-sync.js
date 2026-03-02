@@ -799,25 +799,24 @@
      * KEY RULE: empty string '' means "Default (Global)" — restore PHP-rendered
      * initial state for that setting. Non-empty means page override.
      *
-     * @param {Object} p - Payload with keys: disable, theme, color, smoothness, blend_mode, effect, adaptive
+     * @param {Object} p - Payload with keys: enabled, theme, color, smoothness, blend_mode, effect, adaptive
      */
     function applyPageCursorSettings(p) {
         if (!p) return;
         var body = document.body;
         var ini = initialCursorState;
 
-        // --- Disable ---
-        if (p.disable === 'yes') {
+        // --- Enabled state ---
+        if (p.enabled === false) {
             body.classList.add('cmsmasters-cursor-disabled');
             return;
         }
-        if (p.disable === '') {
-            // Keep preview OFF authoritative: page settings must not force-enable cursor.
-            if (cursorEnabled) {
-                body.classList.remove('cmsmasters-cursor-disabled');
-            } else {
-                body.classList.add('cmsmasters-cursor-disabled');
-            }
+
+        // Keep preview OFF authoritative: page settings must not force-enable cursor.
+        if (cursorEnabled) {
+            body.classList.remove('cmsmasters-cursor-disabled');
+        } else {
+            body.classList.add('cmsmasters-cursor-disabled');
         }
 
         // --- Theme ---

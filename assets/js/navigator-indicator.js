@@ -887,6 +887,46 @@
 	}
 
 	/**
+	 * Normalize page/template cursor settings into a preview-ready payload.
+	 *
+	 * The stored switcher field is context-sensitive:
+	 * - full mode: yes => disabled on this document
+	 * - widgets mode: yes => enabled on this document
+	 *
+	 * @param {Object} json - Document settings JSON.
+	 * @returns {Object|null}
+	 */
+	function buildPageCursorPayload(json) {
+		if (!json) return null;
+
+		var toggle = json.cmsmasters_page_cursor_disable || '';
+		var payload = {
+			enabled:    isDisabledMode ? false : (isShowMode ? (toggle === 'yes' ? true : null) : toggle !== 'yes'),
+			theme:      json.cmsmasters_page_cursor_theme || '',
+			color:      json.cmsmasters_page_cursor_color || '',
+			smoothness: json.cmsmasters_page_cursor_smoothness || '',
+			blend_mode: json.cmsmasters_page_cursor_blend_mode || '',
+			effect:     json.cmsmasters_page_cursor_effect || '',
+			adaptive:   json.cmsmasters_page_cursor_adaptive || ''
+		};
+
+		var globals = json.__globals__ || {};
+		if (globals.cmsmasters_page_cursor_color) {
+			var resolved = resolveGlobalColor(globals.cmsmasters_page_cursor_color);
+			if (resolved) payload.color = resolved;
+		} else if (payload.color && payload.color.charAt(0) !== '#') {
+			payload.color = '';
+		}
+
+		var hasOverride = isShowMode ? toggle === 'yes' : toggle !== '';
+		var hasVisualSetting = ['theme', 'color', 'smoothness', 'blend_mode', 'effect', 'adaptive'].some(function(key) {
+			return payload[key] !== '';
+		});
+
+		return (hasOverride || hasVisualSetting || payload.enabled === false) ? payload : null;
+	}
+
+	/**
 	 * P2 FIX: Broadcast cursor settings for all children of a container
 	 * This ensures children don't lose their cursor settings when parent re-renders
 	 */
@@ -964,25 +1004,7 @@
 		var settings = docContainer.model.get('settings');
 		if (!settings) return;
 		var json = settings.toJSON ? settings.toJSON() : settings.attributes;
-
-		var payload = {
-			disable:    json.cmsmasters_page_cursor_disable || '',
-			theme:      json.cmsmasters_page_cursor_theme || '',
-			color:      json.cmsmasters_page_cursor_color || '',
-			smoothness: json.cmsmasters_page_cursor_smoothness || '',
-			blend_mode: json.cmsmasters_page_cursor_blend_mode || '',
-			effect:     json.cmsmasters_page_cursor_effect || '',
-			adaptive:   json.cmsmasters_page_cursor_adaptive || ''
-		};
-
-		// Resolve global color reference (e.g. "globals/colors?id=primary") to hex
-		var globals = json.__globals__ || {};
-		if (globals.cmsmasters_page_cursor_color) {
-			var resolved = resolveGlobalColor(globals.cmsmasters_page_cursor_color);
-			if (resolved) payload.color = resolved;
-		} else if (payload.color && payload.color.charAt(0) !== '#') {
-			payload.color = '';  // Unknown format — skip
-		}
+		var payload = buildPageCursorPayload(json);
 
 		previewIframe.contentWindow.postMessage({
 			type: 'cmsmasters:cursor:page-settings',
@@ -1006,29 +1028,7 @@
 			var settings = doc.container.model.get('settings');
 			if (!settings) return null;
 			var json = settings.toJSON ? settings.toJSON() : settings.attributes;
-
-			var payload = {
-				disable:    json.cmsmasters_page_cursor_disable || '',
-				theme:      json.cmsmasters_page_cursor_theme || '',
-				color:      json.cmsmasters_page_cursor_color || '',
-				smoothness: json.cmsmasters_page_cursor_smoothness || '',
-				blend_mode: json.cmsmasters_page_cursor_blend_mode || '',
-				effect:     json.cmsmasters_page_cursor_effect || '',
-				adaptive:   json.cmsmasters_page_cursor_adaptive || ''
-			};
-
-			// Resolve global color reference to hex
-			var globals = json.__globals__ || {};
-			if (globals.cmsmasters_page_cursor_color) {
-				var resolved = resolveGlobalColor(globals.cmsmasters_page_cursor_color);
-				if (resolved) payload.color = resolved;
-			} else if (payload.color && payload.color.charAt(0) !== '#') {
-				payload.color = '';  // Unknown format — skip
-			}
-
-			// Check if any value is non-empty
-			var hasAny = Object.keys(payload).some(function(k) { return payload[k] !== ''; });
-			return hasAny ? payload : null;
+			return buildPageCursorPayload(json);
 		} catch (e) {
 			if (window.CMSM_DEBUG) console.warn('[NavigatorIndicator] getPageCursorPayload failed:', e);
 			return null;
