@@ -198,7 +198,7 @@ class Editor extends Base_App {
 	 */
 	public function enqueue_preview_scripts() {
 		$mode           = $this->get_cursor_mode();
-		$editor_preview = 'yes' === $this->get_kit_cursor_setting( 'cmsmasters_custom_cursor_editor_preview', '' );
+		$editor_preview = 'yes' === Utils::get_kit_option( 'cmsmasters_custom_cursor_editor_preview', '' );
 
 		// Load when: editor preview ON AND cursor not disabled
 		if ( ! $editor_preview || '' === $mode ) {
@@ -345,37 +345,6 @@ class Editor extends Base_App {
 	}
 
 	/**
-	 * Get a cursor Kit setting via Elementor's document API.
-	 *
-	 * Unlike Utils::get_kit_option() which reads raw post_meta,
-	 * this uses $kit->get_settings_for_display() which merges saved meta
-	 * with registered control defaults. Critical for fresh installs where
-	 * the Kit meta may not yet contain cursor keys.
-	 *
-	 * @since 5.7
-	 *
-	 * @param string $key     Full kit option key (e.g. 'cmsmasters_custom_cursor_visibility').
-	 * @param mixed  $default PHP fallback if Elementor API is unavailable.
-	 * @return mixed Setting value.
-	 */
-	private function get_kit_cursor_setting( $key, $default ) {
-		static $kit_settings = null;
-
-		if ( null === $kit_settings ) {
-			$kit_id  = Utils::get_active_kit();
-			$kit_doc = ( $kit_id && did_action( 'elementor/loaded' ) && class_exists( '\Elementor\Plugin' ) )
-				? \Elementor\Plugin::$instance->documents->get( $kit_id )
-				: null;
-
-			$kit_settings = ( $kit_doc && method_exists( $kit_doc, 'get_settings_for_display' ) )
-				? $kit_doc->get_settings_for_display()
-				: array();
-		}
-
-		return isset( $kit_settings[ $key ] ) ? $kit_settings[ $key ] : $default;
-	}
-
-	/**
 	 * Get the current cursor mode from settings.
 	 *
 	 * Returns 'yes' (enabled), 'widgets' (widgets only), or '' (disabled).
@@ -385,7 +354,7 @@ class Editor extends Base_App {
 	 * @return string 'yes'|'widgets'|''
 	 */
 	private function get_cursor_mode() {
-		$visibility = $this->get_kit_cursor_setting( 'cmsmasters_custom_cursor_visibility', 'elements' );
+		$visibility = Utils::get_kit_option( 'cmsmasters_custom_cursor_visibility', 'elements' );
 
 		// Kit: show/elements/hide → Internal: yes/widgets/''
 		static $mode_map = array(

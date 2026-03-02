@@ -1318,7 +1318,7 @@ class Frontend extends Base_App {
 		);
 		$kit_suffix = isset( $kit_key_map[ $global_key ] ) ? $kit_key_map[ $global_key ] : $global_key;
 
-		$value = $this->get_kit_cursor_setting( 'cmsmasters_custom_cursor_' . $kit_suffix, $default );
+		$value = AddonUtils::get_kit_option( 'cmsmasters_custom_cursor_' . $kit_suffix, $default );
 
 		// Map Kit values → internal values consumed by frontend code
 		static $kit_value_map = array(
@@ -1333,37 +1333,6 @@ class Frontend extends Base_App {
 	}
 
 	/**
-	 * Get a cursor Kit setting via Elementor's document API.
-	 *
-	 * Unlike AddonUtils::get_kit_option() which reads raw post_meta,
-	 * this uses $kit->get_settings_for_display() which merges saved meta
-	 * with registered control defaults. Critical for fresh installs where
-	 * the Kit meta may not yet contain cursor keys.
-	 *
-	 * @since 5.7
-	 *
-	 * @param string $key     Full kit option key (e.g. 'cmsmasters_custom_cursor_visibility').
-	 * @param mixed  $default PHP fallback if Elementor API is unavailable.
-	 * @return mixed Setting value.
-	 */
-	private function get_kit_cursor_setting( $key, $default ) {
-		static $kit_settings = null;
-
-		if ( null === $kit_settings ) {
-			$kit_id  = AddonUtils::get_active_kit();
-			$kit_doc = ( $kit_id && did_action( 'elementor/loaded' ) && class_exists( '\Elementor\Plugin' ) )
-				? \Elementor\Plugin::$instance->documents->get( $kit_id )
-				: null;
-
-			$kit_settings = ( $kit_doc && method_exists( $kit_doc, 'get_settings_for_display' ) )
-				? $kit_doc->get_settings_for_display()
-				: array();
-		}
-
-		return isset( $kit_settings[ $key ] ) ? $kit_settings[ $key ] : $default;
-	}
-
-	/**
 	 * Get the current cursor mode from settings.
 	 *
 	 * Returns 'yes' (enabled), 'widgets' (widgets only), or '' (disabled).
@@ -1373,7 +1342,7 @@ class Frontend extends Base_App {
 	 * @return string 'yes'|'widgets'|''
 	 */
 	private function get_cursor_mode() {
-		$visibility = $this->get_kit_cursor_setting( 'cmsmasters_custom_cursor_visibility', 'elements' );
+		$visibility = AddonUtils::get_kit_option( 'cmsmasters_custom_cursor_visibility', 'elements' );
 
 		// Kit: show/elements/hide → Internal: yes/widgets/''
 		static $mode_map = array(
@@ -1437,7 +1406,7 @@ class Frontend extends Base_App {
 
 		// If in Elementor preview iframe, check editor preview option
 		if ( $in_elementor_preview ) {
-			if ( 'yes' !== $this->get_kit_cursor_setting( 'cmsmasters_custom_cursor_editor_preview', '' ) ) {
+			if ( 'yes' !== AddonUtils::get_kit_option( 'cmsmasters_custom_cursor_editor_preview', '' ) ) {
 				return false;
 			}
 
@@ -1506,8 +1475,8 @@ class Frontend extends Base_App {
 		}
 
 		// Dot sizes (high specificity to override theme defaults)
-		$dot_size = $this->get_kit_cursor_setting( 'cmsmasters_custom_cursor_cursor_size', 8 );
-		$dot_hover_size = $this->get_kit_cursor_setting( 'cmsmasters_custom_cursor_size_on_hover', 40 );
+		$dot_size = AddonUtils::get_kit_option( 'cmsmasters_custom_cursor_cursor_size', 8 );
+		$dot_hover_size = AddonUtils::get_kit_option( 'cmsmasters_custom_cursor_size_on_hover', 40 );
 
 		$size_vars = array();
 		if ( ! empty( $dot_size ) && is_numeric( $dot_size ) ) {
@@ -1563,7 +1532,7 @@ class Frontend extends Base_App {
 
 		// True global blend (for widget fallback — NOT page > global).
 		// Widgets with "Default (Global)" use this instead of the page override.
-		$global_blend_only = $this->get_kit_cursor_setting( 'cmsmasters_custom_cursor_blend_mode', 'soft' );
+		$global_blend_only = AddonUtils::get_kit_option( 'cmsmasters_custom_cursor_blend_mode', 'soft' );
 		if ( 'disabled' === $global_blend_only ) {
 			$global_blend_only = '';
 		}
@@ -1614,7 +1583,7 @@ class Frontend extends Base_App {
 		}
 
 		// Dual cursor mode - show system cursor alongside custom cursor
-		$dual_mode = $this->get_kit_cursor_setting( 'cmsmasters_custom_cursor_show_system_cursor', 'yes' );
+		$dual_mode = AddonUtils::get_kit_option( 'cmsmasters_custom_cursor_show_system_cursor', 'yes' );
 		if ( 'yes' === $dual_mode ) {
 			$classes[] = 'cmsmasters-cursor-dual';
 		}
@@ -1643,7 +1612,7 @@ class Frontend extends Base_App {
 			// (even if global wobble is enabled)
 		} else {
 			// Page effect is '' (inherit) → fall back to global wobble setting
-			$wobble = $this->get_kit_cursor_setting( 'cmsmasters_custom_cursor_wobble_effect', 'yes' );
+			$wobble = AddonUtils::get_kit_option( 'cmsmasters_custom_cursor_wobble_effect', 'yes' );
 			if ( 'yes' === $wobble ) {
 				$classes[] = 'cmsmasters-cursor-wobble';
 			}

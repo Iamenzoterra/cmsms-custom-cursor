@@ -4,32 +4,24 @@ Living document tracking development sessions, decisions, and iterations.
 
 ---
 
-## 2026-03-02 — Fix: WP-020 regression — Kit reads bypass registered control defaults
+## 2026-03-02 — REVERTED: Kit reads bypass registered control defaults
 
-**Problem:** After WP-020 Phase 2, the cursor never showed on sites where the user had not explicitly saved Kit (Site Settings) after the Phase 1 controls were registered. The root cause: `AddonUtils::get_kit_option()` calls `get_post_meta()` directly — it reads raw DB meta and falls back to the PHP `$default` argument if the key isn't in the saved meta. The registered Elementor control defaults (e.g. `visibility = 'elements'`, `editor_preview = ''`) are ignored entirely.
+**Attempted fix:** Replaced `AddonUtils::get_kit_option()` with `$kit->get_settings_for_display()` to respect registered Elementor control defaults. Added `get_kit_cursor_setting()` helper to Frontend and Editor classes. Replaced 10 call sites.
 
-**Symptom:** On a fresh install or any site where the Kit settings page was never opened after the cursor controls were registered:
-- `cmsmasters_custom_cursor_editor_preview` → raw meta has no entry → returns PHP fallback `''` → Gate 1 (editor preview) = OFF → cursor-editor-sync.js never loaded in preview iframe
-- `cmsmasters_custom_cursor_visibility` → raw meta has no entry → returns `'elements'` (PHP fallback matched the control default by coincidence, so frontend cursor still showed)
-- All other controls similarly vulnerable if defaults ever diverge
-
-**Root cause:** `Utils::get_kit_option()` (both alias `AddonUtils` in frontend.php and direct `Utils` in editor.php) uses:
-```php
-get_post_meta( $kit_id, '_elementor_page_settings', true ) // raw meta, no control defaults
+**Why it broke the cursor:** `get_kit_option()` has a 3-level fallback chain:
+```
+1. Raw post_meta (_elementor_page_settings)
+2. default_kits wp_option (CMSMASTERS_OPTIONS_PREFIX . 'default_kits')  ← MISSED THIS
+3. PHP $default argument
 ```
 
-The correct API is `$kit->get_settings_for_display()` which Elementor's own Kit document exposes — it merges saved meta WITH registered control defaults.
+The Kuzmich theme stores cursor defaults in the `default_kits` wp_option via the CMSMasters framework. This provides theme-level defaults (e.g., `visibility = 'show'`, `editor_preview = 'yes'`) that override control-level defaults (`'elements'`, `''`). The new `get_settings_for_display()` code only knew about registered control defaults (level 1 + Elementor defaults), completely bypassing the theme's `default_kits` layer.
 
-**Fix:** Added `get_kit_cursor_setting($key, $default)` private helper to both `Frontend` (frontend.php) and `Editor` (editor.php) classes. The helper:
-1. Gets the active Kit post ID via `AddonUtils::get_active_kit()` (or `Utils::get_active_kit()`)
-2. Gets the Kit document via `\Elementor\Plugin::$instance->documents->get($kit_id)`
-3. Calls `$kit->get_settings_for_display()` — respects registered defaults
-4. Caches the settings array statically (one call per request)
-5. Falls back to PHP `$default` if Elementor is unavailable (safety net)
+**Result:** `visibility` dropped from `'show'` → `'elements'` (cursor went from "everywhere" to "widgets only"). `editor_preview` dropped from `'yes'` → `''` (cursor-editor-sync.js no longer loaded in preview iframe).
 
-Replaced all 8 `AddonUtils::get_kit_option()` cursor calls in frontend.php and 2 `Utils::get_kit_option()` cursor calls in editor.php with `$this->get_kit_cursor_setting()`.
+**Lesson:** `AddonUtils::get_kit_option()` is NOT broken — its 3-level fallback chain (raw meta → `default_kits` → PHP default) is intentional CMSMasters framework architecture. The `default_kits` layer provides demo-quality settings without requiring explicit Kit saves. Never replace it with Elementor's `get_settings_for_display()` alone.
 
-**Files changed:** `includes/frontend.php`, `includes/editor.php`
+**Action:** Reverted all changes. Restored `AddonUtils::get_kit_option()` / `Utils::get_kit_option()` in all 10 call sites.
 
 ---
 
