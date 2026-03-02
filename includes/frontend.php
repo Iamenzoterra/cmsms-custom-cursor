@@ -1204,21 +1204,26 @@ class Frontend extends Base_App {
 	/**
 	 * Get the document whose cursor settings should drive the current request.
 	 *
-	 * Page requests use the queried document. Template rendering and Elementor preview
-	 * should prefer the actual template document being rendered.
+	 * In the Elementor preview iframe, the preview document (the page being edited)
+	 * always takes priority. On the frontend, template_document is used when set
+	 * (for template-specific cursor settings), otherwise falls back to the queried page.
+	 *
+	 * Note: template_document is set during header/footer/popup rendering and persists
+	 * through wp_footer. Without this priority order, the cursor HTML output would use
+	 * the wrong document context in the editor preview.
 	 *
 	 * @since 5.7
 	 *
 	 * @return \Elementor\Core\Base\Document|null Document or null.
 	 */
 	private function get_cursor_context_document() {
-		if ( $this->template_document ) {
-			return $this->template_document;
-		}
-
 		$preview_document = $this->get_preview_document();
 		if ( $preview_document ) {
 			return $preview_document;
+		}
+
+		if ( $this->template_document ) {
+			return $this->template_document;
 		}
 
 		return $this->get_current_page_document();
@@ -1407,7 +1412,6 @@ class Frontend extends Base_App {
 		// If in Elementor preview iframe, check editor preview option
 		if ( $in_elementor_preview ) {
 			$raw_ep = AddonUtils::get_kit_option( 'cmsmasters_custom_cursor_editor_preview', '' );
-			error_log( '[CURSOR-DIAG] should_enable_custom_cursor PREVIEW | editor_preview_raw=' . var_export( $raw_ep, true ) . ' | mode=' . $mode );
 			if ( 'yes' !== $raw_ep ) {
 				return false;
 			}

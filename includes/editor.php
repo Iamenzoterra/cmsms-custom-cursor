@@ -201,9 +201,6 @@ class Editor extends Base_App {
 		$raw_editor_preview = Utils::get_kit_option( 'cmsmasters_custom_cursor_editor_preview', '' );
 		$editor_preview    = 'yes' === $raw_editor_preview;
 
-		// DEBUG: temporary diagnostic — remove after fixing
-		error_log( '[CURSOR-DIAG] enqueue_preview_scripts called | mode=' . $mode . ' | editor_preview_raw=' . var_export( $raw_editor_preview, true ) . ' | pass=' . ( ( $editor_preview && '' !== $mode ) ? 'YES' : 'BLOCKED' ) );
-
 		// Load when: editor preview ON AND cursor not disabled
 		if ( ! $editor_preview || '' === $mode ) {
 			return;
