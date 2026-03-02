@@ -1,7 +1,7 @@
 # Custom Cursor v5.6 - Known Issues
 
-**Last Updated:** February 9, 2026
-**Version:** 5.6
+**Last Updated:** March 2, 2026
+**Version:** 5.7
 
 ---
 
@@ -16,11 +16,11 @@ This document consolidates all known issues, bugs, and technical debt across the
 │                                                                             │
 │   Critical:  3 issues    (Architecture, Compatibility)                     │
 │   High:      4 issues    (Memory Leaks)                                    │
-│   Medium:   12 issues    (Performance, UX)                                  │
+│   Medium:   13 issues    (Performance, UX) — +EDITOR-001                   │
 │   Low:       4 issues    (Code Quality) — 2 resolved in v5.6               │
 │   Deferred:  1 issue     (PERF-001 - too risky)                            │
 │   ─────────────────────                                                     │
-│   Total:    24 active issues                                                │
+│   Total:    25 active issues                                                │
 │                                                                             │
 │   Resolved: 42 issues (tracked for reference)                               │
 │   ❌ False Positives: BUG-001, UX-001, UX-002 (not bugs after review)      │
@@ -140,6 +140,54 @@ Users can override via custom CSS: `#cmsmasters-cursor-container { --cmsmasters-
 1. `--cmsmasters-cursor-z-blend` raised from `9999` to `999999` (matched default z-index)
 2. Added `--cmsmasters-cursor-color: #fff` to blend body rules — black cursor is identity element of exclusion/difference math and produces no visual change; white inverts correctly
 3. Removed `isolation: isolate` from blend body rules — it was creating a stacking context that prevented blending with body background in gaps between Elementor containers
+
+---
+
+### EDITOR-001: Custom Cursor Not Visible in Elementor Editor
+
+| Field | Value |
+|-------|-------|
+| **Location** | `includes/frontend.php:1387–1449`, `includes/editor.php:199–225`, `custom-cursor.js:555` |
+| **Type** | UX / Architecture |
+| **Status** | ⚠️ BY DESIGN — requires explicit opt-in |
+| **Since** | v5.7 (WP-020 migration, commit `7c5c960`) |
+| **Investigated** | March 2, 2026 |
+
+**Description:**
+The custom cursor does not appear anywhere in the Elementor editor. Two independent cases with different root causes.
+
+**Case 1: Main Editor Frame (wp-admin)**
+Blocked by two independent guards:
+- **PHP** (`frontend.php:1424`): `is_admin()` → `should_enable_custom_cursor()` returns `false` → no body class, no scripts, no cursor HTML
+- **JS** (`custom-cursor.js:555`): `body.classList.contains('elementor-editor-wp-page')` → early return
+- **Status: intentional** — system cursor required for editor UI
+
+**Case 2: Preview Iframe**
+Blocked by `editor_preview` Kit option:
+```php
+// frontend.php:1408–1411
+if ( 'yes' !== AddonUtils::get_kit_option( 'cmsmasters_custom_cursor_editor_preview', '' ) ) {
+    return false; // default '' ≠ 'yes' → cursor blocked
+}
+```
+- Default value `''` (disabled) → cursor does not load in preview
+- Requires: `cmsmasters_custom_cursor_editor_preview = 'yes'` in Elementor Site Settings
+- Same gate blocks `cursor-editor-sync.js` from loading (`editor.php:204`)
+
+**WP-020 Migration Impact:**
+- Before Phase 2: `get_option('elementor_custom_cursor_editor_preview')` read from wp_options
+- After Phase 2: reads from Kit (`Utils::get_kit_option(...)`)
+- **No value migration was performed** — sites with `editor_preview=yes` in wp_options lose the setting
+- After Phase 3 (settings page removed): the only way to set `editor_preview` is via Elementor Site Settings (requires Kuzmich theme Kit controls to be registered)
+
+**Commit 7c5c960 (2026-03-02):**
+Removed the widgets-mode early return that previously bypassed the `editor_preview` check. Before this commit, widget-only mode always showed cursor in preview regardless of `editor_preview`. After: all modes require `editor_preview='yes'`. This is correct behavior (fixes native cursor disappearing issue from 2026-02-19) but may appear as a regression on sites upgrading from pre-7c5c960 builds.
+
+**Resolution:**
+Enable "Show in Editor Preview" in Elementor Site Settings → Custom Cursor section.
+
+**Possible Future Improvement:**
+Default `editor_preview` to `'yes'` when cursor visibility is enabled, so users see cursor in preview immediately after enabling it globally.
 
 ---
 

@@ -4,6 +4,35 @@ Living document tracking development sessions, decisions, and iterations.
 
 ---
 
+## 2026-03-02 — Fix: WP-020 regression — Kit reads bypass registered control defaults
+
+**Problem:** After WP-020 Phase 2, the cursor never showed on sites where the user had not explicitly saved Kit (Site Settings) after the Phase 1 controls were registered. The root cause: `AddonUtils::get_kit_option()` calls `get_post_meta()` directly — it reads raw DB meta and falls back to the PHP `$default` argument if the key isn't in the saved meta. The registered Elementor control defaults (e.g. `visibility = 'elements'`, `editor_preview = ''`) are ignored entirely.
+
+**Symptom:** On a fresh install or any site where the Kit settings page was never opened after the cursor controls were registered:
+- `cmsmasters_custom_cursor_editor_preview` → raw meta has no entry → returns PHP fallback `''` → Gate 1 (editor preview) = OFF → cursor-editor-sync.js never loaded in preview iframe
+- `cmsmasters_custom_cursor_visibility` → raw meta has no entry → returns `'elements'` (PHP fallback matched the control default by coincidence, so frontend cursor still showed)
+- All other controls similarly vulnerable if defaults ever diverge
+
+**Root cause:** `Utils::get_kit_option()` (both alias `AddonUtils` in frontend.php and direct `Utils` in editor.php) uses:
+```php
+get_post_meta( $kit_id, '_elementor_page_settings', true ) // raw meta, no control defaults
+```
+
+The correct API is `$kit->get_settings_for_display()` which Elementor's own Kit document exposes — it merges saved meta WITH registered control defaults.
+
+**Fix:** Added `get_kit_cursor_setting($key, $default)` private helper to both `Frontend` (frontend.php) and `Editor` (editor.php) classes. The helper:
+1. Gets the active Kit post ID via `AddonUtils::get_active_kit()` (or `Utils::get_active_kit()`)
+2. Gets the Kit document via `\Elementor\Plugin::$instance->documents->get($kit_id)`
+3. Calls `$kit->get_settings_for_display()` — respects registered defaults
+4. Caches the settings array statically (one call per request)
+5. Falls back to PHP `$default` if Elementor is unavailable (safety net)
+
+Replaced all 8 `AddonUtils::get_kit_option()` cursor calls in frontend.php and 2 `Utils::get_kit_option()` cursor calls in editor.php with `$this->get_kit_cursor_setting()`.
+
+**Files changed:** `includes/frontend.php`, `includes/editor.php`
+
+---
+
 ## 2026-02-24 — WP-020 Phase 2: Read Migration — wp_options → Kit
 
 **Problem:** All global cursor settings were read via `get_option('elementor_custom_cursor_*')`. Phase 1 registered 11 Kit controls in the Kuzmich theme with prefix `cmsmasters_custom_cursor_`. Need to migrate all reads to Kit.
