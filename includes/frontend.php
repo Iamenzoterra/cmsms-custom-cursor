@@ -1406,7 +1406,9 @@ class Frontend extends Base_App {
 
 		// If in Elementor preview iframe, check editor preview option
 		if ( $in_elementor_preview ) {
-			if ( 'yes' !== AddonUtils::get_kit_option( 'cmsmasters_custom_cursor_editor_preview', '' ) ) {
+			$raw_ep = AddonUtils::get_kit_option( 'cmsmasters_custom_cursor_editor_preview', '' );
+			error_log( '[CURSOR-DIAG] should_enable_custom_cursor PREVIEW | editor_preview_raw=' . var_export( $raw_ep, true ) . ' | mode=' . $mode );
+			if ( 'yes' !== $raw_ep ) {
 				return false;
 			}
 
