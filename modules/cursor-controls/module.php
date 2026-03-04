@@ -312,14 +312,22 @@ class Module extends Base_Module {
 			'cmsmasters_cursor_special_type',
 			array(
 				'label'       => __( 'Cursor Type', 'cmsmasters-elementor' ),
-				'type'        => Controls_Manager::SELECT,
+				'label_block' => false,
+				'type'        => Cmsmasters_Controls_Manager::CHOOSE_TEXT,
 				'default'     => 'image',
 				'options'     => array(
-					'image' => __( 'Image', 'cmsmasters-elementor' ),
-					'text'  => __( 'Text', 'cmsmasters-elementor' ),
-					'icon'  => __( 'Icon', 'cmsmasters-elementor' ),
+					'image' => array(
+						'title' => __( 'Image', 'cmsmasters-elementor' ),
+					),
+					'text'  => array(
+						'title' => __( 'Text', 'cmsmasters-elementor' ),
+					),
+					'icon'  => array(
+						'title' => __( 'Icon', 'cmsmasters-elementor' ),
+					),
 				),
 				'separator'   => 'before',
+				'toggle'      => false,
 				'condition'   => array_merge( $toggle_condition, array(
 					'cmsmasters_cursor_inherit_parent' => '',
 					'cmsmasters_cursor_special_active' => 'yes',
