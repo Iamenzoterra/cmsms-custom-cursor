@@ -1150,6 +1150,7 @@
 	 */
 	var watchedSettingsModel = null;
 	var watchedContainer = null;
+	var specialBlendTouched = {};
 
 	function watchSelectedElementModel() {
 		try {
@@ -1195,13 +1196,17 @@
 
 		var changedKeys = Object.keys(changed);
 
+		if (changedKeys.indexOf('cmsmasters_cursor_special_blend') !== -1) {
+			specialBlendTouched[model.cid] = true;
+		}
+
 		// When switching to Special for the first time, default its blend to Disabled.
-		// Only apply if the special blend control has never been explicitly set.
+		// Only apply if the user has not explicitly changed the special blend yet.
 		if (
 			changedKeys.indexOf('cmsmasters_cursor_special_active') !== -1 &&
 			model.get('cmsmasters_cursor_special_active') === 'yes' &&
-			model.attributes &&
-			!Object.prototype.hasOwnProperty.call(model.attributes, 'cmsmasters_cursor_special_blend')
+			model.get('cmsmasters_cursor_special_blend') === '' &&
+			!specialBlendTouched[model.cid]
 		) {
 			model.set('cmsmasters_cursor_special_blend', 'off');
 			return;
