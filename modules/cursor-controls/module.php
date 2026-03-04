@@ -672,14 +672,24 @@ class Module extends Base_Module {
 			)
 		);
 
-		// Normal State heading
 		$element->add_control(
-			'cmsmasters_cursor_icon_normal_heading',
+			'cmsmasters_cursor_icon_state',
 			array(
-				'label'     => __( 'Normal State', 'cmsmasters-elementor' ),
-				'type'      => Controls_Manager::HEADING,
-				'separator' => 'before',
-				'condition' => array_merge( $toggle_condition, array(
+				'label'       => '',
+				'label_block' => true,
+				'type'        => Cmsmasters_Controls_Manager::CHOOSE_TEXT,
+				'default'     => 'normal',
+				'options'     => array(
+					'normal' => array(
+						'title' => __( 'Normal', 'cmsmasters-elementor' ),
+					),
+					'hover'  => array(
+						'title' => __( 'Hover', 'cmsmasters-elementor' ),
+					),
+				),
+				'separator'   => 'before',
+				'toggle'      => false,
+				'condition'   => array_merge( $toggle_condition, array(
 					'cmsmasters_cursor_inherit_parent' => '',
 					'cmsmasters_cursor_special_active' => 'yes',
 					'cmsmasters_cursor_special_type'   => 'icon',
@@ -698,6 +708,7 @@ class Module extends Base_Module {
 					'cmsmasters_cursor_inherit_parent' => '',
 					'cmsmasters_cursor_special_active' => 'yes',
 					'cmsmasters_cursor_special_type'   => 'icon',
+					'cmsmasters_cursor_icon_state'     => 'normal',
 				) ),
 			)
 		);
@@ -713,21 +724,7 @@ class Module extends Base_Module {
 					'cmsmasters_cursor_inherit_parent' => '',
 					'cmsmasters_cursor_special_active' => 'yes',
 					'cmsmasters_cursor_special_type'   => 'icon',
-				) ),
-			)
-		);
-
-		// Hover State heading
-		$element->add_control(
-			'cmsmasters_cursor_icon_hover_heading',
-			array(
-				'label'     => __( 'Hover State', 'cmsmasters-elementor' ),
-				'type'      => Controls_Manager::HEADING,
-				'separator' => 'before',
-				'condition' => array_merge( $toggle_condition, array(
-					'cmsmasters_cursor_inherit_parent' => '',
-					'cmsmasters_cursor_special_active' => 'yes',
-					'cmsmasters_cursor_special_type'   => 'icon',
+					'cmsmasters_cursor_icon_state'     => 'normal',
 				) ),
 			)
 		);
@@ -743,6 +740,7 @@ class Module extends Base_Module {
 					'cmsmasters_cursor_inherit_parent' => '',
 					'cmsmasters_cursor_special_active' => 'yes',
 					'cmsmasters_cursor_special_type'   => 'icon',
+					'cmsmasters_cursor_icon_state'     => 'hover',
 				) ),
 			)
 		);
@@ -758,6 +756,7 @@ class Module extends Base_Module {
 					'cmsmasters_cursor_inherit_parent' => '',
 					'cmsmasters_cursor_special_active' => 'yes',
 					'cmsmasters_cursor_special_type'   => 'icon',
+					'cmsmasters_cursor_icon_state'     => 'hover',
 				) ),
 			)
 		);
