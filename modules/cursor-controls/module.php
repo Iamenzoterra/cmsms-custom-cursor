@@ -355,7 +355,7 @@ class Module extends Base_Module {
 			'cmsmasters_cursor_image_state',
 			array(
 				'label'       => '',
-				'label_block' => false,
+				'label_block' => true,
 				'type'        => Cmsmasters_Controls_Manager::CHOOSE_TEXT,
 				'default'     => 'normal',
 				'options'     => array(
