@@ -214,6 +214,7 @@ class Module extends Base_Module {
 				),
 				'description' => __( 'Replace default cursor with Image, Text or Icon', 'cmsmasters-elementor' ),
 				'separator'   => 'before',
+				'show_label'  => true,
 				'toggle'      => false,
 				'condition'   => array_merge( $toggle_condition, array(
 					'cmsmasters_cursor_inherit_parent' => '',
