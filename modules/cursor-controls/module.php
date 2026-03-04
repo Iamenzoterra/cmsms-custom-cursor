@@ -2,6 +2,7 @@
 namespace CmsmastersElementor\Modules\CursorControls;
 
 use CmsmastersElementor\Base\Base_Module;
+use CmsmastersElementor\Controls_Manager as Cmsmasters_Controls_Manager;
 use CmsmastersElementor\Utils;
 use Elementor\Controls_Manager;
 use Elementor\Group_Control_Typography;
@@ -202,7 +203,7 @@ class Module extends Base_Module {
 			'cmsmasters_cursor_special_active',
 			array(
 				'label'       => __( 'Cursor Style', 'cmsmasters-elementor' ),
-				'type'        => Controls_Manager::CHOOSE,
+				'type'        => Cmsmasters_Controls_Manager::CHOOSE_TEXT,
 				'default'     => '',
 				'options'     => array(
 					''    => array(
@@ -214,7 +215,6 @@ class Module extends Base_Module {
 				),
 				'description' => __( 'Replace default cursor with Image, Text or Icon', 'cmsmasters-elementor' ),
 				'separator'   => 'before',
-				'show_label'  => true,
 				'toggle'      => false,
 				'condition'   => array_merge( $toggle_condition, array(
 					'cmsmasters_cursor_inherit_parent' => '',
