@@ -286,6 +286,19 @@ class Module extends Base_Module {
 		);
 
 		$element->add_control(
+			'cmsmasters_cursor_core_effects_heading',
+			array(
+				'label'     => __( 'Effects', 'cmsmasters-elementor' ),
+				'type'      => Controls_Manager::HEADING,
+				'separator' => 'before',
+				'condition' => array_merge( $toggle_condition, array(
+					'cmsmasters_cursor_inherit_parent' => '',
+					'cmsmasters_cursor_special_active' => '',
+				) ),
+			)
+		);
+
+		$element->add_control(
 			'cmsmasters_cursor_blend_mode',
 			array(
 				'label'       => __( 'Blend Mode', 'cmsmasters-elementor' ),
