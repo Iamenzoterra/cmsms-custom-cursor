@@ -762,20 +762,6 @@ class Module extends Base_Module {
 		);
 
 		$element->add_control(
-			'cmsmasters_cursor_icon_shape_heading',
-			array(
-				'label'     => __( 'Shape', 'cmsmasters-elementor' ),
-				'type'      => Controls_Manager::HEADING,
-				'separator' => 'before',
-				'condition' => array_merge( $toggle_condition, array(
-					'cmsmasters_cursor_inherit_parent' => '',
-					'cmsmasters_cursor_special_active' => 'yes',
-					'cmsmasters_cursor_special_type'   => 'icon',
-				) ),
-			)
-		);
-
-		$element->add_control(
 			'cmsmasters_cursor_icon_fit_circle',
 			array(
 				'label'     => __( 'Fit in Circle', 'cmsmasters-elementor' ),
