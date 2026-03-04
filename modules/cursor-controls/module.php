@@ -830,7 +830,7 @@ class Module extends Base_Module {
 			array(
 				'label'       => __( 'Blend Mode', 'cmsmasters-elementor' ),
 				'type'        => Controls_Manager::SELECT,
-				'default'     => '',
+				'default'     => 'off',
 				'options'     => array(
 					''       => __( 'Default (Global)', 'cmsmasters-elementor' ),
 					'off'    => __( 'Disabled', 'cmsmasters-elementor' ),
