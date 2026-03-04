@@ -201,14 +201,21 @@ class Module extends Base_Module {
 		$element->add_control(
 			'cmsmasters_cursor_special_active',
 			array(
-				'label'        => __( 'Special Cursor', 'cmsmasters-elementor' ),
-				'type'         => Controls_Manager::SWITCHER,
-				'default'      => '',
-				'label_off'    => __( 'Off', 'cmsmasters-elementor' ),
-				'label_on'     => __( 'On', 'cmsmasters-elementor' ),
-				'description'  => __( 'Replace default cursor with Image, Text or Icon.', 'cmsmasters-elementor' ),
-				'separator'    => 'before',
-				'condition'    => array_merge( $toggle_condition, array(
+				'label'       => __( 'Cursor Style', 'cmsmasters-elementor' ),
+				'type'        => Controls_Manager::CHOOSE,
+				'default'     => '',
+				'options'     => array(
+					''    => array(
+						'title' => __( 'Default', 'cmsmasters-elementor' ),
+					),
+					'yes' => array(
+						'title' => __( 'Special', 'cmsmasters-elementor' ),
+					),
+				),
+				'description' => __( 'Replace default cursor with Image, Text or Icon', 'cmsmasters-elementor' ),
+				'separator'   => 'before',
+				'toggle'      => false,
+				'condition'   => array_merge( $toggle_condition, array(
 					'cmsmasters_cursor_inherit_parent' => '',
 				) ),
 			)
@@ -238,8 +245,7 @@ class Module extends Base_Module {
 					''      => __( 'Default (Global)', 'cmsmasters-elementor' ),
 					'hover' => __( 'Enlarged', 'cmsmasters-elementor' ),
 				),
-				/* translators: %s: element type (widget, container, section, column) */
-				'description' => sprintf( __( 'Cursor style when hovering this %s.', 'cmsmasters-elementor' ), $type_label ),
+				'description' => __( 'Cursor style when hovering this element', 'cmsmasters-elementor' ),
 				'condition'   => array_merge( $toggle_condition, array(
 					'cmsmasters_cursor_inherit_parent' => '',
 					'cmsmasters_cursor_special_active' => '',
@@ -255,8 +261,7 @@ class Module extends Base_Module {
 				'default'      => '',
 				'label_off'    => __( 'No', 'cmsmasters-elementor' ),
 				'label_on'     => __( 'Yes', 'cmsmasters-elementor' ),
-				/* translators: %s: element type (widget, container, section, column) */
-				'description'  => sprintf( __( 'Override cursor color on this %s.', 'cmsmasters-elementor' ), $type_label ),
+				'description'  => __( 'Override cursor color on this element.', 'cmsmasters-elementor' ),
 				'condition'    => array_merge( $toggle_condition, array(
 					'cmsmasters_cursor_inherit_parent' => '',
 					'cmsmasters_cursor_special_active' => '',
