@@ -203,6 +203,7 @@ class Module extends Base_Module {
 			'cmsmasters_cursor_special_active',
 			array(
 				'label'       => __( 'Cursor Style', 'cmsmasters-elementor' ),
+				'label_block' => false,
 				'type'        => Cmsmasters_Controls_Manager::CHOOSE_TEXT,
 				'default'     => '',
 				'options'     => array(
