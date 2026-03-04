@@ -1538,7 +1538,7 @@ class Frontend extends Base_App {
 
 		// True global blend (for widget fallback — NOT page > global).
 		// Widgets with "Default (Global)" use this instead of the page override.
-		$global_blend_only = AddonUtils::get_kit_option( 'cmsmasters_custom_cursor_blend_mode', 'soft' );
+		$global_blend_only = AddonUtils::get_kit_option( 'cmsmasters_custom_cursor_blend_mode', 'disabled' );
 		if ( 'disabled' === $global_blend_only ) {
 			$global_blend_only = '';
 		}
@@ -1595,7 +1595,7 @@ class Frontend extends Base_App {
 		}
 
 		// Add blend mode class based on intensity (page > global)
-		$blend_mode = $this->get_page_cursor_setting( 'blend_mode', 'blend_mode', 'soft' );
+		$blend_mode = $this->get_page_cursor_setting( 'blend_mode', 'blend_mode', 'disabled' );
 		if ( $blend_mode ) {
 			// Legacy support: 'yes' maps to 'medium'
 			if ( 'yes' === $blend_mode ) {
