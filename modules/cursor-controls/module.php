@@ -288,7 +288,7 @@ class Module extends Base_Module {
 		$element->add_control(
 			'cmsmasters_cursor_core_effects_heading',
 			array(
-				'label'     => __( 'Effects', 'cmsmasters-elementor' ),
+				'label'     => __( 'Special Effects', 'cmsmasters-elementor' ),
 				'type'      => Controls_Manager::HEADING,
 				'separator' => 'before',
 				'condition' => array_merge( $toggle_condition, array(
