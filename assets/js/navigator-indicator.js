@@ -1195,6 +1195,18 @@
 
 		var changedKeys = Object.keys(changed);
 
+		// When switching to Special for the first time, default its blend to Disabled.
+		// Only apply if the special blend control has never been explicitly set.
+		if (
+			changedKeys.indexOf('cmsmasters_cursor_special_active') !== -1 &&
+			model.get('cmsmasters_cursor_special_active') === 'yes' &&
+			model.attributes &&
+			!Object.prototype.hasOwnProperty.call(model.attributes, 'cmsmasters_cursor_special_blend')
+		) {
+			model.set('cmsmasters_cursor_special_blend', 'off');
+			return;
+		}
+
 		// Check if cursor-related OR __globals__ changed
 		var isCursorChange = changedKeys.some(function(key) {
 			return key.indexOf('cmsmasters_cursor') === 0 || key === '__globals__';
