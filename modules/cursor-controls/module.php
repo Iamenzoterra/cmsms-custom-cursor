@@ -440,21 +440,6 @@ class Module extends Base_Module {
 			)
 		);
 
-		// EFFECTS heading (IMAGE)
-		$element->add_control(
-			'cmsmasters_cursor_effects_heading',
-			array(
-				'label'     => __( 'Effects', 'cmsmasters-elementor' ),
-				'type'      => Controls_Manager::HEADING,
-				'separator' => 'before',
-				'condition' => array_merge( $toggle_condition, array(
-					'cmsmasters_cursor_inherit_parent' => '',
-					'cmsmasters_cursor_special_active' => 'yes',
-					'cmsmasters_cursor_special_type'   => 'image',
-				) ),
-			)
-		);
-
 		// === TEXT CURSOR CONTROLS ===
 		$element->add_control(
 			'cmsmasters_cursor_text_content',
@@ -824,13 +809,27 @@ class Module extends Base_Module {
 				) ),
 			)
 		);
-		// === SHARED: Blend Mode (works for Image, Text, Icon) ===
+		// === SHARED: Special Effects heading + Blend + Effect ===
+		$element->add_control(
+			'cmsmasters_cursor_special_effects_heading',
+			array(
+				'label'     => __( 'Special Effects', 'cmsmasters-elementor' ),
+				'type'      => Controls_Manager::HEADING,
+				'separator' => 'before',
+				'condition' => array_merge( $toggle_condition, array(
+					'cmsmasters_cursor_inherit_parent' => '',
+					'cmsmasters_cursor_special_active' => 'yes',
+				) ),
+			)
+		);
+
 		$element->add_control(
 			'cmsmasters_cursor_special_blend',
 			array(
 				'label'       => __( 'Blend Mode', 'cmsmasters-elementor' ),
 				'type'        => Controls_Manager::SELECT,
 				'default'     => 'off',
+				'description' => __( 'Override global blend mode on this element.', 'cmsmasters-elementor' ),
 				'options'     => array(
 					''       => __( 'Default (Global)', 'cmsmasters-elementor' ),
 					'off'    => __( 'Disabled', 'cmsmasters-elementor' ),
@@ -861,7 +860,6 @@ class Module extends Base_Module {
 					'buzz'   => __( 'Buzz', 'cmsmasters-elementor' ),
 				),
 				'description' => __( 'Animation effect for cursor.', 'cmsmasters-elementor' ),
-				'separator'   => 'before',
 				'condition'   => array_merge( $toggle_condition, array(
 					'cmsmasters_cursor_inherit_parent' => '',
 				) ),
