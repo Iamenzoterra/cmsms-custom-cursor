@@ -1222,10 +1222,6 @@ class Frontend extends Base_App {
 			return $preview_document;
 		}
 
-		if ( $this->template_document ) {
-			return $this->template_document;
-		}
-
 		return $this->get_current_page_document();
 	}
 
