@@ -786,7 +786,15 @@
         if (s.cmsmasters_cursor_icon_preserve_colors === 'yes') el.setAttribute('data-cursor-icon-preserve', 'yes');
         el.setAttribute('data-cursor-icon-size', getSize(s.cmsmasters_cursor_icon_size_normal, 32));
         el.setAttribute('data-cursor-icon-size-hover', getSize(s.cmsmasters_cursor_icon_size_hover, 48));
-        if (s.cmsmasters_cursor_icon_fit_circle === 'yes') el.setAttribute('data-cursor-icon-circle', 'yes');
+        el.setAttribute('data-cursor-icon-rotate', getSize(s.cmsmasters_cursor_icon_rotate_normal, 0));
+        el.setAttribute('data-cursor-icon-rotate-hover', getSize(s.cmsmasters_cursor_icon_rotate_hover, 0));
+        if (s.cmsmasters_cursor_icon_fit_circle === 'yes') {
+            el.setAttribute('data-cursor-icon-circle', 'yes');
+            el.setAttribute('data-cursor-icon-circle-spacing', getSize(s.cmsmasters_cursor_icon_circle_spacing, 10));
+        } else {
+            if (s.cmsmasters_cursor_icon_border_radius) el.setAttribute('data-cursor-icon-radius', fmtDims(s.cmsmasters_cursor_icon_border_radius));
+            if (s.cmsmasters_cursor_icon_padding) el.setAttribute('data-cursor-icon-padding', fmtDims(s.cmsmasters_cursor_icon_padding));
+        }
         if (s.cmsmasters_cursor_effect) el.setAttribute('data-cursor-icon-effect', s.cmsmasters_cursor_effect);
         if (s.cmsmasters_cursor_special_blend) el.setAttribute('data-cursor-blend', s.cmsmasters_cursor_special_blend);
     }
