@@ -120,18 +120,12 @@ class Module extends Base_Module {
 		$element->add_control(
 			'cmsmasters_cursor_hide',
 			array(
-				'label'       => $is_show_mode
-					? __( 'Show Custom Cursor', 'cmsmasters-elementor' )
-					: __( 'Hide Custom Cursor', 'cmsmasters-elementor' ),
+				'label'       => __( 'Custom Cursor', 'cmsmasters-elementor' ),
 				'type'        => Controls_Manager::SWITCHER,
 				'default'     => '',
-				'label_off'   => __( 'No', 'cmsmasters-elementor' ),
-				'label_on'    => __( 'Yes', 'cmsmasters-elementor' ),
-				'description' => $is_show_mode
-					/* translators: %s: element type (widget, container, section, column) */
-					? sprintf( __( 'Enable custom cursor on this %s.', 'cmsmasters-elementor' ), $type_label )
-					/* translators: %s: element type (widget, container, section, column) */
-					: __( 'When <strong>Hide</strong> is chosen, system cursor will be shown on this element', 'cmsmasters-elementor' ),
+				'label_off'   => $is_show_mode ? __( 'Hide', 'cmsmasters-elementor' ) : __( 'Show', 'cmsmasters-elementor' ),
+				'label_on'    => $is_show_mode ? __( 'Show', 'cmsmasters-elementor' ) : __( 'Hide', 'cmsmasters-elementor' ),
+				'description' => __( 'When <strong>Hide</strong> is chosen, system cursor will be shown on this element.', 'cmsmasters-elementor' ),
 			)
 		);
 
