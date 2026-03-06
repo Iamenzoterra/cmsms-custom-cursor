@@ -123,18 +123,15 @@ class Module extends Base_Module {
 				'label'       => __( 'Custom Cursor', 'cmsmasters-elementor' ),
 				'type'        => Controls_Manager::SWITCHER,
 				'default'     => '',
-				'label_off'   => $is_show_mode ? __( 'Hide', 'cmsmasters-elementor' ) : __( 'Show', 'cmsmasters-elementor' ),
-				'label_on'    => $is_show_mode ? __( 'Show', 'cmsmasters-elementor' ) : __( 'Hide', 'cmsmasters-elementor' ),
+				'label_off'   => __( 'Hide', 'cmsmasters-elementor' ),
+				'label_on'    => __( 'Show', 'cmsmasters-elementor' ),
 				'description' => __( 'When <strong>Hide</strong> is chosen, system cursor will be shown on this element.', 'cmsmasters-elementor' ),
 			)
 		);
 
-		// === Toggle condition (contextual) ===
-		// Show mode: controls visible when toggle=yes (opt-in)
-		// Full mode: controls visible when toggle=no (opt-out, i.e. NOT hiding)
-		$toggle_condition = $is_show_mode
-			? array( 'cmsmasters_cursor_hide' => 'yes' )
-			: array( 'cmsmasters_cursor_hide' => '' );
+		// === Toggle condition ===
+		// Both modes: sub-controls visible when toggle=yes (Show)
+		$toggle_condition = array( 'cmsmasters_cursor_hide' => 'yes' );
 
 		// === USE PARENT CURSOR ===
 		$element->add_control(
@@ -1667,15 +1664,6 @@ class Module extends Base_Module {
 	 * @param array                   $raw_settings
 	 */
 	private function apply_core_cursor_attributes( $element, $settings, $raw_settings, $is_show_render = false ) {
-		// Full mode only: hide check (show mode gate is in dispatcher)
-		if ( ! $is_show_render ) {
-			$hide = ! empty( $settings['cmsmasters_cursor_hide'] ) ? $settings['cmsmasters_cursor_hide'] : '';
-			if ( 'yes' === $hide ) {
-				$element->add_render_attribute( '_wrapper', 'data-cursor', 'hide' );
-				return;
-			}
-		}
-
 		// Hover style
 		$hover_style = ! empty( $settings['cmsmasters_cursor_hover_style'] ) ? $settings['cmsmasters_cursor_hover_style'] : '';
 		if ( $hover_style ) {

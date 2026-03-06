@@ -649,16 +649,15 @@
 
         var toggle = settings.cmsmasters_cursor_hide;
 
+        // toggle=yes means "Show" in both modes
+        if (toggle !== 'yes') {
+            // No custom cursor on this element
+            if (isShowMode) return; // Show mode: no opt-in → skip
+            // Full mode: no per-element settings → use global defaults
+            return;
+        }
         if (isShowMode) {
-            // Show mode: toggle=yes means SHOW cursor
-            if (toggle !== 'yes') return;
             element.setAttribute('data-cursor-show', 'yes');
-        } else {
-            // Full mode: toggle=yes means HIDE cursor
-            if (toggle === 'yes') {
-                element.setAttribute('data-cursor', 'hide');
-                return;
-            }
         }
 
         // Inherit → Special → Core (existing logic)
