@@ -915,6 +915,12 @@ class Module extends Base_Module {
 			return;
 		}
 
+		// Template documents (headers, footers, archives, singles) — skip.
+		// Page-level cursor controls only apply to wp-page and wp-post documents.
+		if ( $this->is_template_document( $element ) ) {
+			return;
+		}
+
 		// Skip on admin pages that aren't the Elementor editor (fixes 504 timeout on Merlin wizard)
 		if ( ! $this->should_register_controls() ) {
 			return;
@@ -1341,6 +1347,35 @@ class Module extends Base_Module {
 		}
 
 		return in_array( $document->get_name(), array( 'popup', 'cmsmasters_popup' ), true );
+	}
+
+	/**
+	 * Check whether a document is a template (header, footer, archive, single).
+	 *
+	 * Template documents don't support page-level cursor controls.
+	 * Only wp-page and wp-post documents do.
+	 *
+	 * @param mixed $document Elementor document instance.
+	 * @return bool
+	 */
+	private function is_template_document( $document ) {
+		if ( ! is_object( $document ) || ! method_exists( $document, 'get_name' ) ) {
+			return false;
+		}
+
+		$template_types = array(
+			'page',
+			'single',
+			'archive',
+			'header',
+			'footer',
+			'cmsmasters_header',
+			'cmsmasters_footer',
+			'cmsmasters_singular',
+			'cmsmasters_archive',
+		);
+
+		return in_array( $document->get_name(), $template_types, true );
 	}
 
 	/**
