@@ -56,7 +56,7 @@ body.cmsmasters-cursor-on-light {
 
 .cmsmasters-cursor-enabled.cmsmasters-cursor-dual,
 .cmsmasters-cursor-enabled.cmsmasters-cursor-dual * {
-    cursor:default!important
+    cursor:auto!important
 }
 
 /* Widget-only mode: cursor elements visible */
