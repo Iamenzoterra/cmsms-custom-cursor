@@ -1082,7 +1082,6 @@ class Module extends Base_Module {
 				                   . __( 'Reset to System Default', 'cmsmasters-elementor' )
 				                   . '</button>',
 				'content_classes' => 'elementor-control-field',
-				'separator'       => 'before',
 				'condition'       => $page_toggle_condition,
 			)
 		);
