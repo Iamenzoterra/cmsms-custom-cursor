@@ -111,18 +111,10 @@ body.cmsmasters-cursor-on-light {
     cursor:pointer!important
 }
 
-#wpadminbar,
-#wpadminbar * {
-    cursor:auto!important
-}
-
-/* Elementor editor UI: restore cursor on overlays, empty views, add-section */
-.elementor-editor-active .elementor-element-overlay,
-.elementor-editor-active .elementor-element-overlay *,
-.elementor-editor-active .elementor-empty-view,
-.elementor-editor-active .elementor-empty-view *,
-.elementor-editor-active .elementor-add-section,
-.elementor-editor-active .elementor-add-section * {
+/* Admin bar: restore visible cursor only in non-dual mode
+   (dual mode excluded from cursor:none via :not(), so original WP styles apply) */
+.cmsmasters-cursor-enabled:not(.cmsmasters-cursor-dual) #wpadminbar,
+.cmsmasters-cursor-enabled:not(.cmsmasters-cursor-dual) #wpadminbar * {
     cursor:auto!important
 }
 
