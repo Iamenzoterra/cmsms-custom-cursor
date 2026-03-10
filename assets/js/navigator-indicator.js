@@ -359,68 +359,28 @@
 			return null;
 		}
 
-		// === SHOW MODE (widget-only): toggle=yes means cursor active ===
-		if (isShowMode) {
-			if (toggle !== 'yes') return null;
+		// === UNIFIED LOGIC (both Show and Full mode) ===
+		// After toggle unification (commit 4576aea): 'yes' always means Show.
+		// All sub-controls require toggle='yes' (condition in module.php),
+		// so no per-element configuration exists without it.
+		if (toggle !== 'yes') return null;
 
-			// Check special → inherit → core (same priority as full mode)
-			var specialActive = settings.get('cmsmasters_cursor_special_active');
-			if (specialActive === 'yes') {
-				var specialType = settings.get('cmsmasters_cursor_special_type') || 'image';
-				return { type: 'special', subtype: specialType };
-			}
-
-			var inheritParent = settings.get('cmsmasters_cursor_inherit_parent');
-			if (inheritParent === 'yes') {
-				return { type: 'inherit' };
-			}
-
-			// Show mode active with no special/inherit = core indicator
-			return { type: 'core' };
+		// Priority 1: Inherit (highest — when inherit is ON, special controls
+		// are hidden by Elementor condition but may retain stale saved values)
+		var inheritParent = settings.get('cmsmasters_cursor_inherit_parent');
+		if (inheritParent === 'yes') {
+			return { type: 'inherit' };
 		}
 
-		// === FULL MODE (existing logic) ===
-
-		// Priority 1: Special cursor (highest priority indicator)
+		// Priority 2: Special cursor
 		var specialActive = settings.get('cmsmasters_cursor_special_active');
 		if (specialActive === 'yes') {
 			var specialType = settings.get('cmsmasters_cursor_special_type') || 'image';
 			return { type: 'special', subtype: specialType };
 		}
 
-		// Priority 2: Inherit
-		var inheritParent = settings.get('cmsmasters_cursor_inherit_parent');
-		if (inheritParent === 'yes') {
-			return { type: 'inherit' };
-		}
-
-		// Priority 3: Hide toggle
-		if (toggle === 'yes') {
-			return { type: 'hidden' };
-		}
-
-		// Priority 4: Core settings changed
-		var hoverStyle = settings.get('cmsmasters_cursor_hover_style');
-		var forceColor = settings.get('cmsmasters_cursor_force_color');
-		var blendMode = settings.get('cmsmasters_cursor_blend_mode');
-		var effect = settings.get('cmsmasters_cursor_effect');
-
-		if (hoverStyle && hoverStyle !== '' ||
-			forceColor === 'yes' ||
-			blendMode && blendMode !== '' ||
-			effect && effect !== '') {
-			return {
-				type: 'core',
-				details: {
-					hover: hoverStyle || null,
-					color: forceColor === 'yes',
-					blend: blendMode || null,
-					effect: effect || null
-				}
-			};
-		}
-
-		return null;
+		// Priority 3: Core (toggle='yes' with no special/inherit = core indicator)
+		return { type: 'core' };
 	}
 
 
@@ -702,14 +662,6 @@
 			'<span class="cmsmasters-legend-item">' +
 				'<span class="cmsmasters-nav-cursor-indicator cmsmasters-nav-cursor-special"></span> Special' +
 			'</span>';
-
-		// Hidden indicator only exists in full mode (not in show/widgets-only mode)
-		if (!isShowMode) {
-			legendItems +=
-				'<span class="cmsmasters-legend-item">' +
-					'<span class="cmsmasters-nav-cursor-indicator cmsmasters-nav-cursor-hidden"></span> Hidden' +
-				'</span>';
-		}
 
 		legendItems +=
 			'<span class="cmsmasters-legend-item">' +
