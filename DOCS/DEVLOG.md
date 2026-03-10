@@ -4,6 +4,20 @@ Living document tracking development sessions, decisions, and iterations.
 
 ---
 
+## 2026-03-10 — Update cursor control defaults, ranges and size_units
+
+**Change:** Updated Elementor control parameters in `modules/cursor-controls/module.php` per design spec.
+
+**Image cursor:** `cursor_size_normal` / `cursor_size_hover` — range widened from 16-128 to 10-200 px; defaults changed to 80/100 (were 96/80).
+
+**Icon cursor:** `icon_border_radius` and `icon_padding` defaults changed from 8 to 10. `icon_padding` size_units expanded from `[px]` to `[px, em, rem, %, vw]`.
+
+**Text cursor:** `text_border_radius` default changed from 150 to 10. `text_padding` size_units expanded from `[px, em]` to `[px, em, rem, %, vw]`.
+
+No changes needed for icon_size (32/48), circle_spacing (10), or text_border_radius units (px/%) — already matched spec.
+
+---
+
 ## 2026-03-10 — Fix image/icon cursor Normal size ignored on frontend (4 iterations)
 
 **Problem:** User sets Special Cursor → Image → Size (Normal tab) = 80 in editor. Frontend renders `data-cursor-image-size="32"` (fallback). Hover size works correctly (`100`).
