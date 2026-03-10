@@ -1,4 +1,5 @@
 <?php
+error_log( 'CURSOR MODULE PATH: ' . __FILE__ );
 namespace CmsmastersElementor\Modules\CursorControls;
 
 use CmsmastersElementor\Base\Base_Module;
