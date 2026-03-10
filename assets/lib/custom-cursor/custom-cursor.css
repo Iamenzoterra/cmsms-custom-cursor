@@ -49,14 +49,9 @@ body.cmsmasters-cursor-on-light {
     opacity:1
 }
 
-.cmsmasters-cursor-enabled,
-.cmsmasters-cursor-enabled * {
+.cmsmasters-cursor-enabled:not(.cmsmasters-cursor-dual),
+.cmsmasters-cursor-enabled:not(.cmsmasters-cursor-dual) * {
     cursor:none!important
-}
-
-.cmsmasters-cursor-enabled.cmsmasters-cursor-dual,
-.cmsmasters-cursor-enabled.cmsmasters-cursor-dual * {
-    cursor:auto!important
 }
 
 /* Widget-only mode: cursor elements visible */
@@ -64,16 +59,10 @@ body.cmsmasters-cursor-on-light {
     opacity:1
 }
 
-/* Widget-only mode: hide native cursor only inside show zones */
-.cmsmasters-cursor-widget-only [data-cursor-show],
-.cmsmasters-cursor-widget-only [data-cursor-show] * {
+/* Widget-only mode: hide native cursor only inside show zones (not in dual) */
+.cmsmasters-cursor-widget-only:not(.cmsmasters-cursor-dual) [data-cursor-show],
+.cmsmasters-cursor-widget-only:not(.cmsmasters-cursor-dual) [data-cursor-show] * {
     cursor:none!important
-}
-
-/* Widget-only + dual mode: restore native cursor inside show zones */
-.cmsmasters-cursor-widget-only.cmsmasters-cursor-dual [data-cursor-show],
-.cmsmasters-cursor-widget-only.cmsmasters-cursor-dual [data-cursor-show] * {
-    cursor:auto!important
 }
 
 /* ==========================================================================
