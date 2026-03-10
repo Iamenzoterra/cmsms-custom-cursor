@@ -1569,8 +1569,15 @@ class Frontend extends Base_App {
 		}
 
 		// Mode class: widget-only or full
+		// Page-level "Show Custom Cursor" in widgets mode promotes page to full mode
 		if ( $this->is_widget_only_mode() ) {
-			$classes[] = 'cmsmasters-cursor-widget-only';
+			$cursor_document = $this->get_cursor_context_document();
+			$doc_state = $this->get_document_cursor_state( $cursor_document );
+			if ( true === $doc_state['enabled'] ) {
+				$classes[] = 'cmsmasters-cursor-enabled';
+			} else {
+				$classes[] = 'cmsmasters-cursor-widget-only';
+			}
 		} else {
 			$classes[] = 'cmsmasters-cursor-enabled';
 		}
