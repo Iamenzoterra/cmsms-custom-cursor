@@ -385,8 +385,8 @@ class Module extends Base_Module {
 			array(
 				'label'     => __( 'Size', 'cmsmasters-elementor' ),
 				'type'      => Controls_Manager::SLIDER,
-				'range'     => array( 'px' => array( 'min' => 16, 'max' => 128, 'step' => 1 ) ),
-				'default'   => array( 'size' => 96, 'unit' => 'px' ),
+				'range'     => array( 'px' => array( 'min' => 10, 'max' => 200, 'step' => 1 ) ),
+				'default'   => array( 'size' => 80, 'unit' => 'px' ),
 				'condition' => array_merge( $toggle_condition, array(
 					'cmsmasters_cursor_inherit_parent' => '',
 					'cmsmasters_cursor_special_active' => 'yes',
@@ -417,8 +417,8 @@ class Module extends Base_Module {
 			array(
 				'label'     => __( 'Size', 'cmsmasters-elementor' ),
 				'type'      => Controls_Manager::SLIDER,
-				'range'     => array( 'px' => array( 'min' => 16, 'max' => 128, 'step' => 1 ) ),
-				'default'   => array( 'size' => 80, 'unit' => 'px' ),
+				'range'     => array( 'px' => array( 'min' => 10, 'max' => 200, 'step' => 1 ) ),
+				'default'   => array( 'size' => 100, 'unit' => 'px' ),
 				'condition' => array_merge( $toggle_condition, array(
 					'cmsmasters_cursor_inherit_parent' => '',
 					'cmsmasters_cursor_special_active' => 'yes',
@@ -557,10 +557,10 @@ class Module extends Base_Module {
 				'type'       => Controls_Manager::DIMENSIONS,
 				'size_units' => array( 'px', '%' ),
 				'default'    => array(
-					'top'    => '150',
-					'right'  => '150',
-					'bottom' => '150',
-					'left'   => '150',
+					'top'    => '10',
+					'right'  => '10',
+					'bottom' => '10',
+					'left'   => '10',
 					'unit'   => 'px',
 				),
 				'condition'  => array_merge( $toggle_condition, array(
@@ -577,7 +577,7 @@ class Module extends Base_Module {
 			array(
 				'label'      => __( 'Padding', 'cmsmasters-elementor' ),
 				'type'       => Controls_Manager::DIMENSIONS,
-				'size_units' => array( 'px', 'em' ),
+				'size_units' => array( 'px', 'em', 'rem', '%', 'vw' ),
 				'default'    => array(
 					'top'    => '10',
 					'right'  => '10',
@@ -788,7 +788,7 @@ class Module extends Base_Module {
 				'label'      => __( 'Border Radius', 'cmsmasters-elementor' ),
 				'type'       => Controls_Manager::DIMENSIONS,
 				'size_units' => array( 'px', '%' ),
-				'default'    => array( 'top' => '8', 'right' => '8', 'bottom' => '8', 'left' => '8', 'unit' => 'px' ),
+				'default'    => array( 'top' => '10', 'right' => '10', 'bottom' => '10', 'left' => '10', 'unit' => 'px' ),
 				'condition'  => array_merge( $toggle_condition, array(
 					'cmsmasters_cursor_inherit_parent'  => '',
 					'cmsmasters_cursor_special_active'  => 'yes',
@@ -803,8 +803,8 @@ class Module extends Base_Module {
 			array(
 				'label'      => __( 'Padding', 'cmsmasters-elementor' ),
 				'type'       => Controls_Manager::DIMENSIONS,
-				'size_units' => array( 'px' ),
-				'default'    => array( 'top' => '8', 'right' => '8', 'bottom' => '8', 'left' => '8', 'unit' => 'px' ),
+				'size_units' => array( 'px', 'em', 'rem', '%', 'vw' ),
+				'default'    => array( 'top' => '10', 'right' => '10', 'bottom' => '10', 'left' => '10', 'unit' => 'px' ),
 				'condition'  => array_merge( $toggle_condition, array(
 					'cmsmasters_cursor_inherit_parent'  => '',
 					'cmsmasters_cursor_special_active'  => 'yes',
