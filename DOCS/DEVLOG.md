@@ -4,6 +4,63 @@ Living document tracking development sessions, decisions, and iterations.
 
 ---
 
+## 2026-03-10 — Session: 8 fixes/changes
+
+### 1. Remove Custom Cursor from template Page Settings
+**Commit:** `2937b97`
+**Problem:** Custom Cursor section appeared in Page Settings for templates (Header, Footer, Archive, Single, etc.) where it doesn't belong.
+**Fix:** Added `is_template_document()` check in `register_page_cursor_controls()` to skip registration for all template document types. Only `wp-page` and `wp-post` retain page-level cursor settings.
+
+### 2. Fix system cursor non-interactive in dual mode
+**Commit:** `a3c63f1`
+**Problem:** When "Show System Cursor" (dual mode) was enabled, the system cursor stayed as arrow on all elements — never changed to pointer on links, text cursor on inputs, etc.
+**Root cause:** `custom-cursor.css` line 59: `.cmsmasters-cursor-enabled.cmsmasters-cursor-dual * { cursor:default!important }` — `default` forces arrow, overriding browser defaults.
+**Fix:** Changed `cursor:default!important` → `cursor:auto!important`. `auto` lets the browser decide cursor per element type.
+
+### 3. Fix icon cursor rotate/shape not syncing in editor preview
+**Commit:** `10ed778`
+**Problem:** Yulia reported icon cursor Rotate control had no effect. Investigation confirmed it worked on frontend (PHP rendered attrs) but NOT in editor live preview.
+**Root cause:** `cursor-editor-sync.js` was missing `setAttribute` calls for 5 icon cursor attributes: `data-cursor-icon-rotate`, `data-cursor-icon-rotate-hover`, `data-cursor-icon-circle-spacing`, `data-cursor-icon-radius`, `data-cursor-icon-padding`. Image cursor had all these, icon was incomplete.
+**Fix:** Added missing setAttribute calls in `applyIconSettings()`, mirroring the text cursor pattern (circle spacing, radius, padding).
+
+### 4. Update element cursor toggle labels
+**Commit:** `f95aae8`
+**Change:** Unified toggle labels per Yulia's request:
+- Label: "Custom Cursor"
+- Options: "Show" / "Hide" (no more mode-dependent branching)
+- Help text: "When Hide is chosen, system cursor will be shown on this element."
+
+### 5. Unify toggle semantics: 'yes' always means Show
+**Commit:** `4576aea`
+**Problem:** Yulia reported that switching global mode from "Show on Individual Elements" to "Show Sitewide" caused widgets with configured cursors to HIDE the cursor. The same toggle value `'yes'` meant "show" in one mode and "hide" in another.
+**Root cause:** `cmsmasters_cursor_hide` toggle had inverted semantics per mode:
+- Show mode: `'yes'` = show cursor (opt-in)
+- Full mode: `'yes'` = hide cursor (opt-out)
+Switching mode inverted the meaning of saved per-element values.
+**Fix:**
+- `module.php`: Removed full-mode hide block in `apply_core_cursor_attributes()` (no more `data-cursor="hide"` from toggle). Unified toggle condition to `'yes'` = Show.
+- `cursor-editor-sync.js`: Removed full-mode `data-cursor="hide"` on toggle='yes'. Per-element hide remains via `data-cursor="hide"` HTML attribute.
+
+### 6. Fix page-level cursor color ignored on frontend
+**Commit:** `df713a4`
+**Problem:** Yulia set orange Cursor Color in Page Settings, but frontend showed global green color.
+**Root cause:** `get_cursor_context_document()` in `frontend.php` returned `template_document` (header/footer) instead of the actual page document. Since templates no longer have cursor controls (fix #1), template document returned empty color → fallback to global.
+**Fix:** Removed `template_document` priority from `get_cursor_context_document()` — now always reads page document for cursor settings. Affects all page-level settings (color, theme, smoothness, blend, effect, adaptive).
+
+### 7. Fix editor sync: full mode always apply per-element settings
+**Commit:** `8060400`
+**Problem:** Previous toggle unification (fix #5) made `cursor-editor-sync.js` return early for full mode + toggle='', breaking editor preview for elements configured in old toggle semantic.
+**Fix:** Full mode now always falls through to apply special/core settings in editor sync, matching PHP render behavior.
+
+### 8. Remove separator border before Reset button
+**Commit:** `384d8a1`
+**Change:** Removed `'separator' => 'before'` from `cmsmasters_page_cursor_reset` control in page cursor settings per Yulia's request.
+
+### Key insight: template_document leak pattern
+The `template_document` property in `frontend.php` persists through wp_footer after header/footer rendering. Multiple bugs stem from this: editor cursor missing (2026-03-02), page color ignored (this session). The fix pattern is consistent: for cursor settings, always prefer page document over template document.
+
+---
+
 ## 2026-03-10 — Hide page cursor controls on all template types
 
 **Problem:** Page-level cursor controls (Page Settings tab) still appeared on Section, Entry, Product, Product Archive, Product Entry, Event Singular, Event Entry, and Events Archive template documents. Only wp-page and wp-post should show them.
