@@ -1340,7 +1340,7 @@ class Module extends Base_Module {
 	}
 
 	/**
-	 * Check whether a document is a template (header, footer, archive, single).
+	 * Check whether a document is a template type.
 	 *
 	 * Template documents don't support page-level cursor controls.
 	 * Only wp-page and wp-post documents do.
@@ -1354,15 +1354,28 @@ class Module extends Base_Module {
 		}
 
 		$template_types = array(
+			// Elementor core templates.
 			'page',
 			'single',
 			'archive',
 			'header',
 			'footer',
+			'section',
+			'container',
+			// CMSMasters templates.
 			'cmsmasters_header',
 			'cmsmasters_footer',
 			'cmsmasters_singular',
 			'cmsmasters_archive',
+			'cmsmasters_entry',
+			// WooCommerce templates.
+			'cmsmasters_product_singular',
+			'cmsmasters_product_entry',
+			'cmsmasters_product_archive',
+			// Tribe Events templates.
+			'cmsmasters_tribe_events_singular',
+			'cmsmasters_tribe_events_entry',
+			'cmsmasters_tribe_events_archive',
 		);
 
 		return in_array( $document->get_name(), $template_types, true );

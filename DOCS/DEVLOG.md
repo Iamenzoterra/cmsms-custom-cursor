@@ -4,6 +4,39 @@ Living document tracking development sessions, decisions, and iterations.
 
 ---
 
+## 2026-03-10 — Hide page cursor controls on all template types
+
+**Problem:** Page-level cursor controls (Page Settings tab) still appeared on Section, Entry, Product, Product Archive, Product Entry, Event Singular, Event Entry, and Events Archive template documents. Only wp-page and wp-post should show them.
+
+**Fix:** Extended `is_template_document()` in `module.php` with 9 new document types:
+- Elementor core: `section`, `container`
+- CMSMasters: `cmsmasters_entry`
+- WooCommerce: `cmsmasters_product_singular`, `cmsmasters_product_entry`, `cmsmasters_product_archive`
+- Tribe Events: `cmsmasters_tribe_events_singular`, `cmsmasters_tribe_events_entry`, `cmsmasters_tribe_events_archive`
+
+Document names found via `get_name()` methods in the addon's document classes under `modules/*/documents/`.
+
+---
+
+## 2026-03-02 — Fix editor cursor missing (template_document leak)
+
+**Problem:** Cursor DOM elements (`#cmsmasters-cursor-container`, `.cmsmasters-cursor-dot`, `.cmsmasters-cursor-ring`) were not output in the Elementor editor preview iframe. Scripts, CSS, and body classes all loaded correctly — only the HTML from `print_custom_cursor_html()` was missing.
+
+**Diagnosis iterations:**
+1. Added diagnostic `error_log` to `should_enable_custom_cursor()` and `enqueue_preview_scripts()` — confirmed Gate 1 (editor_preview) passes, scripts load
+2. Chrome browser inspection: toggle panel visible, body classes correct, scripts loaded — but cursor container missing from DOM
+3. JavaScript DOM inspection in preview iframe confirmed: `document.getElementById('cmsmasters-cursor-container')` → null
+
+**Root cause:** `get_cursor_context_document()` checked `$this->template_document` before the preview document. During page rendering, Elementor calls `set_template_document()` for header/footer templates. This `template_document` is never cleared, so it leaks into `wp_footer` time. Result: `print_custom_cursor_html()` (wp_footer, priority 5) got a different document than `enqueue_custom_cursor()` (wp_enqueue_scripts), causing `should_enable_custom_cursor()` to return false at HTML output time.
+
+**Why enqueue worked but HTML didn't:** `wp_enqueue_scripts` fires before Elementor renders templates → `template_document` is null → falls through to preview document → cursor enabled. `wp_footer` fires after rendering → `template_document` is set to last header/footer → returns template document → wrong cursor state → cursor disabled.
+
+**Fix:** Swapped priority in `get_cursor_context_document()` — preview document (from `$_GET['elementor-preview']`) now checked first. On frontend (non-editor), `get_preview_document()` returns null so fallback to `template_document` still works.
+
+**Also:** Removed temporary `CURSOR-DIAG` error_log lines from frontend.php and editor.php.
+
+---
+
 ## 2026-03-02 — REVERTED: Kit reads bypass registered control defaults
 
 **Attempted fix:** Replaced `AddonUtils::get_kit_option()` with `$kit->get_settings_for_display()` to respect registered Elementor control defaults. Added `get_kit_cursor_setting()` helper to Frontend and Editor classes. Replaced 10 call sites.
