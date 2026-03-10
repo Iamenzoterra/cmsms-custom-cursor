@@ -4,6 +4,64 @@ Living document tracking development sessions, decisions, and iterations.
 
 ---
 
+## 2026-03-10 — Fix image/icon cursor Normal size ignored on frontend (4 iterations)
+
+**Problem:** User sets Special Cursor → Image → Size (Normal tab) = 80 in editor. Frontend renders `data-cursor-image-size="32"` (fallback). Hover size works correctly (`100`).
+
+**Root cause — two layers:**
+
+1. **Elementor settings filtering:** Both `get_settings_for_display()` AND `get_settings()` filter out slider values whose conditions aren't met. The Normal size slider has `condition: image_state => 'normal'`. When user's last-saved tab was Hover (`image_state = 'hover'`), both methods strip the Normal value.
+
+2. **Elementor rendering cache:** Elementor caches rendered element HTML in postmeta. After deploying PHP changes, the cached HTML is served without re-executing PHP. This made ALL debug attempts invisible — code was correct on disk but old HTML kept being served.
+
+**Iteration history:**
+
+1. **`$element->get_settings()`** — assumed it returns raw values without condition filtering. Still returned fallback `32`. FAIL — `get_settings()` also filters conditioned controls.
+
+2. **Pass `$raw_settings` from parent scope** — `apply_cursor_attributes()` already calls `get_settings()` at line 1437. Passed it to `apply_image_cursor_attributes()` as parameter. Same result — `32`. FAIL — same filtered data.
+
+3. **`$element->get_data()['settings']`** — reads raw `_elementor_data` JSON from database with zero Elementor processing. Code deployed, rsync confirmed, PHP-FPM restarted — still `32`. Spent hours debugging "cache" (query strings, Cloudflare, opcache, FPM restart). All red herrings.
+
+4. **Elementor → Tools → Regenerate Files & Data** — flushed Elementor's rendering cache. `data-cursor-image-size="80"` appeared immediately. The `get_data()` fix from iteration 3 was correct all along.
+
+**Final fix (commit `3aa71ef`):**
+```php
+// In apply_image_cursor_attributes() and apply_icon_cursor_attributes():
+$saved = $element->get_data()['settings'] ?? array();
+$element->add_render_attribute( '_wrapper', 'data-cursor-image-size',
+    $saved['cmsmasters_cursor_size_normal']['size'] ?? 32 );
+```
+
+**Key insights:**
+- `get_settings_for_display()` → filters conditions + parses dynamic tags
+- `get_settings()` → filters conditions + merges defaults (NOT raw!)
+- `get_data()['settings']` → truly raw DB JSON, no filtering whatsoever
+- **Elementor caches rendered HTML** — PHP render changes require "Regenerate Files & Data" to take effect. This is separate from opcache, browser cache, or page cache.
+- Confirmed via debug data attribute: `image_state: "hover"`, but both `size_normal: {size: 80}` and `size_hover: {size: 100}` present in raw data — Elementor DOES save all values regardless of conditions, it just filters them on read.
+
+**Commits:** `1ef02cd`, `6f03430`, `3aa71ef` (fix), `861d3fe` (cleanup)
+
+---
+
+## 2026-03-10 — Fix navigator indicators after toggle unification
+
+**Problem:** After toggle semantics unification (commit `4576aea`, 'yes' always means Show), navigator indicators showed wrong types:
+- Core cursor → indicated as Hidden (grey)
+- Inherit cursor → indicated as Special (green)
+- Only Special showed correctly
+
+**Root cause — two bugs:**
+
+1. **Core→Hidden:** In Full mode branch, `toggle === 'yes'` returned `{ type: 'hidden' }` at Priority 3. After unification, `'yes'` means Show, not Hide.
+
+2. **Inherit→Special:** Special was checked before Inherit (Priority 1 > 2). But `special_active` retains stale `'yes'` when Inherit is enabled — Elementor hides the Special controls UI but doesn't clear saved values.
+
+**Fix:** Unified Full/Show mode logic (both use same toggle semantics now). Changed priority: Inherit → Special → Core. Removed Hidden from legend (no longer applicable after toggle unification).
+
+**Commit:** `cdbcbae`
+
+---
+
 ## 2026-03-10 — Fix pointer cursor missing in dual mode (6 iterations)
 
 **Problem:** With dual mode enabled (system cursor + custom cursor visible simultaneously), the system cursor stayed as arrow on links, buttons, and interactive elements. Three areas affected:
