@@ -1511,11 +1511,17 @@ class Module extends Base_Module {
 
 		$element->add_render_attribute( '_wrapper', 'data-cursor-image', esc_url( $image['url'] ) );
 
+		// Use get_settings() for Normal/Hover sliders to bypass tab state condition.
+		// get_settings_for_display() strips values where cmsmasters_cursor_image_state
+		// condition doesn't match the last-saved tab (Normal vs Hover), causing whichever
+		// tab was NOT active at save time to fall back to defaults on the frontend.
+		$raw = $element->get_settings();
+
 		// Transform values
-		$element->add_render_attribute( '_wrapper', 'data-cursor-image-size', $settings['cmsmasters_cursor_size_normal']['size'] ?? 32 );
-		$element->add_render_attribute( '_wrapper', 'data-cursor-image-size-hover', $settings['cmsmasters_cursor_size_hover']['size'] ?? 48 );
-		$element->add_render_attribute( '_wrapper', 'data-cursor-image-rotate', $settings['cmsmasters_cursor_rotate_normal']['size'] ?? 0 );
-		$element->add_render_attribute( '_wrapper', 'data-cursor-image-rotate-hover', $settings['cmsmasters_cursor_rotate_hover']['size'] ?? 0 );
+		$element->add_render_attribute( '_wrapper', 'data-cursor-image-size', $raw['cmsmasters_cursor_size_normal']['size'] ?? 32 );
+		$element->add_render_attribute( '_wrapper', 'data-cursor-image-size-hover', $raw['cmsmasters_cursor_size_hover']['size'] ?? 48 );
+		$element->add_render_attribute( '_wrapper', 'data-cursor-image-rotate', $raw['cmsmasters_cursor_rotate_normal']['size'] ?? 0 );
+		$element->add_render_attribute( '_wrapper', 'data-cursor-image-rotate-hover', $raw['cmsmasters_cursor_rotate_hover']['size'] ?? 0 );
 
 		// Effect
 		$effect = ! empty( $settings['cmsmasters_cursor_effect'] ) ? $settings['cmsmasters_cursor_effect'] : '';
@@ -1649,11 +1655,15 @@ class Module extends Base_Module {
 		$icon_bg = $this->resolve_color_with_fallback( $globals, 'cmsmasters_cursor_icon_bg_color', $settings, '#ffffff' );
 		$element->add_render_attribute( '_wrapper', 'data-cursor-icon-bg', $icon_bg );
 
+		// Use get_settings() for Normal/Hover sliders to bypass tab state condition
+		// (same issue as image cursor — see apply_image_cursor_attributes)
+		$raw_all = $element->get_settings();
+
 		// Transform
-		$element->add_render_attribute( '_wrapper', 'data-cursor-icon-size', $settings['cmsmasters_cursor_icon_size_normal']['size'] ?? 32 );
-		$element->add_render_attribute( '_wrapper', 'data-cursor-icon-rotate', $settings['cmsmasters_cursor_icon_rotate_normal']['size'] ?? 0 );
-		$element->add_render_attribute( '_wrapper', 'data-cursor-icon-size-hover', $settings['cmsmasters_cursor_icon_size_hover']['size'] ?? 48 );
-		$element->add_render_attribute( '_wrapper', 'data-cursor-icon-rotate-hover', $settings['cmsmasters_cursor_icon_rotate_hover']['size'] ?? 0 );
+		$element->add_render_attribute( '_wrapper', 'data-cursor-icon-size', $raw_all['cmsmasters_cursor_icon_size_normal']['size'] ?? 32 );
+		$element->add_render_attribute( '_wrapper', 'data-cursor-icon-rotate', $raw_all['cmsmasters_cursor_icon_rotate_normal']['size'] ?? 0 );
+		$element->add_render_attribute( '_wrapper', 'data-cursor-icon-size-hover', $raw_all['cmsmasters_cursor_icon_size_hover']['size'] ?? 48 );
+		$element->add_render_attribute( '_wrapper', 'data-cursor-icon-rotate-hover', $raw_all['cmsmasters_cursor_icon_rotate_hover']['size'] ?? 0 );
 
 		// Shape
 		$fit_circle = $settings['cmsmasters_cursor_icon_fit_circle'] ?? 'yes';
