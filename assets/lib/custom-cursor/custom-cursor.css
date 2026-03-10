@@ -70,6 +70,12 @@ body.cmsmasters-cursor-on-light {
     cursor:none!important
 }
 
+/* Widget-only + dual mode: restore native cursor inside show zones */
+.cmsmasters-cursor-widget-only.cmsmasters-cursor-dual [data-cursor-show],
+.cmsmasters-cursor-widget-only.cmsmasters-cursor-dual [data-cursor-show] * {
+    cursor:auto!important
+}
+
 /* ==========================================================================
    Plugin & UI Overrides (auto-hide, datepicker, select2, admin bar, touch)
    ========================================================================== */
