@@ -234,8 +234,8 @@ body.cmsmasters-cursor-hidden .cmsmasters-cursor {
 }
 
 /* System cursor fallback when custom cursor hides (form zones, video/iframe) */
-body.cmsmasters-cursor-hidden,
-body.cmsmasters-cursor-hidden * {
+body.cmsmasters-cursor-hidden:not(.cmsmasters-cursor-dual),
+body.cmsmasters-cursor-hidden:not(.cmsmasters-cursor-dual) * {
     cursor:default!important
 }
 
