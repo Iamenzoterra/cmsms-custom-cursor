@@ -1262,7 +1262,7 @@ class Frontend extends Base_App {
 
 		$raw_toggle = '';
 		if ( $document ) {
-			$raw_toggle = (string) $document->get_settings_for_display( 'cmsmasters_page_cursor_disable' );
+			$raw_toggle = (string) $document->get_settings( 'cmsmasters_page_cursor_disable' );
 		}
 
 		if ( '' === $mode ) {
@@ -1302,7 +1302,7 @@ class Frontend extends Base_App {
 		$document = $this->get_cursor_context_document();
 
 		if ( $document ) {
-			$page_value = $document->get_settings_for_display( 'cmsmasters_page_cursor_' . $page_key );
+			$page_value = $document->get_settings( 'cmsmasters_page_cursor_' . $page_key );
 			if ( ! empty( $page_value ) ) {
 				return $page_value;
 			}
@@ -1745,7 +1745,26 @@ class Frontend extends Base_App {
 		// Page-level color override (takes priority over global)
 		$document = $this->get_cursor_context_document();
 		if ( $document ) {
-			$page_color = $document->get_settings_for_display( 'cmsmasters_page_cursor_color' );
+			// Read raw page settings (controls not registered on frontend, so get_settings_for_display returns null)
+			$page_settings = $document->get_settings();
+
+			// Check global color reference first (user picked from globe icon)
+			$page_global_ref = isset( $page_settings['__globals__']['cmsmasters_page_cursor_color'] )
+				? $page_settings['__globals__']['cmsmasters_page_cursor_color']
+				: '';
+
+			if ( ! empty( $page_global_ref ) ) {
+				$resolved = $this->resolve_kit_global_color( $page_global_ref );
+				if ( ! empty( $resolved ) ) {
+					return $this->validate_hex_color( $resolved );
+				}
+			}
+
+			// Direct hex color
+			$page_color = isset( $page_settings['cmsmasters_page_cursor_color'] )
+				? $page_settings['cmsmasters_page_cursor_color']
+				: '';
+
 			if ( ! empty( $page_color ) ) {
 				return $this->validate_hex_color( $page_color );
 			}

@@ -4,6 +4,77 @@ Living document tracking development sessions, decisions, and iterations.
 
 ---
 
+## 2026-03-10 — Fix pointer cursor missing in dual mode (6 iterations)
+
+**Problem:** With dual mode enabled (system cursor + custom cursor visible simultaneously), the system cursor stayed as arrow on links, buttons, and interactive elements. Three areas affected:
+1. WordPress admin bar on frontend — links/buttons show arrow instead of pointer
+2. Frontend nav links and buttons inside `[data-cursor-show]` zones
+3. Elementor editor handles (overlay buttons: edit, duplicate, delete, add-section)
+
+Site runs in **widget-only + dual mode** (`cmsmasters-cursor-widget-only` + `cmsmasters-cursor-dual` on body).
+
+**Root cause:** Multiple CSS rules with `cursor:none!important` or `cursor:default!important` applied globally, with no dual mode exception. In `cursor-editor-sync.js`, injected `cursor:inherit!important` on `*` also overrode Elementor's `cursor:pointer` on editor handles.
+
+**Iteration history:**
+
+1. **`cursor:auto` override approach** — Changed admin bar `cursor:default` → `cursor:auto`, added editor overlay rules. FAILED: site uses `cmsmasters-cursor-widget-only` not `cmsmasters-cursor-enabled`, so selectors didn't match.
+
+2. **Widget-only dual override** — Added `.cmsmasters-cursor-widget-only.cmsmasters-cursor-dual [data-cursor-show] * { cursor:auto!important }`. FAILED: `cursor:auto!important` on div/span/button resolves to default arrow, NOT pointer. `auto` only gives pointer on `<a>` tags natively.
+
+3. **`:not(.cmsmasters-cursor-dual)` on cursor:none rules** — Instead of hiding then overriding back, simply don't apply `cursor:none` when dual. Partially worked, but `body.cmsmasters-cursor-hidden * { cursor:default!important }` still forced arrow.
+
+4. **cursor-hidden fix** — Added `:not(.cmsmasters-cursor-dual)` to cursor-hidden rule. Frontend nav links showed `cursor:pointer` ✅. Admin bar confirmed working ✅.
+
+5. **Admin bar scoping** — Scoped admin bar `cursor:auto` rule to non-dual only (unnecessary in dual mode). Cleaned up leftover editor overlay rules.
+
+6. **cursor-editor-sync.js fix** — Found that `cursor-editor-sync.js` injects `body.cmsmasters-cursor-disabled * { cursor:inherit!important }` into preview iframe, overriding Elementor's `cursor:pointer` on editor handles. Added `:not(.cmsmasters-cursor-dual)` to all injected CSS rules. Editor handles now show pointer ✅.
+
+**Final approach — `:not(.cmsmasters-cursor-dual)` pattern:**
+
+In `custom-cursor.css`:
+```css
+/* Don't hide system cursor in dual mode */
+.cmsmasters-cursor-enabled:not(.cmsmasters-cursor-dual),
+.cmsmasters-cursor-enabled:not(.cmsmasters-cursor-dual) * { cursor:none!important }
+
+.cmsmasters-cursor-widget-only:not(.cmsmasters-cursor-dual) [data-cursor-show],
+.cmsmasters-cursor-widget-only:not(.cmsmasters-cursor-dual) [data-cursor-show] * { cursor:none!important }
+
+body.cmsmasters-cursor-hidden:not(.cmsmasters-cursor-dual),
+body.cmsmasters-cursor-hidden:not(.cmsmasters-cursor-dual) * { cursor:default!important }
+```
+
+In `cursor-editor-sync.js` (injected CSS):
+```css
+body.cmsmasters-cursor-disabled:not(.cmsmasters-cursor-dual) { cursor: auto !important; }
+body.cmsmasters-cursor-disabled:not(.cmsmasters-cursor-dual) * { cursor: inherit !important; }
+```
+
+**Key insights:**
+- `cursor:auto!important` does NOT equal "restore original" — on non-`<a>` elements (div, span, button), `auto` resolves to arrow, overriding any `cursor:pointer` from other stylesheets
+- The correct approach: don't apply cursor-hiding rules at all in dual mode, using `:not(.cmsmasters-cursor-dual)`, so ALL original CSS cursor values from WordPress/Elementor are preserved untouched
+- Three independent sources of cursor override exist: (1) `custom-cursor.css`, (2) `body.cmsmasters-cursor-hidden` rule, (3) `cursor-editor-sync.js` injected styles — ALL three need the dual mode exclusion
+- Browser caching: CSS `?ver=` param doesn't change between deploys → need Ctrl+Shift+R to verify
+
+**Commits:** `3f26436`, `e72628e`, `9cafff6`, `e8a5288`, `52a55e9`, `323b25b`
+
+---
+
+## 2026-03-10 — Fix page cursor settings ignored on frontend
+
+**Problem:** Page-level cursor settings (color, theme, blend, show/hide) work in Elementor editor but are silently ignored on the frontend.
+
+**Root cause:** All three page-setting read sites used `$document->get_settings_for_display()`, which only returns values for **registered** controls. Page cursor controls register via `elementor/element/after_section_end` — an editor-only hook. On the frontend, these controls aren't in Elementor's control registry, so `get_settings_for_display()` returns null for all of them.
+
+**Fix:** Switched to `$document->get_settings()` which reads raw `_elementor_page_settings` meta regardless of registered controls. Three call sites changed:
+1. `get_document_cursor_state()` (line 1265) — page show/hide toggle
+2. `get_page_cursor_setting()` (line 1305) — theme, blend, etc.
+3. `get_cursor_color()` (lines 1747-1771) — page color override. Additionally handles `__globals__` for globe-picked global colors, mirroring the Kit-level pattern already in place.
+
+**Key insight:** `get_settings_for_display()` depends on control registration; `get_settings()` reads raw post meta. For controls registered only in editor context, always use `get_settings()` on frontend.
+
+---
+
 ## 2026-03-10 — Session: 8 fixes/changes
 
 ### 1. Remove Custom Cursor from template Page Settings
