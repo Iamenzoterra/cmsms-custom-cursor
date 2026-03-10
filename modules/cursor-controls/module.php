@@ -1517,6 +1517,11 @@ class Module extends Base_Module {
 		// tab was NOT active at save time to fall back to defaults on the frontend.
 		$raw = $element->get_settings();
 
+		// TEMP DEBUG: show raw value type for cursor size
+		$raw_val = $raw['cmsmasters_cursor_size_normal'] ?? 'KEY_MISSING';
+		$element->add_render_attribute( '_wrapper', 'data-cursor-debug-type', gettype( $raw_val ) );
+		$element->add_render_attribute( '_wrapper', 'data-cursor-debug-val', is_array( $raw_val ) ? wp_json_encode( $raw_val ) : (string) $raw_val );
+
 		// Transform values
 		$element->add_render_attribute( '_wrapper', 'data-cursor-image-size', $raw['cmsmasters_cursor_size_normal']['size'] ?? 32 );
 		$element->add_render_attribute( '_wrapper', 'data-cursor-image-size-hover', $raw['cmsmasters_cursor_size_hover']['size'] ?? 48 );
