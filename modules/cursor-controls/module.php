@@ -1517,9 +1517,15 @@ class Module extends Base_Module {
 		// default merging, which both strip tab-conditioned slider values.
 		$saved = $element->get_data()['settings'] ?? array();
 
-		// DEBUG: dump cursor size keys to error log
-		$cursor_keys = array_filter( array_keys( $saved ), function( $k ) { return strpos( $k, 'cmsmasters_cursor_size' ) === 0 || strpos( $k, 'cmsmasters_cursor_rotate' ) === 0; } );
-		error_log( '[CURSOR SIZE DEBUG] element=' . $element->get_id() . ' keys=' . wp_json_encode( $cursor_keys ) . ' size_normal=' . wp_json_encode( $saved['cmsmasters_cursor_size_normal'] ?? 'MISSING' ) . ' size_hover=' . wp_json_encode( $saved['cmsmasters_cursor_size_hover'] ?? 'MISSING' ) );
+		// TEMP DEBUG: dump size keys from raw element data to HTML attribute
+		$size_keys = array_filter( array_keys( $saved ), function( $k ) {
+			return strpos( $k, 'cursor_size' ) !== false || strpos( $k, 'image_state' ) !== false;
+		} );
+		$debug = array();
+		foreach ( $size_keys as $k ) {
+			$debug[ $k ] = $saved[ $k ];
+		}
+		$element->add_render_attribute( '_wrapper', 'data-cursor-debug', wp_json_encode( $debug ) );
 
 		$element->add_render_attribute( '_wrapper', 'data-cursor-image-size', $saved['cmsmasters_cursor_size_normal']['size'] ?? 32 );
 		$element->add_render_attribute( '_wrapper', 'data-cursor-image-size-hover', $saved['cmsmasters_cursor_size_hover']['size'] ?? 48 );
