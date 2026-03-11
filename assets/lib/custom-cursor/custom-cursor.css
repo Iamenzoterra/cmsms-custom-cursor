@@ -111,10 +111,12 @@ body.cmsmasters-cursor-on-light {
     cursor:pointer!important
 }
 
-/* Admin bar: restore visible cursor only in non-dual mode
+/* Admin bar: restore visible cursor in both full and widget-only modes.
    (dual mode excluded from cursor:none via :not(), so original WP styles apply) */
 .cmsmasters-cursor-enabled:not(.cmsmasters-cursor-dual) #wpadminbar,
-.cmsmasters-cursor-enabled:not(.cmsmasters-cursor-dual) #wpadminbar * {
+.cmsmasters-cursor-enabled:not(.cmsmasters-cursor-dual) #wpadminbar *,
+.cmsmasters-cursor-widget-only:not(.cmsmasters-cursor-dual) #wpadminbar,
+.cmsmasters-cursor-widget-only:not(.cmsmasters-cursor-dual) #wpadminbar * {
     cursor:auto!important
 }
 
