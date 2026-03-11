@@ -722,8 +722,10 @@
     var SpecialCursorManager = {
         _type: null,
         _key: null,
+        _zoneEl: null,  // DOM element with cursor data-attributes (for editor live-refresh)
 
         activate: function(type, config) {
+            this._zoneEl = config.zoneEl || null;
             var key = this._makeKey(type, config);
             if (this._type === type && this._key === key) {
                 // Same cursor identity — just update mutable props without DOM recreation
@@ -817,6 +819,7 @@
             showDefaultCursor();
             this._type = null;
             this._key = null;
+            this._zoneEl = null;
         },
 
         getActive: function() {
@@ -825,6 +828,60 @@
 
         isActive: function() {
             return this._type !== null;
+        },
+
+        /**
+         * Re-read data-attributes from the current zone element and update
+         * closure-level cursor properties. Called by editor-sync after it
+         * changes attributes on a live element so the running cursor picks
+         * up new values without requiring mouse leave/re-enter.
+         *
+         * @param {Element} [el] - If provided, only refresh when el matches
+         *                         the current zone element.
+         */
+        refreshFromDOM: function(el) {
+            if (!this._type || !this._zoneEl) return;
+            if (el && el !== this._zoneEl) return;
+            var z = this._zoneEl;
+            switch (this._type) {
+                case 'image':
+                    var imgSize = parseInt(z.getAttribute('data-cursor-image-size')) || 80;
+                    this._updateProps('image', {
+                        src: z.getAttribute('data-cursor-image'),
+                        size: imgSize,
+                        sizeHover: parseInt(z.getAttribute('data-cursor-image-size-hover')) || imgSize,
+                        rotate: parseInt(z.getAttribute('data-cursor-image-rotate')) || 0,
+                        rotateHover: parseInt(z.getAttribute('data-cursor-image-rotate-hover')) || 0,
+                        effect: z.getAttribute('data-cursor-image-effect') || ''
+                    });
+                    break;
+                case 'icon':
+                    this._updateProps('icon', {
+                        content: z.getAttribute('data-cursor-icon'),
+                        styles: {
+                            color: z.getAttribute('data-cursor-icon-color') || '#000000',
+                            bgColor: z.getAttribute('data-cursor-icon-bg') || '#ffffff',
+                            preserveColors: z.getAttribute('data-cursor-icon-preserve') === 'yes',
+                            size: parseInt(z.getAttribute('data-cursor-icon-size')) || 32,
+                            sizeHover: parseInt(z.getAttribute('data-cursor-icon-size-hover')) || 48,
+                            rotate: parseInt(z.getAttribute('data-cursor-icon-rotate')) || 0,
+                            rotateHover: parseInt(z.getAttribute('data-cursor-icon-rotate-hover')) || 0,
+                            fitCircle: z.getAttribute('data-cursor-icon-circle') === 'yes',
+                            circleSpacing: z.hasAttribute('data-cursor-icon-circle-spacing') ? parseInt(z.getAttribute('data-cursor-icon-circle-spacing')) : 10,
+                            borderRadius: z.getAttribute('data-cursor-icon-radius') || '',
+                            padding: z.getAttribute('data-cursor-icon-padding') || '',
+                            effect: z.getAttribute('data-cursor-icon-effect') || ''
+                        }
+                    });
+                    break;
+                // Text cursor: no mutable size/hover props, effect only
+                case 'text':
+                    this._updateProps('text', {
+                        content: z.getAttribute('data-cursor-text'),
+                        styles: { effect: z.getAttribute('data-cursor-text-effect') || '' }
+                    });
+                    break;
+            }
         },
 
         _removeCurrentType: function() {
@@ -1115,6 +1172,16 @@
                 removeDebugOverlay();
             }
             return debugMode;
+        },
+        /**
+         * Re-read cursor data-attributes from a zone element and update
+         * the running cursor. Used by cursor-editor-sync.js for live
+         * slider feedback without requiring mouse leave/re-enter.
+         *
+         * @param {Element} el - The zone element whose attributes changed.
+         */
+        refreshZone: function(el) {
+            SpecialCursorManager.refreshFromDOM(el);
         }
     };
 
@@ -1815,7 +1882,7 @@
         // IMAGE CURSOR
         if (specialType === 'image') {
             var imgSrc = imageEl.getAttribute('data-cursor-image');
-            var imgSize = parseInt(imageEl.getAttribute('data-cursor-image-size')) || 32;
+            var imgSize = parseInt(imageEl.getAttribute('data-cursor-image-size')) || 80;
             var imgSizeHover = parseInt(imageEl.getAttribute('data-cursor-image-size-hover')) || imgSize;
             var imgRotate = parseInt(imageEl.getAttribute('data-cursor-image-rotate')) || 0;
             var imgRotateHover = parseInt(imageEl.getAttribute('data-cursor-image-rotate-hover')) || imgRotate;
@@ -1834,7 +1901,8 @@
                 sizeHover: imgSizeHover,
                 rotate: imgRotate,
                 rotateHover: imgRotateHover,
-                effect: imgEffect
+                effect: imgEffect,
+                zoneEl: imageEl
             });
 
             // Check hover state: if current element matches hover selectors, set hover
@@ -1907,7 +1975,8 @@
 
             SpecialCursorManager.activate('text', {
                 content: txtContent,
-                styles: txtStyles
+                styles: txtStyles,
+                zoneEl: textEl
             });
 
             // Handle blend mode for text cursor (widget boundary logic)
@@ -1969,7 +2038,8 @@
 
             SpecialCursorManager.activate('icon', {
                 content: icoContent,
-                styles: icoStyles
+                styles: icoStyles,
+                zoneEl: iconElSpecial
             });
 
             // Check hover state: if current element matches hover selectors, set hover

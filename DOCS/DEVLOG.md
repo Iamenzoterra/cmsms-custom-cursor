@@ -4,6 +4,59 @@ Living document tracking development sessions, decisions, and iterations.
 
 ---
 
+## 2026-03-11 — Fix image cursor hover size: fallbacks, editor live-update, cache docs
+
+**Problem (reported by Yulia):** Two issues with image cursor hover:
+1. **Editor:** When editing hover size, cursor appears very small regardless of value set. Normal after re-save and refresh.
+2. **Frontend:** Normal=80, Hover=50 configured, but cursor GROWS on hover instead of shrinking.
+
+**Diagnosis:** Inspected live appointment page via Chrome — rendered attributes:
+```
+data-cursor-image-size="32"        (expected: 80)
+data-cursor-image-size-hover="100" (expected: 50)
+```
+This explains growth: 32→100 on hover. Three separate root causes identified:
+
+### Fix 1: Fallback values mismatch with control defaults
+
+**Root cause:** PHP and JS fallback values (32/48) didn't match Elementor control defaults (80/100). When user never explicitly moves a slider (displays default 80), Elementor doesn't store the value. Raw `get_data()['settings']` returns null → fallback kicks in → wrong size.
+
+| Control | Elementor default | Old fallback | Fixed |
+|---------|-------------------|-------------|-------|
+| `size_normal` | 80px | 32px | 80px |
+| `size_hover` | 100px | 48px | 100px |
+
+Note: Icon cursor fallbacks (32/48) already matched their control defaults — no change needed.
+
+**Changed in 3 files:**
+- `module.php:1522-1523` — PHP render fallbacks
+- `cursor-editor-sync.js:695-696` — editor sync fallbacks
+- `custom-cursor.js:1818` — frontend JS fallback
+
+### Fix 2: Editor doesn't live-update cursor on slider change
+
+**Root cause:** `cursor-editor-sync.js` updates data-attributes on the DOM element, but `custom-cursor.js` reads attributes once (on mouse enter) and stores them in closure variables. Changing a slider in editor has no effect until mouse leaves and re-enters the zone.
+
+**Solution:** Direct API call pattern (not custom events — avoids event coupling):
+1. Added `_zoneEl` property to `SpecialCursorManager` — stores reference to the DOM element with cursor data-attributes
+2. Added `refreshFromDOM(el)` method — re-reads all data-attributes from zone element and updates closure vars via `_updateProps()`. Handles image, icon, and text cursor types.
+3. Exposed `window.cmsmastersCursor.refreshZone(el)` — public API for editor-sync
+4. `cursor-editor-sync.js` calls `refreshZone(element)` after `applySettings()` updates attributes
+
+Flow: slider change → broadcastCursorChange → postMessage → applySettings (sets attrs) → refreshZone (updates closure vars) → next RAF frame renders new size.
+
+### Fix 3: Elementor rendering cache in deployment docs
+
+**Root cause of "works after re-save":** Elementor caches rendered element HTML in postmeta. PHP code changes don't take effect until cache is flushed via Elementor → Tools → Regenerate Files & Data. This was already discovered in the 2026-03-10 session but not documented in deployment workflow.
+
+**Added to `DOCS/merge-rules.md`:**
+- New critical rule #4: "Regenerate after PHP changes"
+- Expanded troubleshooting: "Changes not visible" now lists Elementor rendering cache as first check
+
+**Key insight:** The appointment page still showed old fallback values (32/100) from before the 2026-03-10 fix because Regenerate was never run for that page. The `get_data()['settings']` fix was correct but invisible due to cache.
+
+---
+
 ## 2026-03-10 — Update cursor control defaults, ranges and size_units
 
 **Change:** Updated Elementor control parameters in `modules/cursor-controls/module.php` per design spec.

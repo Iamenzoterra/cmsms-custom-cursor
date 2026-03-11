@@ -1519,8 +1519,8 @@ class Module extends Base_Module {
 
 
 
-		$element->add_render_attribute( '_wrapper', 'data-cursor-image-size', $saved['cmsmasters_cursor_size_normal']['size'] ?? 32 );
-		$element->add_render_attribute( '_wrapper', 'data-cursor-image-size-hover', $saved['cmsmasters_cursor_size_hover']['size'] ?? 48 );
+		$element->add_render_attribute( '_wrapper', 'data-cursor-image-size', $saved['cmsmasters_cursor_size_normal']['size'] ?? 80 );
+		$element->add_render_attribute( '_wrapper', 'data-cursor-image-size-hover', $saved['cmsmasters_cursor_size_hover']['size'] ?? 100 );
 		$element->add_render_attribute( '_wrapper', 'data-cursor-image-rotate', $saved['cmsmasters_cursor_rotate_normal']['size'] ?? 0 );
 		$element->add_render_attribute( '_wrapper', 'data-cursor-image-rotate-hover', $saved['cmsmasters_cursor_rotate_hover']['size'] ?? 0 );
 

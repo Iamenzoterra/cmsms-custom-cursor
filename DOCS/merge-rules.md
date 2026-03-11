@@ -119,8 +119,9 @@ git push
 1. **Always build first** — server reads ONLY minified files (`.min.js`, `.min.css`)
 2. **Never edit `.min.*` directly** — they're auto-generated
 3. **Test before merge** — verify cursor works in Elementor editor + frontend
-4. **Keep dev repo clean** — `/commit` folder is temporary, git-ignored
-5. **STOP after preparing `commit/`** — do NOT copy to production repo, do NOT commit/push to production. Only do exactly what these rules describe, nothing more. The user handles production deployment manually.
+4. **Regenerate after PHP changes** — Elementor caches rendered HTML. After deploying any PHP change, run **Elementor → Tools → Regenerate Files & Data** on the site.
+5. **Keep dev repo clean** — `/commit` folder is temporary, git-ignored
+6. **STOP after preparing `commit/`** — do NOT copy to production repo, do NOT commit/push to production. Only do exactly what these rules describe, nothing more. The user handles production deployment manually.
 
 ### 🔄 Two-Repository Workflow
 
@@ -185,6 +186,9 @@ Build completes normally. The warning is only from `clean` step; all subsequent 
 - Build should create files newer than source files
 
 ### Changes not visible on site
+- **Elementor rendering cache:** After PHP changes, Elementor serves cached HTML.
+  Go to **Elementor → Tools → Regenerate Files & Data** to flush it.
+  This is separate from browser cache, opcache, or page cache plugins.
 - Clear WordPress cache (if caching plugin active)
 - Hard refresh browser (Ctrl+F5)
 - Check if minified files were copied to production repo

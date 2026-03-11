@@ -672,6 +672,11 @@
         } else {
             applyCoreSettings(element, settings);
         }
+
+        // Notify running cursor to re-read attributes for live slider feedback
+        if (window.cmsmastersCursor && window.cmsmastersCursor.refreshZone) {
+            window.cmsmastersCursor.refreshZone(element);
+        }
     }
 
     function findElement(id) {
@@ -692,8 +697,8 @@
         var url = s.cmsmasters_cursor_image && s.cmsmasters_cursor_image.url;
         if (!url) return;
         el.setAttribute('data-cursor-image', url);
-        el.setAttribute('data-cursor-image-size', getSize(s.cmsmasters_cursor_size_normal, 32));
-        el.setAttribute('data-cursor-image-size-hover', getSize(s.cmsmasters_cursor_size_hover, 48));
+        el.setAttribute('data-cursor-image-size', getSize(s.cmsmasters_cursor_size_normal, 80));
+        el.setAttribute('data-cursor-image-size-hover', getSize(s.cmsmasters_cursor_size_hover, 100));
         el.setAttribute('data-cursor-image-rotate', getSize(s.cmsmasters_cursor_rotate_normal, 0));
         el.setAttribute('data-cursor-image-rotate-hover', getSize(s.cmsmasters_cursor_rotate_hover, 0));
         if (s.cmsmasters_cursor_effect) el.setAttribute('data-cursor-image-effect', s.cmsmasters_cursor_effect);
