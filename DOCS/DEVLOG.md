@@ -4,6 +4,36 @@ Living document tracking development sessions, decisions, and iterations.
 
 ---
 
+## 2026-03-11 — Fix system cursor hidden on special cursor zones when preview OFF
+
+**Problem (reported by Yulia):** In the Elementor editor with Custom Cursor Preview OFF, elements with special cursor (image/text/icon) show no cursor at all — even the system cursor is hidden.
+
+**Root cause — two unscoped CSS rules:**
+
+1. **`custom-cursor.css`** — Three `cursor:none!important` rules on attribute selectors were completely unscoped:
+   ```css
+   [data-cursor-image], [data-cursor-image] * { cursor:none!important }
+   [data-cursor-text], [data-cursor-text] * { cursor:none!important }
+   [data-cursor-icon], [data-cursor-icon] * { cursor:none!important }
+   ```
+   These applied ALWAYS — regardless of dual mode, cursor-disabled state, or any body class.
+
+2. **`cursor-editor-sync.js`** — Override rules for `cursor-disabled` state had `:not(.cmsmasters-cursor-dual)`, so in dual mode they didn't apply:
+   ```css
+   body.cmsmasters-cursor-disabled:not(.cmsmasters-cursor-dual) * { cursor: inherit !important; }
+   ```
+   Result: in dual mode + preview OFF, no CSS restored the system cursor on special zones.
+
+**Fix:**
+
+1. **`custom-cursor.css`** — Scoped all three special cursor `cursor:none` rules with `body:not(.cmsmasters-cursor-dual)`. In dual mode, system cursor stays visible on special zones (consistent with dual mode intent).
+
+2. **`cursor-editor-sync.js`** — Removed `:not(.cmsmasters-cursor-dual)` from ALL `cursor-disabled` rules. When preview is OFF, system cursor must be visible regardless of any other mode. Also added explicit override for `[data-cursor-image/text/icon]` attribute selectors with higher specificity (`body.cmsmasters-cursor-disabled [data-cursor-image]` > `[data-cursor-image]`).
+
+**Key insight:** `cursor-disabled` is an editor-only concept meaning "show system cursor instead of custom cursor." Dual mode is irrelevant in this context — dual mode controls whether system cursor shows ALONGSIDE custom cursor. When there's no custom cursor (preview OFF), the system cursor must always be visible.
+
+---
+
 ## 2026-03-11 — Fix image cursor hover size: fallbacks, editor live-update, cache docs
 
 **Problem (reported by Yulia):** Two issues with image cursor hover:

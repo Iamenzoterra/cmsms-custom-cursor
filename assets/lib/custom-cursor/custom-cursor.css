@@ -281,8 +281,9 @@ body.cmsmasters-cursor-theme-dot.cmsmasters-cursor-hover .cmsmasters-cursor-dot 
     object-fit:contain
 }
 
-[data-cursor-image],
-[data-cursor-image] * {
+/* Hide system cursor on special cursor zones (skip in dual mode — system cursor stays visible) */
+body:not(.cmsmasters-cursor-dual) [data-cursor-image],
+body:not(.cmsmasters-cursor-dual) [data-cursor-image] * {
     cursor:none!important
 }
 
@@ -323,8 +324,8 @@ body.cmsmasters-cursor-blend-strong .cmsmasters-cursor-image {
     box-sizing:border-box
 }
 
-[data-cursor-text],
-[data-cursor-text] * {
+body:not(.cmsmasters-cursor-dual) [data-cursor-text],
+body:not(.cmsmasters-cursor-dual) [data-cursor-text] * {
     cursor:none!important
 }
 
@@ -364,8 +365,8 @@ body.cmsmasters-cursor-blend-strong .cmsmasters-cursor-text-el {
     fill:currentColor
 }
 
-[data-cursor-icon],
-[data-cursor-icon] * {
+body:not(.cmsmasters-cursor-dual) [data-cursor-icon],
+body:not(.cmsmasters-cursor-dual) [data-cursor-icon] * {
     cursor:none!important
 }
 

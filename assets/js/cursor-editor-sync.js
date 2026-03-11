@@ -84,12 +84,22 @@
         '  pointer-events: none !important;',
         '}',
         '',
-        'body.cmsmasters-cursor-disabled:not(.cmsmasters-cursor-dual) { cursor: auto !important; }',
-        'body.cmsmasters-cursor-disabled:not(.cmsmasters-cursor-dual) * { cursor: inherit !important; }',
-        // Widget-only show zones have higher specificity (0,2,0) — override them explicitly
-        'body.cmsmasters-cursor-disabled:not(.cmsmasters-cursor-dual).cmsmasters-cursor-widget-only [data-cursor-show],',
-        'body.cmsmasters-cursor-disabled:not(.cmsmasters-cursor-dual).cmsmasters-cursor-widget-only [data-cursor-show] * {',
+        // When preview is OFF, ALWAYS show system cursor regardless of dual mode
+        'body.cmsmasters-cursor-disabled { cursor: auto !important; }',
+        'body.cmsmasters-cursor-disabled * { cursor: inherit !important; }',
+        // Widget-only show zones have higher specificity — override them explicitly
+        'body.cmsmasters-cursor-disabled.cmsmasters-cursor-widget-only [data-cursor-show],',
+        'body.cmsmasters-cursor-disabled.cmsmasters-cursor-widget-only [data-cursor-show] * {',
         '  cursor: inherit !important;',
+        '}',
+        // Special cursor zones apply cursor:none via attribute selectors — override those too
+        'body.cmsmasters-cursor-disabled [data-cursor-image],',
+        'body.cmsmasters-cursor-disabled [data-cursor-image] *,',
+        'body.cmsmasters-cursor-disabled [data-cursor-text],',
+        'body.cmsmasters-cursor-disabled [data-cursor-text] *,',
+        'body.cmsmasters-cursor-disabled [data-cursor-icon],',
+        'body.cmsmasters-cursor-disabled [data-cursor-icon] * {',
+        '  cursor: auto !important;',
         '}',
         '',
         // Panel - always visible, draggable
