@@ -84,21 +84,28 @@
         '  pointer-events: none !important;',
         '}',
         '',
-        // When preview is OFF, ALWAYS show system cursor regardless of dual mode
-        'body.cmsmasters-cursor-disabled { cursor: auto !important; }',
-        'body.cmsmasters-cursor-disabled * { cursor: inherit !important; }',
+        // When preview is OFF, restore system cursor.
+        // MUST keep :not(.cmsmasters-cursor-dual) — otherwise cursor:inherit on *
+        // overrides cursor:pointer on links/buttons (pointer fix regression, 2026-03-10).
+        // In dual mode, cursor:none rules in custom-cursor.css are already scoped with
+        // body:not(.cmsmasters-cursor-dual), so no override needed here.
+        'body.cmsmasters-cursor-disabled:not(.cmsmasters-cursor-dual) { cursor: auto !important; }',
+        'body.cmsmasters-cursor-disabled:not(.cmsmasters-cursor-dual) * { cursor: inherit !important; }',
         // Widget-only show zones have higher specificity — override them explicitly
-        'body.cmsmasters-cursor-disabled.cmsmasters-cursor-widget-only [data-cursor-show],',
-        'body.cmsmasters-cursor-disabled.cmsmasters-cursor-widget-only [data-cursor-show] * {',
+        'body.cmsmasters-cursor-disabled:not(.cmsmasters-cursor-dual).cmsmasters-cursor-widget-only [data-cursor-show],',
+        'body.cmsmasters-cursor-disabled:not(.cmsmasters-cursor-dual).cmsmasters-cursor-widget-only [data-cursor-show] * {',
         '  cursor: inherit !important;',
         '}',
-        // Special cursor zones apply cursor:none via attribute selectors — override those too
-        'body.cmsmasters-cursor-disabled [data-cursor-image],',
-        'body.cmsmasters-cursor-disabled [data-cursor-image] *,',
-        'body.cmsmasters-cursor-disabled [data-cursor-text],',
-        'body.cmsmasters-cursor-disabled [data-cursor-text] *,',
-        'body.cmsmasters-cursor-disabled [data-cursor-icon],',
-        'body.cmsmasters-cursor-disabled [data-cursor-icon] * {',
+        // Special cursor zones: [data-cursor-image] etc. have specificity (0,2,1) which
+        // beats the general * rule. Override with higher specificity (0,3,1).
+        // Also scoped to :not(.cmsmasters-cursor-dual) — in dual mode the CSS attribute
+        // rules are already excluded, so browser defaults (pointer etc.) apply naturally.
+        'body.cmsmasters-cursor-disabled:not(.cmsmasters-cursor-dual) [data-cursor-image],',
+        'body.cmsmasters-cursor-disabled:not(.cmsmasters-cursor-dual) [data-cursor-image] *,',
+        'body.cmsmasters-cursor-disabled:not(.cmsmasters-cursor-dual) [data-cursor-text],',
+        'body.cmsmasters-cursor-disabled:not(.cmsmasters-cursor-dual) [data-cursor-text] *,',
+        'body.cmsmasters-cursor-disabled:not(.cmsmasters-cursor-dual) [data-cursor-icon],',
+        'body.cmsmasters-cursor-disabled:not(.cmsmasters-cursor-dual) [data-cursor-icon] * {',
         '  cursor: auto !important;',
         '}',
         '',

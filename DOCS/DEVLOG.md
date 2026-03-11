@@ -28,9 +28,11 @@ Living document tracking development sessions, decisions, and iterations.
 
 1. **`custom-cursor.css`** — Scoped all three special cursor `cursor:none` rules with `body:not(.cmsmasters-cursor-dual)`. In dual mode, system cursor stays visible on special zones (consistent with dual mode intent).
 
-2. **`cursor-editor-sync.js`** — Removed `:not(.cmsmasters-cursor-dual)` from ALL `cursor-disabled` rules. When preview is OFF, system cursor must be visible regardless of any other mode. Also added explicit override for `[data-cursor-image/text/icon]` attribute selectors with higher specificity (`body.cmsmasters-cursor-disabled [data-cursor-image]` > `[data-cursor-image]`).
+2. **`cursor-editor-sync.js`** — Added explicit overrides for `[data-cursor-image/text/icon]` attribute selectors with higher specificity (0,3,1 > 0,2,1). All rules keep `:not(.cmsmasters-cursor-dual)` — see regression note below.
 
-**Key insight:** `cursor-disabled` is an editor-only concept meaning "show system cursor instead of custom cursor." Dual mode is irrelevant in this context — dual mode controls whether system cursor shows ALONGSIDE custom cursor. When there's no custom cursor (preview OFF), the system cursor must always be visible.
+**Regression caught:** Initial fix removed `:not(.cmsmasters-cursor-dual)` from `cursor-disabled` rules, breaking the pointer cursor fix from 2026-03-10 (6 iterations). `cursor:inherit!important` on `*` without dual mode exclusion overrides `cursor:pointer` on links/buttons. Restored `:not(.cmsmasters-cursor-dual)` — in dual mode, the CSS fix (#1) already prevents `cursor:none` on special zones, so no editor-sync override is needed.
+
+**Key insight:** In dual mode, the solution is to NOT APPLY `cursor:none` at all (via CSS scoping), rather than applying it and then overriding back. The `:not(.cmsmasters-cursor-dual)` pattern on both the hiding AND restoring rules means dual mode sees neither — browser defaults apply naturally, preserving pointer/text/etc. cursors.
 
 ---
 
