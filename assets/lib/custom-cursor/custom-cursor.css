@@ -69,11 +69,22 @@ body.cmsmasters-cursor-on-light {
    Plugin & UI Overrides (auto-hide, datepicker, select2, admin bar, touch)
    ========================================================================== */
 
-[data-cursor=hide],
-[data-cursor=hide] *,
-[data-cursor=none],
-[data-cursor=none] * {
+body:not(.cmsmasters-cursor-dual) [data-cursor=hide],
+body:not(.cmsmasters-cursor-dual) [data-cursor=hide] *,
+body:not(.cmsmasters-cursor-dual) [data-cursor=none],
+body:not(.cmsmasters-cursor-dual) [data-cursor=none] * {
     cursor:auto!important
+}
+
+body:not(.cmsmasters-cursor-dual) [data-cursor=hide] a,
+body:not(.cmsmasters-cursor-dual) [data-cursor=hide] button,
+body:not(.cmsmasters-cursor-dual) [data-cursor=hide] [role="button"],
+body:not(.cmsmasters-cursor-dual) [data-cursor=hide] input[type="submit"],
+body:not(.cmsmasters-cursor-dual) [data-cursor=none] a,
+body:not(.cmsmasters-cursor-dual) [data-cursor=none] button,
+body:not(.cmsmasters-cursor-dual) [data-cursor=none] [role="button"],
+body:not(.cmsmasters-cursor-dual) [data-cursor=none] input[type="submit"] {
+    cursor:pointer!important
 }
 
 .air-datepicker,
@@ -118,6 +129,18 @@ body.cmsmasters-cursor-on-light {
 .cmsmasters-cursor-widget-only:not(.cmsmasters-cursor-dual) #wpadminbar,
 .cmsmasters-cursor-widget-only:not(.cmsmasters-cursor-dual) #wpadminbar * {
     cursor:auto!important
+}
+
+/* Admin bar: restore pointer on clickable elements (cursor:auto overrides UA pointer) */
+.cmsmasters-cursor-enabled:not(.cmsmasters-cursor-dual) #wpadminbar a,
+.cmsmasters-cursor-enabled:not(.cmsmasters-cursor-dual) #wpadminbar button,
+.cmsmasters-cursor-enabled:not(.cmsmasters-cursor-dual) #wpadminbar [role="button"],
+.cmsmasters-cursor-enabled:not(.cmsmasters-cursor-dual) #wpadminbar input[type="submit"],
+.cmsmasters-cursor-widget-only:not(.cmsmasters-cursor-dual) #wpadminbar a,
+.cmsmasters-cursor-widget-only:not(.cmsmasters-cursor-dual) #wpadminbar button,
+.cmsmasters-cursor-widget-only:not(.cmsmasters-cursor-dual) #wpadminbar [role="button"],
+.cmsmasters-cursor-widget-only:not(.cmsmasters-cursor-dual) #wpadminbar input[type="submit"] {
+    cursor:pointer!important
 }
 
 @media (hover:none) and (pointer:coarse) {
