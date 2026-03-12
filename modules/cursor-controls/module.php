@@ -62,7 +62,8 @@ class Module extends Base_Module {
 		}
 
 		// Admin page — only register if it's the Elementor editor (?action=elementor)
-		return ! empty( $_REQUEST['action'] ) && 'elementor' === $_REQUEST['action'];
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- context detection, not form processing
+		return ! empty( $_REQUEST['action'] ) && 'elementor' === sanitize_key( $_REQUEST['action'] );
 	}
 
 	public function register_controls( $element ) {
@@ -1142,12 +1143,6 @@ class Module extends Base_Module {
 			}
 
 			$kit_settings = $kit ? $kit->get_settings_for_display() : array();
-
-			// Debug: log which method worked
-			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( '[CURSOR KIT DEBUG] Kit ID: ' . ( $kit ? $kit->get_id() : 'null' ) );
-				error_log( '[CURSOR KIT DEBUG] Has system_typography: ' . ( isset( $kit_settings['system_typography'] ) ? count( $kit_settings['system_typography'] ) : 'no' ) );
-			}
 		}
 
 		return $kit_settings;
@@ -1162,41 +1157,20 @@ class Module extends Base_Module {
 	private function resolve_global_typography( $global_ref ) {
 		$typography_id = $this->parse_global_reference( $global_ref, 'typography' );
 		if ( ! $typography_id ) {
-			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( '[CURSOR TYPO DEBUG] No typography_id from: ' . $global_ref );
-			}
 			return null;
-		}
-		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			error_log( '[CURSOR TYPO DEBUG] Looking for typography_id: ' . $typography_id );
 		}
 
 		$kit_settings = $this->get_kit_settings();
 		if ( empty( $kit_settings ) ) {
-			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( '[CURSOR TYPO DEBUG] Kit settings is EMPTY!' );
-			}
 			return null;
-		}
-		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			error_log( '[CURSOR TYPO DEBUG] Kit settings keys: ' . implode( ', ', array_keys( $kit_settings ) ) );
 		}
 
 		$system_typography = $kit_settings['system_typography'] ?? array();
 		$custom_typography = $kit_settings['custom_typography'] ?? array();
 		$all_typography = array_merge( $system_typography, $custom_typography );
 
-		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			error_log( '[CURSOR TYPO DEBUG] system_typography count: ' . count( $system_typography ) );
-			error_log( '[CURSOR TYPO DEBUG] custom_typography count: ' . count( $custom_typography ) );
-			error_log( '[CURSOR TYPO DEBUG] all_typography IDs: ' . implode( ', ', array_map( function( $t ) { return $t['_id'] ?? 'no-id'; }, $all_typography ) ) );
-		}
-
 		foreach ( $all_typography as $typography_data ) {
 			if ( isset( $typography_data['_id'] ) && $typography_data['_id'] === $typography_id ) {
-				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					error_log( '[CURSOR TYPO DEBUG] FOUND! font_family: ' . ( $typography_data['typography_font_family'] ?? 'EMPTY' ) );
-				}
 				return array(
 					'font_family'     => $typography_data['typography_font_family'] ?? '',
 					'font_size'       => $typography_data['typography_font_size']['size'] ?? '',
@@ -1215,9 +1189,6 @@ class Module extends Base_Module {
 			}
 		}
 
-		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			error_log( '[CURSOR TYPO DEBUG] NOT FOUND typography_id: ' . $typography_id );
-		}
 		return null;
 	}
 
@@ -1555,29 +1526,9 @@ class Module extends Base_Module {
 		$element->add_render_attribute( '_wrapper', 'data-cursor-text', esc_attr( $text_content ) );
 		$globals = $raw_settings['__globals__'] ?? array();
 
-		// DEBUG: Log what we receive - check debug.log
-		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			error_log( '[CURSOR DEBUG] ========================================' );
-			error_log( '[CURSOR DEBUG] Element ID: ' . $element->get_id() );
-			error_log( '[CURSOR DEBUG] raw_settings keys: ' . implode( ', ', array_keys( $raw_settings ) ) );
-			error_log( '[CURSOR DEBUG] __globals__ content: ' . wp_json_encode( $globals ) );
-
-			// Also try get_raw_data to compare
-			$raw_data = $element->get_raw_data();
-			$raw_data_globals = $raw_data['settings']['__globals__'] ?? array();
-			error_log( '[CURSOR DEBUG] get_raw_data __globals__: ' . wp_json_encode( $raw_data_globals ) );
-		}
-
 		// Typography
 		$global_typography_ref = $globals['cmsmasters_cursor_text_typography_typography'] ?? '';
-		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			error_log( '[CURSOR DEBUG] global_typography_ref: ' . $global_typography_ref );
-		}
 		$typography = ! empty( $global_typography_ref ) ? $this->resolve_global_typography( $global_typography_ref ) : null;
-		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			error_log( '[CURSOR DEBUG] resolved typography: ' . wp_json_encode( $typography ) );
-			error_log( '[CURSOR DEBUG] ========================================' );
-		}
 
 		if ( empty( $typography ) ) {
 			$typography = array(
@@ -1642,6 +1593,33 @@ class Module extends Base_Module {
 		if ( empty( $icon_html ) ) {
 			return;
 		}
+
+		// Sanitize icon HTML server-side (defence-in-depth; JS sanitizer is primary gate).
+		// Strip <script>, event handlers (onclick etc.), but allow all SVG presentation tags.
+		$icon_html = wp_kses(
+			$icon_html,
+			array_merge(
+				wp_kses_allowed_html( 'post' ),
+				array(
+					'svg'      => array( 'xmlns' => true, 'xmlns:xlink' => true, 'viewbox' => true, 'class' => true, 'aria-hidden' => true, 'width' => true, 'height' => true, 'fill' => true, 'stroke' => true, 'style' => true, 'role' => true, 'focusable' => true ),
+					'path'     => array( 'd' => true, 'fill' => true, 'fill-rule' => true, 'clip-rule' => true, 'stroke' => true, 'stroke-width' => true, 'stroke-linecap' => true, 'stroke-linejoin' => true, 'opacity' => true, 'transform' => true, 'class' => true, 'style' => true ),
+					'g'        => array( 'fill' => true, 'stroke' => true, 'transform' => true, 'class' => true, 'opacity' => true, 'clip-path' => true, 'style' => true ),
+					'defs'     => array(),
+					'clippath' => array( 'id' => true ),
+					'mask'     => array( 'id' => true, 'x' => true, 'y' => true, 'width' => true, 'height' => true, 'maskunits' => true ),
+					'use'      => array( 'href' => true, 'xlink:href' => true, 'x' => true, 'y' => true, 'width' => true, 'height' => true, 'class' => true ),
+					'symbol'   => array( 'id' => true, 'viewbox' => true ),
+					'circle'   => array( 'cx' => true, 'cy' => true, 'r' => true, 'fill' => true, 'stroke' => true, 'opacity' => true, 'class' => true, 'style' => true ),
+					'ellipse'  => array( 'cx' => true, 'cy' => true, 'rx' => true, 'ry' => true, 'fill' => true, 'stroke' => true, 'opacity' => true, 'class' => true ),
+					'rect'     => array( 'x' => true, 'y' => true, 'width' => true, 'height' => true, 'rx' => true, 'ry' => true, 'fill' => true, 'stroke' => true, 'opacity' => true, 'class' => true, 'style' => true ),
+					'line'     => array( 'x1' => true, 'y1' => true, 'x2' => true, 'y2' => true, 'stroke' => true, 'stroke-width' => true, 'class' => true ),
+					'polygon'  => array( 'points' => true, 'fill' => true, 'stroke' => true, 'class' => true ),
+					'polyline' => array( 'points' => true, 'fill' => true, 'stroke' => true, 'class' => true ),
+					'text'     => array( 'x' => true, 'y' => true, 'fill' => true, 'class' => true, 'style' => true, 'text-anchor' => true, 'font-size' => true ),
+					'tspan'    => array( 'x' => true, 'y' => true, 'dx' => true, 'dy' => true, 'fill' => true ),
+				)
+			)
+		);
 
 		$element->add_render_attribute( '_wrapper', 'data-cursor-icon', $icon_html );
 		$globals = $raw_settings['__globals__'] ?? array();
@@ -1747,26 +1725,30 @@ class Module extends Base_Module {
 	 * @param string                  $default_padding Default padding value
 	 */
 	private function apply_shape_attributes( $element, $settings, $prefix, $attr_prefix, $default_radius, $default_padding ) {
+		$allowed_units = array( 'px', 'em', '%', 'rem', 'vh', 'vw' );
+
 		$radius = $settings[ $prefix . '_border_radius' ] ?? array();
 		if ( ! empty( $radius ) ) {
+			$unit = in_array( $radius['unit'] ?? 'px', $allowed_units, true ) ? $radius['unit'] : 'px';
 			$radius_value = sprintf(
 				'%s%s %s%s %s%s %s%s',
-				$radius['top'] ?? $default_radius, $radius['unit'] ?? 'px',
-				$radius['right'] ?? $default_radius, $radius['unit'] ?? 'px',
-				$radius['bottom'] ?? $default_radius, $radius['unit'] ?? 'px',
-				$radius['left'] ?? $default_radius, $radius['unit'] ?? 'px'
+				floatval( $radius['top'] ?? $default_radius ), $unit,
+				floatval( $radius['right'] ?? $default_radius ), $unit,
+				floatval( $radius['bottom'] ?? $default_radius ), $unit,
+				floatval( $radius['left'] ?? $default_radius ), $unit
 			);
 			$element->add_render_attribute( '_wrapper', $attr_prefix . '-radius', $radius_value );
 		}
 
 		$padding = $settings[ $prefix . '_padding' ] ?? array();
 		if ( ! empty( $padding ) ) {
+			$unit = in_array( $padding['unit'] ?? 'px', $allowed_units, true ) ? $padding['unit'] : 'px';
 			$padding_value = sprintf(
 				'%s%s %s%s %s%s %s%s',
-				$padding['top'] ?? $default_padding, $padding['unit'] ?? 'px',
-				$padding['right'] ?? $default_padding, $padding['unit'] ?? 'px',
-				$padding['bottom'] ?? $default_padding, $padding['unit'] ?? 'px',
-				$padding['left'] ?? $default_padding, $padding['unit'] ?? 'px'
+				floatval( $padding['top'] ?? $default_padding ), $unit,
+				floatval( $padding['right'] ?? $default_padding ), $unit,
+				floatval( $padding['bottom'] ?? $default_padding ), $unit,
+				floatval( $padding['left'] ?? $default_padding ), $unit
 			);
 			$element->add_render_attribute( '_wrapper', $attr_prefix . '-padding', $padding_value );
 		}

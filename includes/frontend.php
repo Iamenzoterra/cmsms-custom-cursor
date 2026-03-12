@@ -1356,16 +1356,6 @@ class Frontend extends Base_App {
 	}
 
 	/**
-	 * Check if widget override is enabled in settings.
-	 *
-	 * @since 5.7
-	 * @return bool
-	 */
-	private function is_widget_override_enabled() {
-		return 'widgets' === $this->get_cursor_mode();
-	}
-
-	/**
 	 * Check if cursor is in widget-only mode.
 	 *
 	 * Widget-only mode is active when the global setting is 'widgets'.
@@ -1396,6 +1386,7 @@ class Frontend extends Base_App {
 		$document_state = $this->get_document_cursor_state( $cursor_document, $mode );
 
 		// Check if we're in Elementor preview iframe
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only context detection, not form processing
 		$in_elementor_preview = isset( $_GET['elementor-preview'] );
 
 		if ( ! $in_elementor_preview && did_action( 'elementor/loaded' ) && class_exists( '\Elementor\Plugin' ) ) {

@@ -1159,8 +1159,8 @@
             debugMode = !!enable;
             if (debugMode) {
                 createDebugOverlay();
-                console.log('[Cursor:init] Debug mode ENABLED');
-                console.log('[Cursor:init] State:', {
+                debugLog('init', 'Debug mode ENABLED');
+                debugLog('init', 'State:', {
                     mode: CursorState.get('mode'),
                     adaptive: adaptive,
                     blend: CursorState.get('blend'),
@@ -2832,7 +2832,7 @@
     if (window.CMSM_DEBUG || document.body.getAttribute('data-cursor-debug') === 'true') {
         debugMode = true;
         createDebugOverlay();
-        console.log('[Cursor:init] Debug mode auto-enabled');
+        debugLog('init', 'Debug mode auto-enabled');
     }
 
     // === CLEANUP ON PAGE UNLOAD ===
