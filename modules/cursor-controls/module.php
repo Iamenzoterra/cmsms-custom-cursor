@@ -37,11 +37,8 @@ class Module extends Base_Module {
 			return;
 		}
 
-		add_action( 'elementor/frontend/element/before_render', array( $this, 'apply_cursor_attributes' ) );
-		add_action( 'elementor/frontend/widget/before_render', array( $this, 'apply_cursor_attributes' ) );
-		add_action( 'elementor/frontend/section/before_render', array( $this, 'apply_cursor_attributes' ) );
-		add_action( 'elementor/frontend/container/before_render', array( $this, 'apply_cursor_attributes' ) );
-		add_action( 'elementor/frontend/column/before_render', array( $this, 'apply_cursor_attributes' ) );
+		// Generic hook fires for ALL element types (widgets, containers, sections, columns)
+		add_action( 'elementor/frontend/before_render', array( $this, 'apply_cursor_attributes' ) );
 	}
 
 	/**

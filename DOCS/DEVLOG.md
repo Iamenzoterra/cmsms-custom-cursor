@@ -20,12 +20,25 @@ Living document tracking development sessions, decisions, and iterations.
 
 The JS detection code in `custom-cursor.js` (lines 1700, 2645) and the CSS rules (lines 72-86) for `[data-cursor="hide"]` were never removed — only the attribute generation was broken.
 
-**Fix (3 files):**
-1. **`module.php`**: In Full mode, when `toggle !== 'yes'`, render `data-cursor="hide"` on element wrapper and return early (before shared dispatcher).
-2. **`cursor-editor-sync.js`**: In Full mode, when `toggle !== 'yes'`, set `data-cursor="hide"` on element and return early.
-3. **`navigator-indicator.js`**: In Full mode, when `toggle !== 'yes'`, return `{ type: 'hidden' }` instead of `null`. Re-added "Hidden" legend entry (only shown in Full mode, since Show mode doesn't use per-element hide).
+**Fix (4 files, 2 iterations):**
 
-**Key insight:** Toggle unification was correct for UI consistency (both modes use the same switcher semantics), but it accidentally dropped the Full mode rendering path for Hide. The detection/styling layers were still intact — only the attribute generation bridge was broken.
+*Iteration 1 (attribute generation):*
+1. **`module.php`**: In Full mode, when `toggle !== 'yes'`, render `data-cursor="hide"` on element wrapper and return early.
+2. **`cursor-editor-sync.js`**: Same for editor preview.
+3. **`navigator-indicator.js`**: In Full mode, return `{ type: 'hidden' }` for empty toggle. Re-added "Hidden" legend entry.
+
+*Iteration 2 (JS detection + container support):*
+Deployed iteration 1 and verified on live site. Found two more issues:
+- Widgets got `data-cursor="hide"` but containers didn't — despite hooks being registered for `elementor/frontend/container/before_render`. Root cause: the specific type hooks (`container`, `section`, `column`) may not fire in all Elementor versions. **Fix:** Replaced 5 specific hooks with single generic `elementor/frontend/before_render` that fires for ALL element types.
+- JS `detectCursorMode` (RAF loop) detected hide zones but only did `return` (skip) — never transitioned to `hidden: true`. The `mouseover` handler DID transition, but it's event-driven and not guaranteed to fire. **Fix:** Added `hideZoneActive` flag (same pattern as `formZoneActive` for form zones) to both set `hidden: true` in RAF loop and restore `hidden: false` when leaving hide zone.
+
+4. **`custom-cursor.js`**: Added `hideZoneActive` flag, `detectCursorMode:hide` transition in RAF loop, `detectCursorMode:hide-restore` on exit. Synced `hideZoneActive` in mouseover handler too.
+5. **`module.php`**: Consolidated to single `elementor/frontend/before_render` hook (generic, all types).
+
+**Key insights:**
+- Toggle unification was correct for UI, but dropped the Full mode Hide rendering path.
+- Elementor's generic `elementor/frontend/before_render` is more reliable than type-specific hooks for addons.
+- The hide zone JS had TWO detection paths (RAF + mouseover) but only mouseover transitioned to hidden — classic "detection without action" bug.
 
 ---
 
