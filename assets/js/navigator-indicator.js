@@ -366,7 +366,10 @@
 			if (!isShowMode && (
 				settings.get('cmsmasters_cursor_hover_style') ||
 				settings.get('cmsmasters_cursor_special_active') === 'yes' ||
-				settings.get('cmsmasters_cursor_inherit_parent') === 'yes'
+				settings.get('cmsmasters_cursor_inherit_parent') === 'yes' ||
+				settings.get('cmsmasters_cursor_force_color') === 'yes' ||
+				settings.get('cmsmasters_cursor_blend_mode') ||
+				settings.get('cmsmasters_cursor_effect')
 			)) {
 				return { type: 'hidden' };
 			}
