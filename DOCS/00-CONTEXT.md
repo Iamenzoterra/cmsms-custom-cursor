@@ -144,10 +144,12 @@ version-5.6/
 - `07-API-DATA-ATTRIBUTES.md` - data-cursor-* attributes (900 lines)
 - `08-API-PHP.md` - WordPress hooks/filters (650 lines)
 
-### System Maps (09-11)
+### System Maps (09-11 + Functional Map)
 - `09-MAP-DEPENDENCY.md` - Function call graphs
 - `10-MAP-DATA-FLOW.md` - Settings → Visual output pipeline
 - `11-MAP-EDITOR-SYNC.md` - postMessage protocol
+- **`FUNCTIONAL-MAP.md`** - **Single source of truth**: every feature end-to-end (scenarios + matrices + Mermaid diagrams)
+- `FUNCTIONAL-MAP-CODEX.md` - Concise narrative version of functional map
 
 ### Technical Reference (12-15)
 - `12-REF-BODY-CLASSES.md` - State machine for cursor states

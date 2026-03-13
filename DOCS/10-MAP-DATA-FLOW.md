@@ -2,6 +2,11 @@
 
 **Last Updated:** February 5, 2026
 
+> **OUTDATED:** This document uses pre-v5.7 naming (`elementor_custom_cursor_*`, `cmsm-cursor-*`).
+> The current naming is `cmsmasters_custom_cursor_*` (Kit), `cmsmasters_page_cursor_*` (Page),
+> `cmsmasters_cursor_*` (Element), and `cmsmasters-cursor-*` (CSS/classes).
+> **See `FUNCTIONAL-MAP.md` for the current, code-verified source of truth.**
+
 ---
 
 ## Overview

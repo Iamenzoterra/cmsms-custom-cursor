@@ -2,6 +2,10 @@
 
 **Last Updated:** February 17, 2026
 
+> **OUTDATED:** This document uses pre-v5.7 option names (`elementor_custom_cursor_*`, `cmsm-cursor-*`).
+> Settings now live in Elementor Kit postmeta, not `wp_options`. Prefix is `cmsmasters_custom_cursor_*`.
+> **See `FUNCTIONAL-MAP.md` for the current, code-verified Rosetta Stone and complete settings map.**
+
 ---
 
 ## Overview
