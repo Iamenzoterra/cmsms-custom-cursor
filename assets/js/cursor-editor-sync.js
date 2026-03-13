@@ -671,8 +671,11 @@
             if (toggle !== 'yes') return;
             element.setAttribute('data-cursor-show', 'yes');
         }
-        // Full mode: always apply per-element settings regardless of toggle
-        // (cursor shows globally, per-element settings customize it)
+        // Full mode: toggle='' means "Hide cursor on this element"
+        if (toggle !== 'yes') {
+            element.setAttribute('data-cursor', 'hide');
+            return;
+        }
 
         // Inherit → Special → Core (existing logic)
         if (settings.cmsmasters_cursor_inherit_parent === 'yes') {

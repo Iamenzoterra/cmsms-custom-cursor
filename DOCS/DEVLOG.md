@@ -4,6 +4,54 @@ Living document tracking development sessions, decisions, and iterations.
 
 ---
 
+## 2026-03-13 — Fix Hide mode broken on widgets/containers in Full (Sitewide) mode
+
+**Problem:** After toggle unification (commit 4576aea, 2026-03-06), Hide mode stopped working on widgets and containers when cursor visibility is set to "Show Sitewide" (Full mode). Symptoms:
+1. Editor: elements with Hide toggle still show the previously configured cursor
+2. Frontend: Hide elements show the global cursor instead of system cursor
+3. Navigator legend no longer includes the "Hidden" indicator
+4. All elements default to Hide in Full mode, but Hide does nothing
+
+**Root cause:** The toggle unification commit changed both Show and Full mode to use the same `toggle='yes'` = Show semantics. But in doing so, it removed the `data-cursor="hide"` attribute generation for Full mode when toggle is empty. The three rendering layers (PHP, editor sync JS, navigator indicators) all stopped producing hide output:
+
+- `module.php` `apply_cursor_attributes()`: Full mode with empty toggle fell through to the shared dispatcher with no settings → no useful attributes rendered, no hide.
+- `cursor-editor-sync.js` `applySettings()`: Full mode with empty toggle fell through to apply empty settings → no `data-cursor="hide"` set on element.
+- `navigator-indicator.js` `hasNonDefaultCursor()`: `toggle !== 'yes'` returned `null` for both modes → no hidden indicator.
+
+The JS detection code in `custom-cursor.js` (lines 1700, 2645) and the CSS rules (lines 72-86) for `[data-cursor="hide"]` were never removed — only the attribute generation was broken.
+
+**Fix (3 files):**
+1. **`module.php`**: In Full mode, when `toggle !== 'yes'`, render `data-cursor="hide"` on element wrapper and return early (before shared dispatcher).
+2. **`cursor-editor-sync.js`**: In Full mode, when `toggle !== 'yes'`, set `data-cursor="hide"` on element and return early.
+3. **`navigator-indicator.js`**: In Full mode, when `toggle !== 'yes'`, return `{ type: 'hidden' }` instead of `null`. Re-added "Hidden" legend entry (only shown in Full mode, since Show mode doesn't use per-element hide).
+
+**Key insight:** Toggle unification was correct for UI consistency (both modes use the same switcher semantics), but it accidentally dropped the Full mode rendering path for Hide. The detection/styling layers were still intact — only the attribute generation bridge was broken.
+
+---
+
+## 2026-03-11 — Fix pointer cursor missing on admin bar links in dual mode
+
+**Problem:** In cursor-enabled + dual mode, admin bar links (Edit with Elementor, template sub-items, etc.) show arrow cursor instead of pointer finger.
+
+**Root cause:** The `[data-cursor=hide]` CSS rule was the ONLY cursor override rule without `:not(.cmsmasters-cursor-dual)` scoping:
+```css
+[data-cursor=hide], [data-cursor=hide] * { cursor:auto!important }
+```
+In dual mode, all other `cursor:none` rules are excluded via `:not(.cmsmasters-cursor-dual)`, so the system cursor follows browser defaults. But `[data-cursor=hide]` still applied `cursor:auto!important` to admin bar (which has `data-cursor="hide"` set by JS in full mode). This overrode WordPress's `cursor:pointer` on `<a>` tags.
+
+**Why cursor:auto ≠ cursor:pointer:** `cursor:auto` with `!important` overrides the UA stylesheet's `cursor:pointer` on links. The `auto` value resolves based on content context (text→text cursor, otherwise→default arrow), NOT element type. So links get arrow instead of pointer.
+
+**Fix:** Scoped the rule to `body:not(.cmsmasters-cursor-dual)`:
+```css
+body:not(.cmsmasters-cursor-dual) [data-cursor=hide],
+body:not(.cmsmasters-cursor-dual) [data-cursor=hide] * { cursor:auto!important }
+```
+In dual mode, `cursor:none` is never applied anywhere, so `cursor:auto` override is unnecessary — browser/WordPress defaults apply naturally, preserving pointer on links.
+
+**Key insight:** Every `cursor:` override rule that uses `!important` must be scoped to `:not(.cmsmasters-cursor-dual)`. The `[data-cursor=hide]` rule was missed during the original dual mode scoping pass (2026-03-10, 6 iterations). This completes the pattern.
+
+---
+
 ## 2026-03-11 — Fix system cursor hidden on special cursor zones when preview OFF
 
 **Problem (reported by Yulia):** In the Elementor editor with Custom Cursor Preview OFF, elements with special cursor (image/text/icon) show no cursor at all — even the system cursor is hidden.
