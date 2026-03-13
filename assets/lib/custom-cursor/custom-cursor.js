@@ -587,6 +587,15 @@
         if (adminBar && !adminBar.hasAttribute('data-cursor')) {
             adminBar.setAttribute('data-cursor', 'hide');
         }
+
+        // JS fallback: stamp data-cursor="hide" on containers/sections that
+        // PHP before_render hook missed (hook doesn't fire for all element types
+        // in some Elementor versions). In full mode, elements without toggle='yes'
+        // should hide the cursor — PHP renders this for widgets, JS covers the rest.
+        var unmarked = document.querySelectorAll('.elementor-element:not([data-cursor]):not([data-cursor-show]):not([data-cursor-image]):not([data-cursor-text]):not([data-cursor-icon]):not([data-cursor-inherit])');
+        for (var i = 0; i < unmarked.length; i++) {
+            unmarked[i].setAttribute('data-cursor', 'hide');
+        }
     }
 
 
