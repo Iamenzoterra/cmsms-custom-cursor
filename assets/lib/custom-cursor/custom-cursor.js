@@ -587,15 +587,6 @@
         if (adminBar && !adminBar.hasAttribute('data-cursor')) {
             adminBar.setAttribute('data-cursor', 'hide');
         }
-
-        // JS fallback: stamp data-cursor="hide" on containers/sections that
-        // PHP before_render hook missed (hook doesn't fire for all element types
-        // in some Elementor versions). In full mode, elements without toggle='yes'
-        // should hide the cursor — PHP renders this for widgets, JS covers the rest.
-        var unmarked = document.querySelectorAll('.elementor-element:not([data-cursor]):not([data-cursor-show]):not([data-cursor-image]):not([data-cursor-text]):not([data-cursor-icon]):not([data-cursor-inherit])');
-        for (var i = 0; i < unmarked.length; i++) {
-            unmarked[i].setAttribute('data-cursor', 'hide');
-        }
     }
 
 
@@ -1093,7 +1084,6 @@
     var popupObserver = null;              // Track MutationObserver for cleanup
     var popupCheckInterval = null;         // Track setInterval for cleanup
     var formZoneActive = false;            // Track if cursor is hidden due to form zone
-    var hideZoneActive = false;            // Track if cursor is hidden due to data-cursor="hide" zone
 
     /**
      * Pause cursor render loop
@@ -1709,14 +1699,7 @@
             // Full mode: check for HIDE cursor FIRST (before any color/blend/effect processing)
             var hideEl = el.closest ? el.closest('[data-cursor="hide"],[data-cursor="none"]') : null;
             if (hideEl) {
-                hideZoneActive = true;
-                if (!CursorState.get('hidden')) {
-                    CursorState.transition({ hidden: true }, 'detectCursorMode:hide');
-                }
                 return; // Skip ALL detection for hidden cursor zones
-            } else if (hideZoneActive) {
-                hideZoneActive = false;
-                CursorState.transition({ hidden: false }, 'detectCursorMode:hide-restore');
             }
         }
 
@@ -2657,11 +2640,10 @@
             }
         }
 
-        // Hide zone detection (full mode only — data-cursor="hide" on per-element Hide + admin bar)
+        // Hide zone detection (full mode only — data-cursor="hide" kept for admin bar / manual HTML)
         if (!isWidgetOnly) {
             var hideEl = t.closest ? t.closest('[data-cursor="hide"],[data-cursor="none"]') : null;
             if (hideEl) {
-                hideZoneActive = true;
                 CursorState.transition({ hidden: true }, 'mouseover:hide');
                 return; // Dont apply other hover effects when cursor is hidden
             }
@@ -2791,7 +2773,6 @@
         mx = my = dx = dy = rx = ry = OFFSCREEN_POSITION;
         hasValidPosition = false;
         formZoneActive = false;
-        hideZoneActive = false;
         // Reset any active special cursor via Manager (keeps state in sync)
         SpecialCursorManager.deactivate();
     }

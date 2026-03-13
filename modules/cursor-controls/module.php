@@ -37,8 +37,11 @@ class Module extends Base_Module {
 			return;
 		}
 
-		// Generic hook fires for ALL element types (widgets, containers, sections, columns)
-		add_action( 'elementor/frontend/before_render', array( $this, 'apply_cursor_attributes' ) );
+		add_action( 'elementor/frontend/element/before_render', array( $this, 'apply_cursor_attributes' ) );
+		add_action( 'elementor/frontend/widget/before_render', array( $this, 'apply_cursor_attributes' ) );
+		add_action( 'elementor/frontend/section/before_render', array( $this, 'apply_cursor_attributes' ) );
+		add_action( 'elementor/frontend/container/before_render', array( $this, 'apply_cursor_attributes' ) );
+		add_action( 'elementor/frontend/column/before_render', array( $this, 'apply_cursor_attributes' ) );
 	}
 
 	/**
@@ -1417,11 +1420,7 @@ class Module extends Base_Module {
 			$settings = $element->get_settings_for_display();
 			$element->add_render_attribute( '_wrapper', 'data-cursor-show', 'yes' );
 		} else {
-			// FULL MODE: toggle='' means "Hide cursor on this element"
-			if ( 'yes' !== $toggle ) {
-				$element->add_render_attribute( '_wrapper', 'data-cursor', 'hide' );
-				return;
-			}
+			// FULL MODE: always get settings (hide check + attribute output)
 			$settings = $element->get_settings_for_display();
 		}
 

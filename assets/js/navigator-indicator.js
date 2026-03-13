@@ -361,12 +361,9 @@
 
 		// === UNIFIED LOGIC (both Show and Full mode) ===
 		// After toggle unification (commit 4576aea): 'yes' always means Show.
-		// In Full mode: toggle='' means Hide (data-cursor="hide" rendered).
-		// In Show mode: toggle='' means no opt-in (no indicator needed).
-		if (toggle !== 'yes') {
-			if (!isShowMode) return { type: 'hidden' };
-			return null;
-		}
+		// All sub-controls require toggle='yes' (condition in module.php),
+		// so no per-element configuration exists without it.
+		if (toggle !== 'yes') return null;
 
 		// Priority 1: Inherit (highest — when inherit is ON, special controls
 		// are hidden by Elementor condition but may retain stale saved values)
@@ -670,13 +667,6 @@
 			'<span class="cmsmasters-legend-item">' +
 				'<span class="cmsmasters-nav-cursor-indicator cmsmasters-nav-cursor-inherit"></span> Inherit' +
 			'</span>';
-
-		if (!isShowMode) {
-			legendItems +=
-				'<span class="cmsmasters-legend-item">' +
-					'<span class="cmsmasters-nav-cursor-indicator cmsmasters-nav-cursor-hidden"></span> Hidden' +
-				'</span>';
-		}
 
 		// Create legend HTML with wrapper and header
 		var legendHtml = '<div class="cmsmasters-nav-cursor-legend-wrapper">' +
