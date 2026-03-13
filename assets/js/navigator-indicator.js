@@ -359,11 +359,19 @@
 			return null;
 		}
 
-		// === UNIFIED LOGIC (both Show and Full mode) ===
-		// After toggle unification (commit 4576aea): 'yes' always means Show.
-		// All sub-controls require toggle='yes' (condition in module.php),
-		// so no per-element configuration exists without it.
-		if (toggle !== 'yes') return null;
+		// === Full mode: detect explicitly hidden elements ===
+		// toggle='' can mean "never touched" OR "user configured then toggled to Hide".
+		// Distinguish by checking if any cursor sub-settings were configured.
+		if (toggle !== 'yes') {
+			if (!isShowMode && (
+				settings.get('cmsmasters_cursor_hover_style') ||
+				settings.get('cmsmasters_cursor_special_active') === 'yes' ||
+				settings.get('cmsmasters_cursor_inherit_parent') === 'yes'
+			)) {
+				return { type: 'hidden' };
+			}
+			return null;
+		}
 
 		// Priority 1: Inherit (highest — when inherit is ON, special controls
 		// are hidden by Elementor condition but may retain stale saved values)
@@ -667,6 +675,14 @@
 			'<span class="cmsmasters-legend-item">' +
 				'<span class="cmsmasters-nav-cursor-indicator cmsmasters-nav-cursor-inherit"></span> Inherit' +
 			'</span>';
+
+		// Hidden indicator — only in Full (Sitewide) mode
+		if (!isShowMode) {
+			legendItems +=
+				'<span class="cmsmasters-legend-item">' +
+					'<span class="cmsmasters-nav-cursor-indicator cmsmasters-nav-cursor-hidden"></span> Hidden' +
+				'</span>';
+		}
 
 		// Create legend HTML with wrapper and header
 		var legendHtml = '<div class="cmsmasters-nav-cursor-legend-wrapper">' +
