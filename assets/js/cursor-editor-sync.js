@@ -657,6 +657,12 @@
     function getSize(v, d) { return v ? (typeof v === 'object' && v.size !== undefined ? v.size : v) : d; }
     function fmtDims(d) { if (!d) return ''; var u = d.unit || 'px'; return (d.top||0)+u+' '+(d.right||0)+u+' '+(d.bottom||0)+u+' '+(d.left||0)+u; }
 
+    function hasCursorConfig(s) {
+        return !!(s.cmsmasters_cursor_hover_style ||
+            s.cmsmasters_cursor_special_active === 'yes' ||
+            s.cmsmasters_cursor_inherit_parent === 'yes');
+    }
+
     function applySettings(elementId, settings, skipClear) {
         var element = findElement(elementId);
         if (!element) return;
@@ -670,9 +676,15 @@
             // Show mode: toggle=yes means "Show cursor on this element" (opt-in)
             if (toggle !== 'yes') return;
             element.setAttribute('data-cursor-show', 'yes');
+        } else if (toggle !== 'yes') {
+            // Full mode + Hide: don't apply saved settings.
+            // If user had configured cursor settings, stamp hide zone
+            // so the cursor runtime shows system cursor on this element.
+            if (!skipClear && hasCursorConfig(settings)) {
+                element.setAttribute('data-cursor', 'hide');
+            }
+            return;
         }
-        // Full mode: always apply per-element settings regardless of toggle
-        // (cursor shows globally, per-element settings customize it)
 
         // Inherit → Special → Core (existing logic)
         if (settings.cmsmasters_cursor_inherit_parent === 'yes') {

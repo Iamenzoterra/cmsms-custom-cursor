@@ -1420,7 +1420,24 @@ class Module extends Base_Module {
 			$settings = $element->get_settings_for_display();
 			$element->add_render_attribute( '_wrapper', 'data-cursor-show', 'yes' );
 		} else {
-			// FULL MODE: always get settings (hide check + attribute output)
+			// FULL MODE
+			if ( 'yes' !== $toggle ) {
+				// Hide: check if user had configured cursor settings (saved in element data).
+				// If so, stamp data-cursor="hide" so JS shows system cursor.
+				// Never-touched elements have no saved cursor settings — skip them
+				// so the global cursor applies normally.
+				$saved = $element->get_data()['settings'] ?? array();
+				$has_config = ! empty( $saved['cmsmasters_cursor_hover_style'] )
+					|| ( isset( $saved['cmsmasters_cursor_special_active'] ) && 'yes' === $saved['cmsmasters_cursor_special_active'] )
+					|| ( isset( $saved['cmsmasters_cursor_inherit_parent'] ) && 'yes' === $saved['cmsmasters_cursor_inherit_parent'] );
+
+				if ( $has_config ) {
+					$element->add_render_attribute( '_wrapper', 'data-cursor', 'hide' );
+				}
+
+				return;
+			}
+
 			$settings = $element->get_settings_for_display();
 		}
 
