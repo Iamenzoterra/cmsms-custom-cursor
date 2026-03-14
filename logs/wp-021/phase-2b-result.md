@@ -75,16 +75,18 @@ zone) would incorrectly clear form ownership but self-corrects on next detection
 
 ## Open Questions
 
-None.
+- Video-inside-form remains a preserved edge case: mouseout:video incorrectly clears
+  formZoneActive when video is nested in a form zone, but self-corrects on next detection
+  tick. Not worth changing without a dedicated manual test of video-inside-form layouts.
 
 ## Phase 2 Summary (2A + 2B combined)
 
 - Duplication eliminated: form/video in mouseover via resolveVisibility (2A)
 - Ownership documented: formZoneActive multi-writer pattern with JSDoc (2B)
 - Event-owned logic preserved: show-zone-enter, hide-zone-enter (mouseover), relatedTarget (mouseout)
-- formZoneActive writers: 6 writes at 5 locations — documented multi-writer, same-direction-safe
+- formZoneActive writers: 6 writes at 6 locations — documented multi-writer, same-direction-safe
 - Semantic mismatch noted: video leave formZoneActive reset is normally no-op (2B)
-- No behavioral changes in either phase (2A preserves labels, 2B is comment-only)
+- 2A preserved core behavior while adding mouseover-driven forms-restore/select-guard paths; 2B is comment-only
 
 ## Verification Results
 
@@ -98,4 +100,4 @@ None.
 
 ## Git
 
-- Commit: pending
+- Commit: `d732f7d` — `simplify mouseout, document formZoneActive multi-writer ownership [WP-021 phase 2B]`
