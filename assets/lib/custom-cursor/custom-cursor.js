@@ -1662,6 +1662,132 @@
         lastModeChangeTime = Date.now(); // BUG-002: Start sticky period
     }
 
+    // =========================================================================
+    // DOM CASCADE HELPERS (pure functions — no side effects)
+    // Used by: detectCursorMode orchestrator, resolver functions, event handlers
+    // =========================================================================
+
+    /**
+     * Check if element has ANY data-cursor-* attribute.
+     * Used to identify "dirty" elements (have cursor configuration).
+     *
+     * @param {Element} el - DOM element to check
+     * @returns {boolean}
+     */
+    function hasCursorSettings(el) {
+        if (!el || !el.getAttribute) return false;
+        return el.getAttribute('data-cursor') ||
+               el.getAttribute('data-cursor-image') ||
+               el.getAttribute('data-cursor-text') ||
+               el.getAttribute('data-cursor-icon') ||
+               el.getAttribute('data-cursor-color') ||
+               el.getAttribute('data-cursor-effect') ||
+               el.getAttribute('data-cursor-blend');
+    }
+
+    /**
+     * Check if element has cursor TYPE settings (not just modifiers).
+     * TYPE attrs: data-cursor, data-cursor-image, data-cursor-text, data-cursor-icon
+     * Returns false for inherit elements (transparent in cascade).
+     * Modifiers (blend, effect, color) alone do NOT count as type settings.
+     *
+     * @param {Element} el - DOM element to check
+     * @returns {boolean}
+     */
+    function hasCursorTypeSettings(el) {
+        if (!el || !el.getAttribute) return false;
+        if (el.getAttribute('data-cursor-inherit')) return false;
+        return el.getAttribute('data-cursor') ||
+               el.getAttribute('data-cursor-image') ||
+               el.getAttribute('data-cursor-text') ||
+               el.getAttribute('data-cursor-icon');
+    }
+
+    /**
+     * Walk up DOM to find closest ancestor with data-cursor-inherit="yes".
+     *
+     * @param {Element} el - Starting element
+     * @returns {Element|null} Inherit ancestor or null
+     */
+    function findClosestInheritEl(startEl) {
+        var current = startEl;
+        while (current && current !== document.body) {
+            if (current.getAttribute && current.getAttribute('data-cursor-inherit')) {
+                return current;
+            }
+            current = current.parentElement;
+        }
+        return null;
+    }
+
+    /**
+     * CASCADE ENGINE: Walk up DOM looking for an attribute, stopping at type boundaries.
+     *
+     * Rules (from FUNCTIONAL-MAP.md):
+     * - If ancestor has the searched attribute → return that ancestor
+     * - If ancestor has cursor TYPE settings but NOT the searched attr → STOP (boundary)
+     * - Inherit elements (data-cursor-inherit) are transparent — never form boundaries
+     * - Modifiers (color, effect, blend) alone do NOT create boundaries
+     *
+     * @param {Element} el - Starting element
+     * @param {string} attr - Attribute name to search for (e.g. 'data-cursor-blend')
+     * @param {Array|null} excludes - Attribute values to treat as "not found"
+     * @returns {Element|null} Ancestor with the attribute, or null if boundary hit / body reached
+     */
+    function findWithBoundary(startEl, attrName, excludeAttrs) {
+        var current = startEl;
+        while (current && current !== document.body) {
+            if (current.getAttribute) {
+                // Check exclusions (for data-cursor, exclude special cursor elements)
+                if (excludeAttrs) {
+                    var hasExcluded = false;
+                    for (var i = 0; i < excludeAttrs.length; i++) {
+                        if (current.getAttribute(excludeAttrs[i])) {
+                            hasExcluded = true;
+                            break;
+                        }
+                    }
+                    if (hasExcluded) {
+                        current = current.parentElement;
+                        continue;
+                    }
+                }
+                // Found the attribute - return (nearest ancestor wins)
+                if (current.getAttribute(attrName)) {
+                    return current;
+                }
+                // Smart boundary: element has cursor TYPE settings but not this one
+                // = type boundary, stop here (use global default)
+                // Only TYPE attrs (data-cursor, image/text/icon) create boundaries
+                // Modifiers (color/effect/blend) do NOT block cascade
+                if (current !== startEl && hasCursorTypeSettings(current)) {
+                    return null;
+                }
+            }
+            current = current.parentElement;
+        }
+        return null;
+    }
+
+    /**
+     * Count DOM depth from element up to ancestor.
+     * Used for "inner wins" resolution: when multiple special cursors are nested,
+     * the closest (lowest depth) to the hovered element wins.
+     *
+     * @param {Element} el - Starting element (deeper)
+     * @param {Element} ancestor - Target ancestor (shallower)
+     * @returns {number} Depth count (0 if el === ancestor)
+     */
+    function getDepthTo(element, ancestor) {
+        var depth = 0;
+        var current = element;
+        while (current && current !== ancestor && current !== document.body) {
+            depth++;
+            current = current.parentElement;
+        }
+        return current === ancestor ? depth : Infinity;
+    }
+
     function detectCursorMode(x, y) {
         // BUG-002 FIX: Skip detection during sticky period to prevent boundary flicker
         // After a color mode change, lock the mode for STICKY_MODE_DURATION ms
@@ -1726,100 +1852,12 @@
             return;
         }
 
-        // Helper: check if element has ANY cursor settings (was "modified")
-        // P1 fix Attempt 5: Smart boundary - modified elements are boundaries
-        function hasCursorSettings(el) {
-            if (!el || !el.getAttribute) return false;
-            return el.getAttribute('data-cursor') ||
-                   el.getAttribute('data-cursor-image') ||
-                   el.getAttribute('data-cursor-text') ||
-                   el.getAttribute('data-cursor-icon') ||
-                   el.getAttribute('data-cursor-color') ||
-                   el.getAttribute('data-cursor-effect') ||
-                   el.getAttribute('data-cursor-blend');
-        }
-
-        // Does element define a cursor TYPE? (for cascade boundary in findWithBoundary)
-        // TYPE-ONLY: data-cursor (core), data-cursor-image/text/icon (special)
-        // NOT type: color, effect, blend — these are modifiers, not boundaries
-        // Inherit elements are transparent for type cascade
-        function hasCursorTypeSettings(el) {
-            if (!el || !el.getAttribute) return false;
-            if (el.getAttribute('data-cursor-inherit')) return false;
-            return el.getAttribute('data-cursor') ||
-                   el.getAttribute('data-cursor-image') ||
-                   el.getAttribute('data-cursor-text') ||
-                   el.getAttribute('data-cursor-icon');
-        }
-
-        // Find closest ancestor (including self) with data-cursor-inherit="yes"
-        function findClosestInheritEl(startEl) {
-            var current = startEl;
-            while (current && current !== document.body) {
-                if (current.getAttribute && current.getAttribute('data-cursor-inherit')) {
-                    return current;
-                }
-                current = current.parentElement;
-            }
-            return null;
-        }
-
-        // Helper: find closest element with attribute (smart cascade)
-        // P1 fix Attempt 5:
-        // - "Clean" elements (no cursor settings) = transparent, cascade through
-        // - "Modified" elements (has ANY cursor setting) = boundary, use global for missing
-        function findWithBoundary(startEl, attrName, excludeAttrs) {
-            var current = startEl;
-            while (current && current !== document.body) {
-                if (current.getAttribute) {
-                    // Check exclusions (for data-cursor, exclude special cursor elements)
-                    if (excludeAttrs) {
-                        var hasExcluded = false;
-                        for (var i = 0; i < excludeAttrs.length; i++) {
-                            if (current.getAttribute(excludeAttrs[i])) {
-                                hasExcluded = true;
-                                break;
-                            }
-                        }
-                        if (hasExcluded) {
-                            current = current.parentElement;
-                            continue;
-                        }
-                    }
-                    // Found the attribute - return (nearest ancestor wins)
-                    if (current.getAttribute(attrName)) {
-                        return current;
-                    }
-                    // Smart boundary: element has cursor TYPE settings but not this one
-                    // = type boundary, stop here (use global default)
-                    // Only TYPE attrs (data-cursor, image/text/icon) create boundaries
-                    // Modifiers (color/effect/blend) do NOT block cascade
-                    if (current !== startEl && hasCursorTypeSettings(current)) {
-                        return null;
-                    }
-                }
-                current = current.parentElement;
-            }
-            return null;
-        }
-
         // === SPECIAL CURSOR (IMAGE, TEXT, or ICON) ===
         // Find ALL special cursor elements, then pick the CLOSEST one (inner wins)
         // P1 FIX Attempt 4: Pure CSS cascade - nearest ancestor with attribute wins
         var imageEl = findWithBoundary(el, 'data-cursor-image', null);
         var textEl = findWithBoundary(el, 'data-cursor-text', null);
         var iconElSpecial = findWithBoundary(el, 'data-cursor-icon', null);
-
-        // Helper: count DOM depth from el to ancestor (smaller = closer)
-        function getDepthTo(element, ancestor) {
-            var depth = 0;
-            var current = element;
-            while (current && current !== ancestor && current !== document.body) {
-                depth++;
-                current = current.parentElement;
-            }
-            return current === ancestor ? depth : Infinity;
-        }
 
         // Determine which special cursor is closest (inner element wins)
         var specialEl = null;
