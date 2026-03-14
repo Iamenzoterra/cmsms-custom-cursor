@@ -2765,6 +2765,8 @@
             }
         }
 
+        // Event-owned: resolveVisibility returns null for "inside show zone",
+        // mouseover does unhide + detectCursorMode before showing cursor.
         // Widget-only mode: show zone detection — cursor only visible inside show zones
         if (isWidgetOnly) {
             var showZone = t.closest ? t.closest(SHOW_ZONE_SELECTOR) : null;
@@ -2788,6 +2790,8 @@
             }
         }
 
+        // Event-owned: resolveVisibility returns 'skip' for hide zones,
+        // mouseover does the actual hide transition + early return.
         // Hide zone detection (full mode only — data-cursor="hide" kept for admin bar / manual HTML)
         if (!isWidgetOnly) {
             var hideEl = t.closest ? t.closest('[data-cursor="hide"],[data-cursor="none"]') : null;
@@ -2797,17 +2801,17 @@
             }
         }
 
-        // P4 v2: Auto-hide cursor on forms/popups (immediate response)
-        if (isFormZone(t)) {
-            CursorState.transition({ hidden: true }, 'mouseover:forms');
-            return;
-        }
-
-        // P5: Auto-hide cursor on video/iframe (immediate response)
-        if (t.tagName === 'VIDEO' || t.tagName === 'IFRAME' ||
-            (t.closest && t.closest('video, iframe'))) {
-            CursorState.transition({ hidden: true }, 'mouseover:video');
-            return;
+        // --- Shared visibility (form zones, video/iframe) via resolveVisibility ---
+        // Show-zone-enter and hide-zone-enter are event-owned (above).
+        // Form/video use the same logic as detection — delegate to resolveVisibility.
+        var vis = resolveVisibility(t, isWidgetOnly);
+        if (vis) {
+            if (vis.action === 'hide') {
+                CursorState.transition({ hidden: true }, 'mouseover:' + vis.reason);
+            } else if (vis.action === 'show') {
+                CursorState.transition({ hidden: false }, 'mouseover:' + vis.reason);
+            }
+            if (vis.terminal) return;
         }
 
         // Note: Text cursor for inputs disabled (use data-cursor="text" explicitly if needed)
