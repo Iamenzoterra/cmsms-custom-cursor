@@ -1083,7 +1083,27 @@
     var isPaused = false;                  // Pause state
     var popupObserver = null;              // Track MutationObserver for cleanup
     var popupCheckInterval = null;         // Track setInterval for cleanup
-    var formZoneActive = false;            // Track if cursor is hidden due to form zone
+    /**
+     * Tracks whether cursor is in a form zone (input/textarea/select/popup).
+     * Multi-writer, same-direction-safe pattern:
+     *
+     * Writers:
+     * - resolveVisibility(): true on enter, false on exit
+     *   (called from detectCursorMode + mouseover)
+     * - mouseout handler: false on relatedTarget-based leave
+     *   (immediate signal — fires before next detection tick)
+     * - resetCursorState(): false on full reset
+     *
+     * All false-writes are idempotent and same-direction.
+     * No race: mouseout fires first, detection/mouseover confirm next tick.
+     *
+     * TIMING:
+     * 1. detectCursorMode (throttled mousemove) -> resolveVisibility -> form enter/exit
+     * 2. mouseover (immediate) -> resolveVisibility -> form enter/exit
+     * 3. mouseout (immediate) -> relatedTarget check -> form exit only
+     * Path 3 fires FIRST, path 2 SECOND, path 1 LAST. All agree on exit direction.
+     */
+    var formZoneActive = false;
 
     /**
      * Pause cursor render loop
@@ -2846,7 +2866,8 @@
         var el = t.closest ? t.closest(hoverSel) : null;
 
         // P4 v2: Restore cursor when leaving form zone
-        // Only restore if moving to a non-form element
+        // Inverse of resolveVisibility: "am I leaving?" vs "am I inside?"
+        // Uses relatedTarget (where mouse is going) — structurally different from detection
         if (isFormZone(t)) {
             var related = e.relatedTarget;
             if (!related || !isFormZone(related)) {
@@ -2865,6 +2886,8 @@
             var related = e.relatedTarget;
             if (!related || (related.tagName !== 'VIDEO' && related.tagName !== 'IFRAME' &&
                 (!related.closest || !related.closest('video, iframe')))) {
+                // Note: video hide (resolveVisibility) doesn't set formZoneActive=true,
+                // so this is normally a no-op. Kept for safety — idempotent false-write.
                 formZoneActive = false;
                 CursorState.transition({ hidden: false }, 'mouseout:video');
             }
