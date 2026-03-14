@@ -2010,6 +2010,110 @@
         return { coreEffect: coreEffect, perElementWobble: perElementWobble };
     }
 
+    /**
+     * Determine blend intensity for the given element.
+     * PURE — no side effects. Does not call setBlendIntensity().
+     *
+     * @param {Element} el - Target element
+     * @param {Object} ctx - Global blend state
+     * @param {string} ctx.trueGlobalBlend - Kit-only blend (NOT page override)
+     * @param {string} ctx.globalBlendIntensity - Page > Kit resolved blend
+     * @param {string} ctx.currentBlendIntensity - Currently active blend
+     * @returns {string} Resolved blend: '' | 'soft' | 'medium' | 'strong'
+     */
+    function resolveBlendForElement(el, ctx) {
+        var selfBlend = el.getAttribute ? el.getAttribute('data-cursor-blend') : null;
+
+        // Inherit override for core cursor blend
+        // If no explicit blend on this element, check if an inherit ancestor overrides it
+        if (selfBlend === null) {
+            var inheritElForBlend = findClosestInheritEl(el);
+            if (inheritElForBlend) {
+                var inheritBlend = inheritElForBlend.getAttribute('data-cursor-inherit-blend');
+                if (inheritBlend !== null && inheritBlend !== '') {
+                    // Only override if no explicit blend between el and inheritEl
+                    var hasCloserBlend = false;
+                    if (el !== inheritElForBlend) {
+                        var checkEl = el.parentElement;
+                        while (checkEl && checkEl !== inheritElForBlend && checkEl !== document.body) {
+                            if (checkEl.getAttribute && checkEl.getAttribute('data-cursor-blend')) {
+                                hasCloserBlend = true;
+                                break;
+                            }
+                            checkEl = checkEl.parentElement;
+                        }
+                    }
+                    if (!hasCloserBlend) {
+                        selfBlend = inheritBlend;
+                    }
+                }
+            }
+        }
+
+        if (selfBlend !== null) {
+            // Element has EXPLICIT blend setting - use it
+            if (selfBlend === 'off' || selfBlend === 'no') return '';
+            if (selfBlend === 'soft' || selfBlend === 'medium' || selfBlend === 'strong') return selfBlend;
+            if (selfBlend === 'yes') {
+                return ctx.currentBlendIntensity === '' ? (ctx.trueGlobalBlend || 'soft') : ctx.currentBlendIntensity;
+            }
+            // P1 fix: Explicit "default" = use true GLOBAL, not page override
+            if (selfBlend === 'default' || selfBlend === '') return ctx.trueGlobalBlend;
+            return ctx.currentBlendIntensity; // unknown value — no-op
+        }
+
+        // Element has NO blend attribute
+        // Widget (data-id) with no blend = use true GLOBAL (not page override)
+        // Inner content (no data-id) = walk up to find parent's blend
+        var isWidget = el.getAttribute && el.getAttribute('data-id');
+
+        if (isWidget && hasCursorSettings(el)) {
+            // Dirty widget without blend attribute = use true GLOBAL
+            return ctx.trueGlobalBlend;
+        }
+
+        // Inner content - walk up to find blend
+        // "Dirty" widget (has ANY cursor settings) = new "floor" = use true GLOBAL for unset
+        // "Clean" widget (no cursor settings) = same "floor" = cascade from parent
+        var blendEl = null;
+        var stoppedAtWidget = false;
+        var current = el.parentElement;
+        while (current && current !== document.body) {
+            if (current.getAttribute) {
+                // Check if this is a "dirty" widget FIRST (before checking blend)
+                // Dirty widget = new floor, doesn't inherit from grandparent
+                if (current.getAttribute('data-id') && hasCursorSettings(current)) {
+                    // This widget is "dirty" - check if IT has blend
+                    if (current.getAttribute('data-cursor-blend')) {
+                        blendEl = current;
+                    }
+                    // Either way, STOP here - dirty widget = new floor
+                    stoppedAtWidget = true;
+                    break;
+                }
+                // Clean widget or non-widget - check for blend and continue cascade
+                if (current.getAttribute('data-cursor-blend')) {
+                    blendEl = current;
+                    break;
+                }
+            }
+            current = current.parentElement;
+        }
+
+        if (blendEl) {
+            var blendValue = blendEl.getAttribute('data-cursor-blend');
+            if (blendValue === 'off' || blendValue === 'no') return '';
+            if (blendValue === 'soft' || blendValue === 'medium' || blendValue === 'strong') return blendValue;
+            if (blendValue === 'yes') {
+                return ctx.currentBlendIntensity === '' ? (ctx.trueGlobalBlend || 'soft') : ctx.currentBlendIntensity;
+            }
+            return ctx.currentBlendIntensity; // unmatched cascade value — no-op
+        }
+
+        // No blend found — widget context uses true global, body uses page > global
+        return stoppedAtWidget ? ctx.trueGlobalBlend : ctx.globalBlendIntensity;
+    }
+
     function detectCursorMode(x, y) {
         // BUG-002 FIX: Skip detection during sticky period to prevent boundary flicker
         // After a color mode change, lock the mode for STICKY_MODE_DURATION ms
@@ -2241,108 +2345,13 @@
         // Handle forced color for core cursor (uses closest() cascade)
         updateForcedColor(el);
 
-        // Check for blend mode intensity override (per-element)
-        // FIX: Elementor widgets (data-id) without attribute use GLOBAL
-        //      Inner content (no data-id) inherits from parent via DOM walk
-        var selfBlend = el.getAttribute ? el.getAttribute('data-cursor-blend') : null;
-
-        // Inherit override for core cursor blend
-        // If no explicit blend on this element, check if an inherit ancestor overrides it
-        if (selfBlend === null) {
-            var inheritElForBlend = findClosestInheritEl(el);
-            if (inheritElForBlend) {
-                var inheritBlend = inheritElForBlend.getAttribute('data-cursor-inherit-blend');
-                if (inheritBlend !== null && inheritBlend !== '') {
-                    // Only override if no explicit blend between el and inheritEl
-                    var hasCloserBlend = false;
-                    if (el !== inheritElForBlend) {
-                        var checkEl = el.parentElement;
-                        while (checkEl && checkEl !== inheritElForBlend && checkEl !== document.body) {
-                            if (checkEl.getAttribute && checkEl.getAttribute('data-cursor-blend')) {
-                                hasCloserBlend = true;
-                                break;
-                            }
-                            checkEl = checkEl.parentElement;
-                        }
-                    }
-                    if (!hasCloserBlend) {
-                        selfBlend = inheritBlend;
-                    }
-                }
-            }
-        }
-
-        if (selfBlend !== null) {
-            // Element has EXPLICIT blend setting - use it
-            if (selfBlend === 'off' || selfBlend === 'no') {
-                if (currentBlendIntensity !== '') setBlendIntensity('');
-            } else if (selfBlend === 'soft' || selfBlend === 'medium' || selfBlend === 'strong') {
-                if (currentBlendIntensity !== selfBlend) setBlendIntensity(selfBlend);
-            } else if (selfBlend === 'yes' && currentBlendIntensity === '') {
-                setBlendIntensity(trueGlobalBlend || 'soft');
-            } else if (selfBlend === 'default' || selfBlend === '') {
-                // P1 fix: Explicit "default" = use true GLOBAL, not page override
-                if (currentBlendIntensity !== trueGlobalBlend) {
-                    setBlendIntensity(trueGlobalBlend);
-                }
-            }
-        } else {
-            // Element has NO blend attribute
-            // Widget (data-id) with no blend = use true GLOBAL (not page override)
-            // Inner content (no data-id) = walk up to find parent's blend
-            var isWidget = el.getAttribute && el.getAttribute('data-id');
-
-            if (isWidget && hasCursorSettings(el)) {
-                // Dirty widget without blend attribute = use true GLOBAL
-                if (currentBlendIntensity !== trueGlobalBlend) {
-                    setBlendIntensity(trueGlobalBlend);
-                }
-            } else {
-                // Inner content - walk up to find blend
-                // "Dirty" widget (has ANY cursor settings) = new "floor" = use true GLOBAL for unset
-                // "Clean" widget (no cursor settings) = same "floor" = cascade from parent
-                var blendEl = null;
-                var stoppedAtWidget = false;
-                var current = el.parentElement;
-                while (current && current !== document.body) {
-                    if (current.getAttribute) {
-                        // Check if this is a "dirty" widget FIRST (before checking blend)
-                        // Dirty widget = new floor, doesn't inherit from grandparent
-                        if (current.getAttribute('data-id') && hasCursorSettings(current)) {
-                            // This widget is "dirty" - check if IT has blend
-                            if (current.getAttribute('data-cursor-blend')) {
-                                blendEl = current;
-                            }
-                            // Either way, STOP here - dirty widget = new floor
-                            stoppedAtWidget = true;
-                            break;
-                        }
-                        // Clean widget or non-widget - check for blend and continue cascade
-                        if (current.getAttribute('data-cursor-blend')) {
-                            blendEl = current;
-                            break;
-                        }
-                    }
-                    current = current.parentElement;
-                }
-                if (blendEl) {
-                    var blendValue = blendEl.getAttribute('data-cursor-blend');
-                    if (blendValue === 'off' || blendValue === 'no') {
-                        if (currentBlendIntensity !== '') setBlendIntensity('');
-                    } else if (blendValue === 'soft' || blendValue === 'medium' || blendValue === 'strong') {
-                        if (currentBlendIntensity !== blendValue) setBlendIntensity(blendValue);
-                    } else if (blendValue === 'yes' && currentBlendIntensity === '') {
-                        setBlendIntensity(trueGlobalBlend || 'soft');
-                    }
-                } else {
-                    // No blend found — widget context uses true global, body uses page > global
-                    var fallbackBlend = stoppedAtWidget ? trueGlobalBlend : globalBlendIntensity;
-                    if (currentBlendIntensity !== fallbackBlend) {
-                        setBlendIntensity(fallbackBlend);
-                    }
-                }
-            }
-        }
+        // --- BLEND RESOLUTION ---
+        var resolvedBlend = resolveBlendForElement(el, {
+            trueGlobalBlend: trueGlobalBlend,
+            globalBlendIntensity: globalBlendIntensity,
+            currentBlendIntensity: currentBlendIntensity
+        });
+        if (resolvedBlend !== currentBlendIntensity) setBlendIntensity(resolvedBlend);
 
         // Core cursor effect (wobble/pulse/shake/buzz)
         var effectResult = resolveEffectForElement(el);
