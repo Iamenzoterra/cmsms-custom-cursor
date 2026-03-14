@@ -148,7 +148,8 @@ Orchestrator receives: `special` object (or null), `effectResult` object.
 
 ## Issues & Workarounds
 
-None.
+- **Impure special split (known debt):** `resolveSpecialCandidate` remained impure because core-wins `SpecialCursorManager.deactivate()` was preserved verbatim per M1. This is a conscious trade-off — correctness over purity. The deactivate call is untested for redundancy, so it stays until proven safe to remove.
+- **Special activate/deactivate order:** The activate/deactivate sequence in the special cursor path is unchanged from pre-1B. Phase 1C must not alter this boundary.
 
 ## Open Questions
 
