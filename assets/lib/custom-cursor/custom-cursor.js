@@ -617,7 +617,6 @@
 
     // Theme support
     var theme = window.cmsmCursorTheme || 'classic';
-    body.classList.add('cmsmasters-cursor-theme-' + theme);
 
     // Widget-only mode: show zone selector (cached for mouseover/mouseout/adaptive)
     var SHOW_ZONE_SELECTOR = '[data-cursor-show]';
@@ -698,10 +697,21 @@
     }
     var currentBlendIntensity = globalBlendIntensity;
 
-    // Sync CursorState.blend with PHP-rendered body classes.
-    // PHP sets cmsmasters-cursor-blend-{soft|medium|strong} on body,
-    // but CursorState._state.blend inits as null. Without this sync,
-    // transitioning to blend:null (="off") is a no-op → classes stay.
+    /**
+     * Blend body class sync — INTENTIONAL dual ownership (PHP + JS).
+     *
+     * PHP MUST pre-render blend body classes (cmsmasters-cursor-blend,
+     * cmsmasters-cursor-blend-{soft|medium|strong}) on page load.
+     * Without them: 100-200ms of unstyled cursor before JS initializes
+     * = visible FOUC (no mix-blend-mode applied).
+     *
+     * JS reads these classes on init and syncs to CursorState._state.blend.
+     * After init, CursorState owns blend class transitions.
+     *
+     * Do NOT remove PHP blend classes — FOUC risk.
+     * Do NOT remove JS sync — CursorState no-op bug (null === null).
+     * See: FUNCTIONAL-MAP.md Appendix Pitfall #1, DEC-001.
+     */
     if (globalBlendIntensity) {
         CursorState._state.blend = globalBlendIntensity;
     }

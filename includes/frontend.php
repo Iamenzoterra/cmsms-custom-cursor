@@ -1541,6 +1541,18 @@ class Frontend extends Base_App {
 			$inline_js_parts[] = 'window.cmsmCursorWidgetOnly=true;';
 		}
 
+		// Wobble effect (page > global) — window var for JS, no body class needed
+		$page_effect = $this->get_page_cursor_setting( 'effect', '', '' );
+		if ( 'wobble' === $page_effect ) {
+			$inline_js_parts[] = 'window.cmsmCursorWobble=true;';
+		} elseif ( 'none' !== $page_effect && 'pulse' !== $page_effect && 'shake' !== $page_effect && 'buzz' !== $page_effect ) {
+			// Page effect is '' (inherit) → fall back to global wobble setting
+			$wobble = AddonUtils::get_kit_option( 'cmsmasters_custom_cursor_wobble_effect', 'yes' );
+			if ( 'yes' === $wobble ) {
+				$inline_js_parts[] = 'window.cmsmCursorWobble=true;';
+			}
+		}
+
 		if ( ! empty( $inline_js_parts ) ) {
 			wp_add_inline_script( 'cmsmasters-custom-cursor', implode( "\n", $inline_js_parts ), 'before' );
 		}
@@ -1598,23 +1610,6 @@ class Frontend extends Base_App {
 			if ( in_array( $blend_mode, array( 'soft', 'medium', 'strong' ), true ) ) {
 				$classes[] = 'cmsmasters-cursor-blend';
 				$classes[] = 'cmsmasters-cursor-blend-' . $blend_mode;
-			}
-		}
-
-		// Animation effect → wobble body class (page > global)
-		$page_effect = $this->get_page_cursor_setting( 'effect', '', '' );
-
-		if ( 'wobble' === $page_effect ) {
-			// Page explicitly sets wobble → add class
-			$classes[] = 'cmsmasters-cursor-wobble';
-		} elseif ( 'none' === $page_effect || 'pulse' === $page_effect || 'shake' === $page_effect || 'buzz' === $page_effect ) {
-			// Page explicitly sets non-wobble effect → do NOT add wobble class
-			// (even if global wobble is enabled)
-		} else {
-			// Page effect is '' (inherit) → fall back to global wobble setting
-			$wobble = AddonUtils::get_kit_option( 'cmsmasters_custom_cursor_wobble_effect', 'yes' );
-			if ( 'yes' === $wobble ) {
-				$classes[] = 'cmsmasters-cursor-wobble';
 			}
 		}
 
