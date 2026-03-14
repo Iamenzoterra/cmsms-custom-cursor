@@ -1788,6 +1788,111 @@
         return current === ancestor ? depth : Infinity;
     }
 
+    // =========================================================================
+    // RESOLVER FUNCTIONS
+    // resolveElement    — pure (no side effects)
+    // resolveVisibility — impure by design: owns visibility-tracking state
+    //                     (formZoneActive). mouseout still has legacy writes
+    //                     until Phase 2.
+    // Used by: detectCursorMode orchestrator, event handlers (Phase 2)
+    // =========================================================================
+
+    /**
+     * Resolve which DOM element the cursor is effectively over.
+     * Filters: cursor container, popup overlays, documentElement/body.
+     * PURE — no side effects.
+     *
+     * @param {number} x - Mouse X coordinate
+     * @param {number} y - Mouse Y coordinate
+     * @returns {Element|null} Final effective element, or null if nothing valid
+     */
+    function resolveElement(x, y) {
+        var elements = document.elementsFromPoint(x, y);
+        var el = null;
+        for (var i = 0; i < elements.length; i++) {
+            var candidate = elements[i];
+            if (candidate === document.documentElement || candidate === document.body) continue;
+            if (candidate.closest && candidate.closest('#cmsmasters-cursor-container')) continue;
+            el = candidate;
+            break;
+        }
+
+        if (!el) return null;
+
+        // Skip popup overlay backgrounds (semi-transparent dark)
+        if (el.closest && el.closest('.dialog-widget-content, .dialog-lightbox-widget')) {
+            // Inside popup content — continue detection normally
+        } else if (el.closest && el.closest('.elementor-popup-modal')) {
+            // On popup overlay (not content) — skip detection
+            return null;
+        }
+
+        return el;
+    }
+
+    /**
+     * Determine cursor visibility for the given element.
+     * Checks (in order): show zones, hide zones, form fields, video/iframe.
+     *
+     * IMPURE — reads/writes formZoneActive (visibility-tracking state).
+     *
+     * formZoneActive ownership (Phase 1A — NOT final):
+     *   - Detection: resolveVisibility writes (enter/exit)
+     *   - mouseout handler: STILL has legacy restore writes (until Phase 2)
+     *   - mouseout:video also resets formZoneActive (current behavior, preserved)
+     *   - This is known tech debt, not a bug
+     *
+     * Hide zone note: detection only skips deeper resolution here.
+     * The actual hide (CursorState.transition hidden:true) is event-owned
+     * by the mouseover handler. This boundary is unchanged in Phase 1A.
+     *
+     * Returns:
+     * - { action, reason, terminal: true }  — caller acts and STOPS detection
+     * - { action, reason, terminal: false } — caller acts and CONTINUES
+     * - null                                — no visibility concern, continue
+     *
+     * IMPORTANT: In widget-only mode inside a show zone, returns null
+     * (not 'show'). The unhide is handled by mouseover, not detection.
+     *
+     * @param {Element} el - Target element
+     * @param {boolean} isWidgetOnly - Whether in widget-only mode
+     * @returns {{ action: string, reason: string, terminal: boolean }|null}
+     */
+    function resolveVisibility(el, isWidgetOnly) {
+        // Widget-only: skip detection outside show zones
+        if (isWidgetOnly) {
+            var showZone = el.closest ? el.closest(SHOW_ZONE_SELECTOR) : null;
+            if (!showZone) return { action: 'skip', reason: 'outside-show-zone', terminal: true };
+        } else {
+            // Full mode: check for HIDE cursor FIRST (detection skips only — hide is event-owned)
+            var hideEl = el.closest ? el.closest('[data-cursor="hide"],[data-cursor="none"]') : null;
+            if (hideEl) return { action: 'skip', reason: 'hide-zone', terminal: true };
+        }
+
+        // P4 v2: Auto-hide cursor on forms/popups (graceful degradation)
+        if (isFormZone(el)) {
+            formZoneActive = true;
+            return { action: 'hide', reason: 'forms', terminal: true };
+        } else if (formZoneActive) {
+            // Native <select> dropdowns block elementsFromPoint — don't restore
+            // while a select has focus (dropdown may still be open)
+            if (document.activeElement && document.activeElement.tagName === 'SELECT') {
+                return { action: 'skip', reason: 'form-zone-select-guard', terminal: true };
+            }
+            formZoneActive = false;
+            return { action: 'show', reason: 'forms-restore', terminal: false };
+        }
+
+        // P5: Auto-hide cursor on video/iframe
+        // Cross-origin iframes block mouse events, videos cause lag
+        if (el.tagName === 'VIDEO' || el.tagName === 'IFRAME' ||
+            (el.closest && el.closest('video, iframe'))) {
+            return { action: 'hide', reason: 'video', terminal: true };
+        }
+
+        return null;
+    }
+
     function detectCursorMode(x, y) {
         // BUG-002 FIX: Skip detection during sticky period to prevent boundary flicker
         // After a color mode change, lock the mode for STICKY_MODE_DURATION ms
@@ -1795,61 +1900,18 @@
             return; // Still in sticky period - keep current mode
         }
 
-        // Use elementsFromPoint to see through cursor elements (pointer-events:none does not affect elementFromPoint)
-        var elements = document.elementsFromPoint(x, y);
-        var el = null;
-        for (var i = 0; i < elements.length; i++) {
-            var candidate = elements[i];
-            // Skip cursor elements, html, and body
-            if (candidate === document.documentElement || candidate === document.body) continue;
-            if (candidate.closest && candidate.closest('#cmsmasters-cursor-container')) continue;
-            el = candidate;
-            break;
-        }
-
+        var el = resolveElement(x, y);
         if (!el) return;
 
-        // Skip popup overlay backgrounds (they're semi-transparent dark)
-        if (el && el.closest && el.closest('.dialog-widget-content, .dialog-lightbox-widget')) {
-            // Inside popup content - continue detection normally
-        } else if (el && el.closest && el.closest('.elementor-popup-modal')) {
-            // On popup overlay (not content) - skip detection
-            return;
-        }
-
-        // Widget-only: skip adaptive detection outside show zones
-        if (isWidgetOnly) {
-            var showZone = el.closest ? el.closest(SHOW_ZONE_SELECTOR) : null;
-            if (!showZone) return; // Outside show zone — nothing to detect
-        } else {
-            // Full mode: check for HIDE cursor FIRST (before any color/blend/effect processing)
-            var hideEl = el.closest ? el.closest('[data-cursor="hide"],[data-cursor="none"]') : null;
-            if (hideEl) {
-                return; // Skip ALL detection for hidden cursor zones
+        var vis = resolveVisibility(el, isWidgetOnly);
+        if (vis) {
+            if (vis.action === 'hide') {
+                CursorState.transition({ hidden: true }, 'detectCursorMode:' + vis.reason);
+            } else if (vis.action === 'show') {
+                CursorState.transition({ hidden: false }, 'detectCursorMode:' + vis.reason);
             }
-        }
-
-        // P4 v2: Auto-hide cursor on forms/popups (graceful degradation)
-        if (isFormZone(el)) {
-            formZoneActive = true;
-            CursorState.transition({ hidden: true }, 'detectCursorMode:forms');
-            return;
-        } else if (formZoneActive) {
-            // Native <select> dropdowns block elementsFromPoint — don't restore
-            // while a select has focus (dropdown may still be open)
-            if (document.activeElement && document.activeElement.tagName === 'SELECT') {
-                return;
-            }
-            formZoneActive = false;
-            CursorState.transition({ hidden: false }, 'detectCursorMode:forms-restore');
-        }
-
-        // P5: Auto-hide cursor on video/iframe
-        // Cross-origin iframes block mouse events, videos cause lag
-        if (el.tagName === 'VIDEO' || el.tagName === 'IFRAME' ||
-            (el.closest && el.closest('video, iframe'))) {
-            CursorState.transition({ hidden: true }, 'detectCursorMode:video');
-            return;
+            // action === 'skip' → no CursorState call needed
+            if (vis.terminal) return;
         }
 
         // === SPECIAL CURSOR (IMAGE, TEXT, or ICON) ===
