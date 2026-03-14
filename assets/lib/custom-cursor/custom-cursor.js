@@ -1893,30 +1893,19 @@
         return null;
     }
 
-    function detectCursorMode(x, y) {
-        // BUG-002 FIX: Skip detection during sticky period to prevent boundary flicker
-        // After a color mode change, lock the mode for STICKY_MODE_DURATION ms
-        if (lastModeChangeTime && Date.now() - lastModeChangeTime < STICKY_MODE_DURATION) {
-            return; // Still in sticky period - keep current mode
-        }
-
-        var el = resolveElement(x, y);
-        if (!el) return;
-
-        var vis = resolveVisibility(el, isWidgetOnly);
-        if (vis) {
-            if (vis.action === 'hide') {
-                CursorState.transition({ hidden: true }, 'detectCursorMode:' + vis.reason);
-            } else if (vis.action === 'show') {
-                CursorState.transition({ hidden: false }, 'detectCursorMode:' + vis.reason);
-            }
-            // action === 'skip' → no CursorState call needed
-            if (vis.terminal) return;
-        }
-
-        // === SPECIAL CURSOR (IMAGE, TEXT, or ICON) ===
-        // Find ALL special cursor elements, then pick the CLOSEST one (inner wins)
-        // P1 FIX Attempt 4: Pure CSS cascade - nearest ancestor with attribute wins
+    /**
+     * Determine which special cursor (image/text/icon) should activate.
+     * Finds candidates via findWithBoundary, picks closest by depth,
+     * checks if core cursor is closer (core wins over farther special).
+     *
+     * IMPURE — calls SpecialCursorManager.deactivate() when core wins.
+     * This preserves the original control flow from detectCursorMode.
+     *
+     * @param {Element} el - Target element (from resolveElement)
+     * @returns {{ type: string, el: Element, depth: number }|null}
+     *   null: no special cursor (none found or core is closer)
+     */
+    function resolveSpecialCandidate(el) {
         var imageEl = findWithBoundary(el, 'data-cursor-image', null);
         var textEl = findWithBoundary(el, 'data-cursor-text', null);
         var iconElSpecial = findWithBoundary(el, 'data-cursor-icon', null);
@@ -1957,7 +1946,7 @@
         // Find closest core cursor element
         var closestCoreEl = null;
         var closestCoreDepth = Infinity;
-        
+
         if (coreEl) {
             var d = getDepthTo(el, coreEl);
             if (d < closestCoreDepth) { closestCoreDepth = d; closestCoreEl = coreEl; }
@@ -1975,12 +1964,79 @@
         if (closestCoreEl && closestCoreDepth < specialDepth) {
             // Clean up any active special cursors
             SpecialCursorManager.deactivate();
-            specialEl = null;
-            specialType = null;
+            return null;
         }
 
+        if (!specialEl) return null;
+
+        return { type: specialType, el: specialEl, depth: specialDepth };
+    }
+
+    /**
+     * Resolve the core cursor effect for the given element.
+     * Uses findWithBoundary cascade + findClosestInheritEl override.
+     *
+     * PURE — no side effects, no module-scope writes.
+     *
+     * @param {Element} el - Target element (from resolveElement)
+     * @returns {{ coreEffect: string, perElementWobble: boolean|null }}
+     */
+    function resolveEffectForElement(el) {
+        // Core cursor effect (wobble/pulse/shake/buzz)
+        // FIX H1: Use DOM walk with widget boundary instead of .closest()
+        var coreEffectElForValue = findWithBoundary(el, 'data-cursor-effect', null);
+        var coreEffect;
+        if (coreEffectElForValue) {
+            coreEffect = coreEffectElForValue.getAttribute('data-cursor-effect') || '';
+        } else {
+            coreEffect = '';
+        }
+
+        // Inherit override for core cursor effect
+        var inheritElForEffect = findClosestInheritEl(el);
+        if (inheritElForEffect) {
+            var inheritEffect = inheritElForEffect.getAttribute('data-cursor-inherit-effect');
+            if (inheritEffect !== null && inheritEffect !== '') {
+                // Only override if effect source is at/above inherit element (not a more specific child)
+                if (!coreEffectElForValue || !inheritElForEffect.contains(coreEffectElForValue)) {
+                    coreEffect = inheritEffect;
+                }
+            }
+        }
+
+        // For backwards compatibility: wobble effect also sets perElementWobble
+        var perElementWobble = (coreEffect === 'wobble') ? true : null;
+
+        return { coreEffect: coreEffect, perElementWobble: perElementWobble };
+    }
+
+    function detectCursorMode(x, y) {
+        // BUG-002 FIX: Skip detection during sticky period to prevent boundary flicker
+        // After a color mode change, lock the mode for STICKY_MODE_DURATION ms
+        if (lastModeChangeTime && Date.now() - lastModeChangeTime < STICKY_MODE_DURATION) {
+            return; // Still in sticky period - keep current mode
+        }
+
+        var el = resolveElement(x, y);
+        if (!el) return;
+
+        var vis = resolveVisibility(el, isWidgetOnly);
+        if (vis) {
+            if (vis.action === 'hide') {
+                CursorState.transition({ hidden: true }, 'detectCursorMode:' + vis.reason);
+            } else if (vis.action === 'show') {
+                CursorState.transition({ hidden: false }, 'detectCursorMode:' + vis.reason);
+            }
+            // action === 'skip' → no CursorState call needed
+            if (vis.terminal) return;
+        }
+
+        // === SPECIAL CURSOR (IMAGE, TEXT, or ICON) ===
+        var special = resolveSpecialCandidate(el);
+
         // IMAGE CURSOR
-        if (specialType === 'image') {
+        if (special && special.type === 'image') {
+            var imageEl = special.el;
             var imgSrc = imageEl.getAttribute('data-cursor-image');
             var imgSize = parseInt(imageEl.getAttribute('data-cursor-image-size')) || 80;
             var imgSizeHover = parseInt(imageEl.getAttribute('data-cursor-image-size-hover')) || imgSize;
@@ -2040,7 +2096,8 @@
             return;
 
         // TEXT CURSOR
-        } else if (specialType === 'text') {
+        } else if (special && special.type === 'text') {
+            var textEl = special.el;
             var txtContent = textEl.getAttribute('data-cursor-text');
 
             // Parse typography JSON
@@ -2110,7 +2167,8 @@
             return;
 
         // ICON CURSOR
-        } else if (specialType === 'icon') {
+        } else if (special && special.type === 'icon') {
+            var iconElSpecial = special.el;
             var icoContent = iconElSpecial.getAttribute('data-cursor-icon');
             var icoEffect = iconElSpecial.getAttribute('data-cursor-icon-effect') || '';
 
@@ -2287,28 +2345,9 @@
         }
 
         // Core cursor effect (wobble/pulse/shake/buzz)
-        // FIX H1: Use DOM walk with widget boundary instead of .closest()
-        var coreEffectElForValue = findWithBoundary(el, 'data-cursor-effect', null);
-        if (coreEffectElForValue) {
-            coreEffect = coreEffectElForValue.getAttribute('data-cursor-effect') || '';
-        } else {
-            coreEffect = '';
-        }
-
-        // Inherit override for core cursor effect
-        var inheritElForEffect = findClosestInheritEl(el);
-        if (inheritElForEffect) {
-            var inheritEffect = inheritElForEffect.getAttribute('data-cursor-inherit-effect');
-            if (inheritEffect !== null && inheritEffect !== '') {
-                // Only override if effect source is at/above inherit element (not a more specific child)
-                if (!coreEffectElForValue || !inheritElForEffect.contains(coreEffectElForValue)) {
-                    coreEffect = inheritEffect;
-                }
-            }
-        }
-
-        // For backwards compatibility: wobble effect also sets perElementWobble
-        perElementWobble = (coreEffect === 'wobble') ? true : null;
+        var effectResult = resolveEffectForElement(el);
+        coreEffect = effectResult.coreEffect;
+        perElementWobble = effectResult.perElementWobble;
 
         // Adaptive background detection (only if enabled)
         if (adaptive) {
