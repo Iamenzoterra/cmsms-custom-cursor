@@ -72,7 +72,9 @@ to CursorState on init) but the existing 4-line comment didn't explain WHY both 
 
 ## Issues & Workarounds
 
-None. All three tasks were clean mechanical changes with no behavioral ambiguity.
+`isWobbleEnabled()` preserves a body-class fallback (`body.classList.contains('cmsmasters-cursor-wobble')`)
+even though PHP no longer adds that class. Kept intentionally as a BC safety net — harmless dead code,
+zero behavioral risk. If a third-party theme or snippet ever adds the class manually, wobble still works.
 
 ## Open Questions
 
@@ -88,5 +90,6 @@ None.
 | Theme var read exists | ✅ Line 619 — `var theme = window.cmsmCursorTheme` |
 | Blend JSDoc present | ✅ 3 hits — INTENTIONAL, FOUC, FOUC risk |
 | isWobbleEnabled reads window var | ✅ Line 1006 — `window.cmsmCursorWobble \|\| body.classList...` |
+| CSS wobble class usage | ✅ None found — `grep 'cursor-wobble' custom-cursor.css` empty |
 | Build | ✅ Success |
-| AC met | ✅ All automated checks pass; manual tests pending |
+| AC met | ⚠️ Partial — automated checks pass, manual tests pending |
