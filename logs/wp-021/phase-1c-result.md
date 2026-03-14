@@ -52,7 +52,7 @@ No `CursorState.transition` calls existed in the blend block — all state chang
 | Resolver | Line | Purity | Returns |
 |---|---|---|---|
 | `resolveElement` | 1809 | PURE (DOM read only) | `Element\|null` |
-| `resolveVisibility` | 1861 | PURE (DOM read only) | `{action, reason}\|null` |
+| `resolveVisibility` | 1861 | IMPURE (reads/writes `formZoneActive`) | `{action, reason}\|null` |
 | `resolveSpecialCandidate` | 1908 | IMPURE (calls `SpecialCursorManager.deactivate()`) | `{type, el}\|null` |
 | `resolveEffectForElement` | 1984 | PURE (DOM read only) | `{coreEffect, perElementWobble}` |
 | `resolveBlendForElement` | 2024 | PURE (DOM read only) | `string` (`''`/`'soft'`/`'medium'`/`'strong'`) |
@@ -104,6 +104,12 @@ No `CursorState.transition` calls existed in the blend block — all state chang
 
 Per-element wobble not a regression — investigated, confirmed current render path drives wobble through `coreEffect` string, not `perElementWobble`. `perElementWobble` is set but not consumed by render. Logged as pre-existing, not a 1C issue.
 
+## Carry-Forward for Phase 2/5
+
+- Phase 1 finished extraction of core concerns (element, visibility, special candidate, effect, blend) — all 5 resolvers at module scope
+- Orchestrator-only target NOT yet reached: `detectCursorMode` still ~313 lines with special cursor application blocks (~197 lines) and adaptive detection (~66 lines) inline
+- Next structural step: handler unification / docs update (Phase 2/5 scope)
+
 ## Open Questions
 
 None.
@@ -116,7 +122,7 @@ None.
 | resolveBlendForElement pure (no setBlendIntensity) | PASS (0 matches in lines 2024-2116) |
 | resolveBlendForElement pure (no CursorState.transition) | PASS (0 matches in lines 2024-2116) |
 | detectCursorMode calls resolveBlendForElement → setBlendIntensity | PASS (line 2349-2354) |
-| Blend mapping matches FUNCTIONAL-MAP Scenario 6 | PASS (all 13 paths verified) |
+| Blend mapping matches FUNCTIONAL-MAP Scenario 6 | PASS (all Scenario 6 branches matched; extra defensive/asymmetric paths documented and preserved verbatim) |
 | Special cursor blend blocks untouched | PASS (image/text/icon at 2172-2194, 2243-2265, 2311-2333) |
 | Adaptive block untouched | PASS (starts line 2361) |
 | perElementWobble writes to module scope | PASS (line 2359) |
