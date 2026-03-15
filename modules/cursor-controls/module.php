@@ -122,18 +122,20 @@ class Module extends Base_Module {
 			'cmsmasters_cursor_element_mode',
 			array(
 				'label'   => esc_html__( 'Custom Cursor', 'cmsmasters-elementor' ),
-				'type'    => Controls_Manager::SELECT,
-				'default' => $is_show_mode ? 'hide' : 'default',
-				'options' => $is_show_mode
+				'type'        => Cmsmasters_Controls_Manager::CHOOSE_TEXT,
+				'label_block' => ! $is_show_mode,
+				'default'     => $is_show_mode ? 'hide' : 'default',
+				'options'     => $is_show_mode
 					? array(
-						'customize' => esc_html__( 'Show', 'cmsmasters-elementor' ),
-						'hide'      => esc_html__( 'Hide', 'cmsmasters-elementor' ),
+						'customize' => array( 'title' => esc_html__( 'Show', 'cmsmasters-elementor' ) ),
+						'hide'      => array( 'title' => esc_html__( 'Hide', 'cmsmasters-elementor' ) ),
 					)
 					: array(
-						'default'   => esc_html__( 'Use global', 'cmsmasters-elementor' ),
-						'customize' => esc_html__( 'Customize', 'cmsmasters-elementor' ),
-						'hide'      => esc_html__( 'Hide', 'cmsmasters-elementor' ),
+						'default'   => array( 'title' => esc_html__( 'Use global', 'cmsmasters-elementor' ) ),
+						'customize' => array( 'title' => esc_html__( 'Customize', 'cmsmasters-elementor' ) ),
+						'hide'      => array( 'title' => esc_html__( 'Hide', 'cmsmasters-elementor' ) ),
 					),
+				'toggle'    => false,
 				'separator' => 'before',
 			)
 		);
