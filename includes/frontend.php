@@ -1467,20 +1467,20 @@ class Frontend extends Base_App {
 			$inline_css_parts[] = ':root { --cmsmasters-cursor-color: ' . esc_attr( $cursor_color ) . '; --cmsmasters-cursor-color-dark: ' . esc_attr( $cursor_color ) . '; }';
 		}
 
-		// Dot sizes (high specificity to override theme defaults)
+		// Dot sizes (on :root so editor JS inline override wins)
 		$dot_size = AddonUtils::get_kit_option( 'cmsmasters_custom_cursor_cursor_size', 8 );
 		$dot_hover_size = AddonUtils::get_kit_option( 'cmsmasters_custom_cursor_size_on_hover', 40 );
 
 		$size_vars = array();
-		if ( ! empty( $dot_size ) && is_numeric( $dot_size ) ) {
+		if ( '' !== (string) $dot_size && is_numeric( $dot_size ) ) {
 			$size_vars[] = '--cmsmasters-cursor-dot-size: ' . intval( $dot_size ) . 'px';
 		}
-		if ( ! empty( $dot_hover_size ) && is_numeric( $dot_hover_size ) ) {
+		if ( '' !== (string) $dot_hover_size && is_numeric( $dot_hover_size ) ) {
 			$size_vars[] = '--cmsmasters-cursor-dot-hover-size: ' . intval( $dot_hover_size ) . 'px';
 		}
 
 		if ( ! empty( $size_vars ) ) {
-			$inline_css_parts[] = 'body.cmsmasters-cursor-enabled[class], body.cmsmasters-cursor-widget-only[class] { ' . implode( '; ', $size_vars ) . '; }';
+			$inline_css_parts[] = ':root { ' . implode( '; ', $size_vars ) . '; }';
 		}
 
 		if ( ! empty( $inline_css_parts ) ) {
