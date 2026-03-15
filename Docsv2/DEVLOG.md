@@ -4,6 +4,22 @@ Living document tracking development sessions, decisions, and iterations.
 
 ---
 
+## 2026-03-15 — Live Kit Settings Sync in Editor Preview
+
+**Problem:** Kit (global) cursor settings had no live preview — changing color, blend, theme etc. in Site Settings panel required iframe reload to take effect. Page-level settings already had live sync, but Kit was missing.
+
+**Solution:** Two-file postMessage bridge with cascade contract `effective = Kit baseline + page overrides`:
+
+- **Sender** (`navigator-indicator.js`): Backbone `change` listener on Kit doc settings model, filtered to `cmsmasters_custom_cursor_*` keys. Builds normalized payload (value remaps mirror PHP: `dot_ring`→`classic`, `disabled`→`''`, wobble→effect). Broadcasts `cmsmasters:cursor:kit-settings` to preview iframe. Eager + lazy attach points for Kit doc availability.
+
+- **Receiver** (`cursor-editor-sync.js`): `applyKitBaseline(p)` — (1) updates `initialCursorState` so page "Default" fallback reads latest Kit, (2) applies Kit to DOM (body classes, CSS vars, window vars), (3) re-applies stored `activePageOverrides` on top. Kit-only fields (visibility, dot_size, dual_mode, trueGlobalBlend) always applied directly.
+
+**Key design choice:** Re-apply full page overrides after Kit change rather than per-field skip logic. Simpler, symmetric with init order, one extra DOM write per Kit change (negligible — Kit changes are rare user actions).
+
+**Log:** `logs/wp-021/phase-6-kit-preview-sync.md`
+
+---
+
 ## 2026-03-15 — Quality baseline fix: duplicate CSS selector + innerHTML false positives
 
 **Problem:** `npm run quality` had 2 actionable failures blocking clean runs:
