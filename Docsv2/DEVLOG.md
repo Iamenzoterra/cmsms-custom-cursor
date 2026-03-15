@@ -4,6 +4,20 @@ Living document tracking development sessions, decisions, and iterations.
 
 ---
 
+## 2026-03-15 — Hotfix: Dot Theme Kit Size Override
+
+**Problem:** Kit size controls (`--cmsmasters-cursor-dot-size`, `--cmsmasters-cursor-dot-hover-size`) had no effect on dot theme. Slider moved, value saved, but dot stayed 10px / 20px hover.
+
+**Root cause:** `body.cmsmasters-cursor-theme-dot` in `custom-cursor.css` hardcoded `--cmsmasters-cursor-dot-size:10px` and `--cmsmasters-cursor-dot-hover-size:20px`. Body-level selector beats `:root` Kit vars by specificity — Kit values were dead on arrival.
+
+**Fix:** Deleted the 4-line block. Dot theme now inherits size vars from `:root` (Kit-configured values). Ring hide and hover rules untouched.
+
+**Behaviour change:** Users who never configured Kit dot sizes will see `:root` defaults (8px / 40px) instead of the old forced 10px / 20px. This is correct — Kit controls should be the authority.
+
+**Iterations:** 0 — machete fix, single block deletion. Identified via CSS specificity analysis.
+
+---
+
 ## 2026-03-15 — Hotfix: Kit Smoothness Not Updating Live in Editor
 
 **Problem:** Changing smoothness in Kit (Site Settings) or Page Settings didn't update cursor follow speed live in editor preview. Required save + reload to take effect.

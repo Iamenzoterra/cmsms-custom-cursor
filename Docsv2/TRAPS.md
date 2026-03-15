@@ -117,14 +117,16 @@ The *UI label* also flips between "Show" and "Hide". Code that assumes a fixed m
 
 ---
 
-## TRAP-012: Kit Size CSS Vars — :root Required for Editor Live Preview
+## TRAP-012: Kit Size CSS Vars — :root Required, Body-Level Overrides Kill Kit
 
-**Trigger:** Moving cursor size CSS vars to a selector with specificity > (0,1,0), e.g. `body.cmsmasters-cursor-enabled[class]`.
-**Breaks:** Editor real-time Kit size preview. `cursor-editor-sync.js` applies Kit size changes via `element.style.setProperty('--cmsmasters-cursor-dot-size', ...)` on `document.documentElement` (`:root`). Inline styles on `:root` have specificity (0,1,0) + inline — but the custom property resolution uses the highest-specificity *declaration*, not the inline attribute. A `body[class]` declaration at (0,2,0) wins over `:root` inline, making JS size changes invisible.
-**Fix:** Keep size vars on `:root` in PHP. JS inline override on `documentElement` then wins naturally.
+**Trigger:** Moving cursor size CSS vars to a selector with specificity > (0,1,0), e.g. `body.cmsmasters-cursor-enabled[class]`, OR hardcoding size vars in a `body.` theme rule.
+**Breaks:** Kit size controls become dead. Two known instances:
+1. **Selector specificity (WP-022):** `body[class]` at (0,2,0) beats `:root` inline from JS — editor live preview of Kit sizes stops working.
+2. **Hardcoded theme defaults (dot theme hotfix):** `body.cmsmasters-cursor-theme-dot { --dot-size:10px; --dot-hover-size:20px }` overrode `:root` Kit values by specificity — Kit sliders had zero effect on dot theme.
+**Fix:** Keep size vars on `:root` only. Theme-specific rules must NOT re-declare size custom properties — they should read them via `var()`, never write them.
 **Also:** Don't use `!empty()` to guard numeric CSS values — `!empty(0)` is `true`, filtering out valid `0px`. Use `'' !== (string) $val` instead.
 **See:** DEC-010
 
 ---
 
-*Last updated: 2026-03-15 | WP-022 Phase 2*
+*Last updated: 2026-03-15 | Dot theme size hotfix*
