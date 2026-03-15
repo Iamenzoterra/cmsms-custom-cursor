@@ -274,11 +274,6 @@ body.cmsmasters-cursor-size-lg .cmsmasters-cursor-ring {
     margin-top:-40px
 }
 
-body.cmsmasters-cursor-theme-dot {
-    --cmsmasters-cursor-dot-size:10px;
-    --cmsmasters-cursor-dot-hover-size:20px
-}
-
 body.cmsmasters-cursor-theme-dot .cmsmasters-cursor-ring {
     display:none!important
 }
