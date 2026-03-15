@@ -20,6 +20,14 @@
 .cmsmasters-nav-cursor-indicator {
 	cursor: help;
 	transition: transform 0.15s ease, opacity 0.15s ease;
+	/* Override Elementor's native indicator gradient/highlight */
+	width: 8px !important;
+	height: 8px !important;
+	border-radius: 50% !important;
+	flex-shrink: 0 !important;
+	background-image: none !important;
+	border: none !important;
+	box-shadow: none !important;
 }
 
 .cmsmasters-nav-cursor-indicator:hover {
@@ -263,14 +271,3 @@
 	z-index: 1;
 }
 
-/* Ensure indicator has proper dimensions and override Elementor's native styles */
-.cmsmasters-nav-cursor-indicator {
-	width: 8px !important;
-	height: 8px !important;
-	border-radius: 50% !important;
-	flex-shrink: 0 !important;
-	/* Override Elementor's native indicator gradient/highlight */
-	background-image: none !important;
-	border: none !important;
-	box-shadow: none !important;
-}
