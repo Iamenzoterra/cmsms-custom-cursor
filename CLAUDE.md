@@ -1,6 +1,18 @@
-# Custom Cursor Addon v5.6
+# Custom Cursor Addon v5.7
 
 WordPress + Elementor addon for custom animated cursors with effects, adaptive mode, and special cursor types.
+
+---
+
+## Skills (deep knowledge — auto-loaded by context)
+
+| Skill | What it knows | When it triggers |
+|---|---|---|
+| `cmsmasters-custom-cursor` | Architecture, settings rosetta stone, toggle semantic flip, findWithBoundary cascade, blend/effect resolution, CursorState, mandatory code patterns, pre-change checklist | Any cursor file change |
+| `cmsmasters-kit-migration` | Kit architecture, Utils API, value mappings, __globals__ traps, CSS var override mechanism, two-repo workflow | WP-020 migration work, get_option→Kit changes |
+| 13× WordPress skills | WP coding standards, security, performance, Elementor hooks/controls/forms, WooCommerce, accessibility | General WP/Elementor development |
+
+**Rule:** Don't duplicate skill content here. If you need patterns, settings maps, or architecture details — the skills have them.
 
 ---
 
@@ -8,135 +20,77 @@ WordPress + Elementor addon for custom animated cursors with effects, adaptive m
 
 ```
 repo-root/
-│
-├── assets/                  ← CURSOR SOURCE FILES (edit + deploy)
-│   ├── css/
-│   │   ├── editor-navigator.css
-│   │   └── editor-navigator.min.css
-│   ├── js/
-│   │   ├── cursor-editor-sync.js      # Preview ↔ Editor sync
-│   │   ├── cursor-editor-sync.min.js
-│   │   ├── navigator-indicator.js     # Navigator panel indicators
-│   │   └── navigator-indicator.min.js
-│   └── lib/
-│       └── custom-cursor/
-│           ├── custom-cursor.js       # ★ MAIN FILE (~2100 lines)
-│           ├── custom-cursor.min.js
-│           ├── custom-cursor.css
-│           └── custom-cursor.min.css
-│
-├── includes/                ← CURSOR PHP (edit + deploy)
-│   ├── editor.php            # Elementor editor integration
-│   └── frontend.php          # WordPress frontend hooks
-│
-├── modules/                 ← CURSOR MODULES (edit + deploy)
-│   ├── cursor-controls/
-│   │   └── module.php        # Elementor widget controls
-│   └── settings/
-│       └── settings-page.php # WP admin settings page
-│
-├── cmsmasters-elementor-addon/  ← FULL PLUGIN (READ-ONLY reference)
-│   └── ...                      # Use for context when needed
-│
-├── DOCS/                    ← 18 documentation files
-│   ├── 00-CONTEXT.md         # ★ START HERE — index + navigation
-│   ├── 01-ARCHITECTURE.md
-│   ├── 02-CHANGELOG-v5_6.md
-│   ├── 03-BACKLOG.md
-│   ├── 04-KNOWN-ISSUES.md
-│   ├── 05-API-JAVASCRIPT.md
-│   ├── 06-API-CSS.md
-│   ├── 07-API-DATA-ATTRIBUTES.md
-│   ├── 08-API-PHP.md
-│   ├── 09-MAP-DEPENDENCY.md
-│   ├── 10-MAP-DATA-FLOW.md
-│   ├── 11-MAP-EDITOR-SYNC.md
-│   ├── 12-REF-BODY-CLASSES.md
-│   ├── 13-REF-EFFECTS.md
-│   ├── 14-REF-FILES.md
-│   ├── 15-REF-SETTINGS.md
-│   ├── 16-SEC-CODE-REVIEW.md
-│   ├── 17-SEC-SVG-SANITIZER.md
-│   ├── 18-SEC-TEST-CHECKLIST.md
-│   └── DEVLOG.md              # ★ Living dev log — sessions, iterations, decisions
-│
-├── .claude/
-│   ├── agents/              ← 10 sub-agents
-│   └── commands/            ← slash commands
-│
-├── CLAUDE.md                ← this file
-└── TASK-refactor-state-machine.md
+├── assets/                     ← JS + CSS source (EDIT these)
+│   ├── js/                      cursor-editor-sync.js, navigator-indicator.js
+│   └── lib/custom-cursor/       custom-cursor.js (★ main, ~2100 lines), custom-cursor.css
+├── includes/                   ← PHP hooks (EDIT)
+│   ├── frontend.php              WordPress frontend hooks, settings bridge
+│   └── editor.php                Elementor editor integration
+├── modules/                    ← Elementor modules (EDIT)
+│   ├── cursor-controls/module.php   Widget/section/container controls
+│   └── settings/settings-page.php   WP admin settings (being removed in WP-020)
+├── cmsmasters-elementor-addon/ ← Full plugin (READ-ONLY reference)
+├── Docsv2/                     ← ★ Primary documentation (start here)
+│   ├── OVERVIEW.md               Router — what this is, where to find what
+│   ├── SOURCE-OF-TRUTH.md        Canonical behavior map (scenarios + matrices)
+│   ├── TRAPS.md                  Pitfalls catalog (TRAP-NNN)
+│   ├── DECISIONS.md              Design decisions (DEC-NNN)
+│   ├── DEVLOG.md                 ★ Living dev log — MANDATORY updates
+│   ├── BACKLOG.md                Planned work
+│   └── ref/                      Deep-dive references
+│       ├── REF-SETTINGS.md        Control IDs, defaults, PHP examples
+│       ├── REF-EFFECTS.md         Effect formulas, CSS vars, physics
+│       └── REF-EDITOR.md          PostMessage protocol, navigator, editor sync
+├── DOCS/                       ← Old docs (deprecated, kept for reference)
+├── .claude/agents/             ← 10 sub-agents
+├── .claude/commands/           ← slash commands
+└── CLAUDE.md                   ← this file
 ```
 
-### Deployment flow
+### Deployment
 
 ```
-repo: assets/ includes/ modules/
-        │
-        ├──→ GitHub
-        │       │
-        └───────┴──→ Server (overwrites matching paths in cmsmasters-elementor-addon plugin)
+assets/ includes/ modules/ → GitHub → Server (overwrites paths in plugin)
 ```
 
-### Editable vs read-only
-
-| Path | Access | Purpose |
-|---|---|---|
-| `assets/` | **EDIT** | JS + CSS source files for cursor |
-| `includes/` | **EDIT** | PHP hooks (frontend, editor) |
-| `modules/` | **EDIT** | Elementor controls, settings page |
-| `DOCS/` | **EDIT** | Documentation (via doc-keeper agent) |
-| `cmsmasters-elementor-addon/` | **READ-ONLY** | Full plugin for reference/context |
+**Editable:** `assets/`, `includes/`, `modules/`, `Docsv2/`
+**Read-only:** `cmsmasters-elementor-addon/`
 
 ---
 
 ## ⚠️ Build System — CRITICAL
 
-**Stack:** Grunt (via CMSMasters framework)
-
 ```
-Source files:     assets/**/*.js, assets/**/*.css
-Minified files:   assets/**/*.min.js, assets/**/*.min.css
-Build command:    npm run build  (= grunt build)
-Watch mode:       npm run watch  (auto-rebuild on save)
+Edit:    assets/**/*.js, assets/**/*.css     (source files)
+Built:   assets/**/*.min.js, assets/**/*.min.css  (server reads ONLY these)
+Build:   npm run build
+Watch:   npm run watch
 ```
 
-### Rules
-
-1. **ALWAYS edit source files** (`*.js`, `*.css`) — NEVER edit `*.min.*` directly
-2. **Server reads ONLY minified files** — changes to source have no effect until built
-3. After any code change, remind the user to run `npm run build` or `npm run watch`
-4. The `.min.*` files are auto-generated — do not commit them separately
-
-### Key source files
-
-| Source (edit this) | Minified (server reads this) |
-|---|---|
-| `assets/lib/custom-cursor/custom-cursor.js` | `assets/lib/custom-cursor/custom-cursor.min.js` |
-| `assets/lib/custom-cursor/custom-cursor.css` | `assets/lib/custom-cursor/custom-cursor.min.css` |
-| `assets/js/navigator-indicator.js` | `assets/js/navigator-indicator.min.js` |
-| `assets/js/cursor-editor-sync.js` | `assets/js/cursor-editor-sync.min.js` |
+1. **ALWAYS edit source** — NEVER touch `*.min.*`
+2. **Server ignores source** — no build = no effect
+3. After code changes, remind user: `npm run build`
 
 ---
 
-## Sub-Agent Team
+## Sub-Agents
 
-| Agent | Model | Focus |
-|---|---|---|
-| 🔒 security-sentinel | sonnet | XSS, postMessage, sanitizer |
-| 📖 doc-keeper | sonnet | Documentation updates |
-| 🏗️ architect | sonnet | Architecture invariants |
-| ⚡ render-engine | sonnet | RAF loop, effects, 60fps |
-| 🎨 css-compat | sonnet | Body classes, CSS vars, fallbacks |
-| 🌉 elementor-bridge | sonnet | Editor ↔ Preview, postMessage |
-| 🧹 memory-guardian | sonnet | Memory leaks, cleanup |
-| 📦 wordpress-expert | sonnet | PHP, hooks, options API |
-| 🧪 qa-strategist | sonnet | Test plans, false positives |
-| 🔧 code-quality | haiku | Code debt, naming, JSDoc |
+| Agent | Focus |
+|---|---|
+| 🔒 security-sentinel | XSS, postMessage, sanitizer |
+| 📖 doc-keeper | Documentation updates |
+| 🏗️ architect | Architecture invariants |
+| ⚡ render-engine | RAF loop, effects, 60fps |
+| 🎨 css-compat | Body classes, CSS vars, fallbacks |
+| 🌉 elementor-bridge | Editor ↔ Preview, postMessage |
+| 🧹 memory-guardian | Memory leaks, cleanup |
+| 📦 wordpress-expert | PHP, hooks, Kit API |
+| 🧪 qa-strategist | Test plans, false positives |
+| 🔧 code-quality | Code debt, naming, JSDoc |
 
-### Invocation Matrix
+### When to invoke
 
-| What changed | Invoke agents |
+| Changed | Agents |
 |---|---|
 | `custom-cursor.js` | security-sentinel → render-engine → css-compat → memory-guardian → doc-keeper |
 | `custom-cursor.css` | css-compat → doc-keeper |
@@ -148,58 +102,22 @@ Watch mode:       npm run watch  (auto-rebuild on save)
 
 ---
 
-## 5 Critical Patterns (never break these)
-
-### 1. Singleton Guard
-```javascript
-if (window.cmsmastersCursor) return; // line ~152
-```
-
-### 2. SVG Sanitization
-```javascript
-container.innerHTML = sanitizeSvgHtml(rawHtml); // NEVER raw innerHTML
-```
-
-### 3. postMessage Origin Validation
-```javascript
-if (e.origin !== TRUSTED_ORIGIN) return; // EVERY message handler
-```
-
-### 4. Cleanup on Destroy
-```javascript
-// preview:destroyed → clear intervals, disconnect observers, remove listeners
-```
-
-### 5. Sticky Mode (adaptive)
-```javascript
-if (Date.now() - lastModeChangeTime < STICKY_MODE_DURATION) return;
-```
-
----
-
 ## Open Issues
 
 | ID | Priority | Description |
 |---|---|---|
 | MEM-005 | LOW | Typography cache unbounded |
 | PERF-001 | DEFERRED | RAF always running (3-5% CPU) |
-| CODE-005 | PARTIAL | Long functions (render() still ~250 lines) |
-| CODE-001,004,006-010 | Various | Code quality debt |
-
-**Recently Resolved (v5.6):**
-- ✅ CSS-001: z-index conflicts → CSS custom properties
-- ✅ MEM-004: Special cursor accumulation → SpecialCursorManager
-- ✅ CODE-002: Console.log in production → Debug mode
-- ✅ CODE-003: Empty catch blocks → debugError + CMSM_DEBUG
+| CODE-005 | PARTIAL | render() still ~250 lines |
 
 ---
 
 ## Workflow
 
-1. Read `DOCS/00-CONTEXT.md` for orientation
+1. Skills auto-load context — check them before reading DOCS manually
 2. Check invocation matrix → which agents needed
-3. Edit **source** files in `assets/`, `includes/`, `modules/`
-4. Run agents for verification
-5. Update `DOCS/` via doc-keeper agent
-6. **MANDATORY: Update `DOCS/DEVLOG.md`** — append an entry for every change session. Include: problem, approach iterations (with what failed and why), final solution, key insights. This is a living document and the primary record of development decisions.
+3. Edit **source** files only (`assets/`, `includes/`, `modules/`)
+4. Run relevant agents for verification
+5. Update `Docsv2/` via doc-keeper
+6. **MANDATORY: Append to `Docsv2/DEVLOG.md`** — problem, iterations (what failed + why), solution, insights
 7. Remind user: `npm run build` before testing
