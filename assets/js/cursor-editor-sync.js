@@ -896,6 +896,7 @@
             window.cmsmastersCursorSmooth = ini.smooth;
             window.cmsmCursorSmooth = ini.smooth;
         }
+        dispatchSmoothnessUpdate(window.cmsmCursorSmooth);
 
         // --- Blend mode ---
         if (p.blend_mode) {
@@ -1045,6 +1046,7 @@
         // Smoothness
         window.cmsmastersCursorSmooth = p.smoothness || undefined;
         window.cmsmCursorSmooth = p.smoothness || undefined;
+        dispatchSmoothnessUpdate(window.cmsmCursorSmooth);
 
         // Blend mode
         removeClassByPrefix(body, 'cmsmasters-cursor-blend');
@@ -1109,6 +1111,18 @@
      * @param {Element} el
      * @param {string} prefix
      */
+    /**
+     * Dispatch smoothness update event for live cursor preview.
+     * Normalizes value to a valid enum before dispatch — listener trusts this.
+     * @param {string|undefined} value - Raw smoothness value
+     */
+    function dispatchSmoothnessUpdate(value) {
+        var resolved = (typeof value === 'string' && value !== '') ? value : 'normal';
+        document.body.dispatchEvent(new CustomEvent('cmsmasters:cursor:smoothness-update', {
+            detail: { smoothness: resolved }
+        }));
+    }
+
     function removeClassByPrefix(el, prefix) {
         var toRemove = [];
         el.classList.forEach(function(cls) {

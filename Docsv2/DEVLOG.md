@@ -4,6 +4,21 @@ Living document tracking development sessions, decisions, and iterations.
 
 ---
 
+## 2026-03-15 — Hotfix: Kit Smoothness Not Updating Live in Editor
+
+**Problem:** Changing smoothness in Kit (Site Settings) or Page Settings didn't update cursor follow speed live in editor preview. Required save + reload to take effect.
+
+**Root cause:** `custom-cursor.js` reads `window.cmsmCursorSmooth` once at init into cached `L` and `dotL` (lerp factors for ring and dot). The RAF render loop uses these cached values. The postMessage pipeline already delivered smoothness correctly to `cursor-editor-sync.js`, which updated `window.cmsmCursorSmooth` — but `custom-cursor.js` never re-read it.
+
+**Fix:** Added `cmsmasters:cursor:smoothness-update` custom event, following the existing blend-mode pattern (`cmsmasters:cursor:page-blend-update`):
+- `dispatchSmoothnessUpdate()` helper in `cursor-editor-sync.js` normalizes value (undefined → 'normal') and dispatches
+- Called from both `applyPageCursorSettings()` and `applyKitBaseline()`
+- Listener in `custom-cursor.js` updates `L` and `dotL` from `smoothMap`
+
+**Key insight:** Same pattern as blend — init-only cached values need a custom event bridge for live editor preview. The dispatcher normalizes before dispatch so the listener can trust valid enum input.
+
+---
+
 ## 2026-03-15 — WP-022: Kit Size CSS Vars to :root
 
 **Problem:** In the Elementor editor, changing Kit cursor size/hover-size in Site Settings had no live effect. The slider moved, `cursor-editor-sync.js` applied the new value via `documentElement.style.setProperty()`, but the cursor didn't resize until iframe reload.

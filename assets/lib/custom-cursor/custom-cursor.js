@@ -728,6 +728,12 @@
         globalBlendIntensity = e.detail.blend || '';
     });
 
+    // Editor live preview: update smoothness when Kit/Page Settings change
+    body.addEventListener('cmsmasters:cursor:smoothness-update', function(e) {
+        L = smoothMap[e.detail.smoothness];
+        dotL = Math.min(L * DOT_SPEED_MULTIPLIER, 1);
+    });
+
     // === SPECIAL CURSOR LIFECYCLE MANAGER (Phase 3 — MEM-004 fix) ===
     // Coordinates create/remove of image/text/icon cursors.
     // Prevents accumulation by deduplication and atomic cleanup.
