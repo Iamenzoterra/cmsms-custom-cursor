@@ -280,12 +280,12 @@
 
     /**
      * Debug log — only outputs when debugMode is active
-     * @param {string} category — init, mode, special, effect, event, sync
+     * @param {string} category — init, mode, special, effect, event, sync, resolve, state
      * @param {string} message — log message
      * @param {*} [data] — optional data to log
      */
     function debugLog(category, message, data) {
-        if (!debugMode) return;
+        if (!(debugMode || window.CMSM_DEBUG)) return;
         var prefix = '[Cursor:' + category + ']';
         if (data !== undefined) {
             console.log(prefix, message, data);
@@ -301,7 +301,7 @@
      * @param {*} [data] — optional data to log
      */
     function debugWarn(category, message, data) {
-        if (!debugMode) return;
+        if (!(debugMode || window.CMSM_DEBUG)) return;
         var prefix = '[Cursor:' + category + ']';
         if (data !== undefined) {
             console.warn(prefix, message, data);
@@ -442,6 +442,9 @@
 
             if (changed) {
                 this._applyToDOM(prev);
+                if (debugMode || window.CMSM_DEBUG) {
+                    debugLog('state', 'transition', { change: change, source: source || '?', prev: prev });
+                }
             }
         },
 
@@ -1847,16 +1850,30 @@
             break;
         }
 
-        if (!el) return null;
+        if (!el) {
+            if (debugMode || window.CMSM_DEBUG) {
+                debugLog('resolve', 'element: null (no hit)');
+            }
+            return null;
+        }
 
         // Skip popup overlay backgrounds (semi-transparent dark)
         if (el.closest && el.closest('.dialog-widget-content, .dialog-lightbox-widget')) {
             // Inside popup content — continue detection normally
         } else if (el.closest && el.closest('.elementor-popup-modal')) {
             // On popup overlay (not content) — skip detection
+            if (debugMode || window.CMSM_DEBUG) {
+                debugLog('resolve', 'element: null (popup overlay)');
+            }
             return null;
         }
 
+        if (debugMode || window.CMSM_DEBUG) {
+            var tag = el.tagName || '?';
+            var cls = (typeof el.className === 'string' && el.className) ? '.' + el.className.split(' ')[0] : '';
+            var id = el.id ? '#' + el.id : '';
+            debugLog('resolve', 'element: ' + tag + id + cls);
+        }
         return el;
     }
 
@@ -1892,24 +1909,33 @@
         // Widget-only: skip detection outside show zones
         if (isWidgetOnly) {
             var showZone = el.closest ? el.closest(SHOW_ZONE_SELECTOR) : null;
-            if (!showZone) return { action: 'skip', reason: 'outside-show-zone', terminal: true };
+            if (!showZone) {
+                if (debugMode || window.CMSM_DEBUG) debugLog('resolve', 'visibility: skip/outside-show-zone');
+                return { action: 'skip', reason: 'outside-show-zone', terminal: true };
+            }
         } else {
             // Full mode: check for HIDE cursor FIRST (detection skips only — hide is event-owned)
             var hideEl = el.closest ? el.closest('[data-cursor="hide"],[data-cursor="none"]') : null;
-            if (hideEl) return { action: 'skip', reason: 'hide-zone', terminal: true };
+            if (hideEl) {
+                if (debugMode || window.CMSM_DEBUG) debugLog('resolve', 'visibility: skip/hide-zone');
+                return { action: 'skip', reason: 'hide-zone', terminal: true };
+            }
         }
 
         // P4 v2: Auto-hide cursor on forms/popups (graceful degradation)
         if (isFormZone(el)) {
             formZoneActive = true;
+            if (debugMode || window.CMSM_DEBUG) debugLog('resolve', 'visibility: hide/forms');
             return { action: 'hide', reason: 'forms', terminal: true };
         } else if (formZoneActive) {
             // Native <select> dropdowns block elementsFromPoint — don't restore
             // while a select has focus (dropdown may still be open)
             if (document.activeElement && document.activeElement.tagName === 'SELECT') {
+                if (debugMode || window.CMSM_DEBUG) debugLog('resolve', 'visibility: skip/form-zone-select-guard');
                 return { action: 'skip', reason: 'form-zone-select-guard', terminal: true };
             }
             formZoneActive = false;
+            if (debugMode || window.CMSM_DEBUG) debugLog('resolve', 'visibility: show/forms-restore');
             return { action: 'show', reason: 'forms-restore', terminal: false };
         }
 
@@ -1917,9 +1943,11 @@
         // Cross-origin iframes block mouse events, videos cause lag
         if (el.tagName === 'VIDEO' || el.tagName === 'IFRAME' ||
             (el.closest && el.closest('video, iframe'))) {
+            if (debugMode || window.CMSM_DEBUG) debugLog('resolve', 'visibility: hide/video');
             return { action: 'hide', reason: 'video', terminal: true };
         }
 
+        if (debugMode || window.CMSM_DEBUG) debugLog('resolve', 'visibility: null (continue)');
         return null;
     }
 
@@ -1994,11 +2022,20 @@
         if (closestCoreEl && closestCoreDepth < specialDepth) {
             // Clean up any active special cursors
             SpecialCursorManager.deactivate();
+            if (debugMode || window.CMSM_DEBUG) {
+                debugLog('resolve', 'special: null (core closer)', { coreDepth: closestCoreDepth, specialDepth: specialDepth });
+            }
             return null;
         }
 
-        if (!specialEl) return null;
+        if (!specialEl) {
+            if (debugMode || window.CMSM_DEBUG) debugLog('resolve', 'special: null');
+            return null;
+        }
 
+        if (debugMode || window.CMSM_DEBUG) {
+            debugLog('resolve', 'special: ' + specialType, { depth: specialDepth });
+        }
         return { type: specialType, el: specialEl, depth: specialDepth };
     }
 
@@ -2037,6 +2074,9 @@
         // For backwards compatibility: wobble effect also sets perElementWobble
         var perElementWobble = (coreEffect === 'wobble') ? true : null;
 
+        if (debugMode || window.CMSM_DEBUG) {
+            debugLog('resolve', 'effect:', { coreEffect: coreEffect, perElementWobble: perElementWobble, inherited: !!inheritElForEffect });
+        }
         return { coreEffect: coreEffect, perElementWobble: perElementWobble };
     }
 
@@ -2082,13 +2122,25 @@
 
         if (selfBlend !== null) {
             // Element has EXPLICIT blend setting - use it
-            if (selfBlend === 'off' || selfBlend === 'no') return '';
-            if (selfBlend === 'soft' || selfBlend === 'medium' || selfBlend === 'strong') return selfBlend;
+            if (selfBlend === 'off' || selfBlend === 'no') {
+                if (debugMode || window.CMSM_DEBUG) debugLog('resolve', 'blend: "" (explicit off)');
+                return '';
+            }
+            if (selfBlend === 'soft' || selfBlend === 'medium' || selfBlend === 'strong') {
+                if (debugMode || window.CMSM_DEBUG) debugLog('resolve', 'blend: "' + selfBlend + '" (explicit value)');
+                return selfBlend;
+            }
             if (selfBlend === 'yes') {
-                return ctx.currentBlendIntensity === '' ? (ctx.trueGlobalBlend || 'soft') : ctx.currentBlendIntensity;
+                var result = ctx.currentBlendIntensity === '' ? (ctx.trueGlobalBlend || 'soft') : ctx.currentBlendIntensity;
+                if (debugMode || window.CMSM_DEBUG) debugLog('resolve', 'blend: "' + result + '" (explicit yes)');
+                return result;
             }
             // P1 fix: Explicit "default" = use true GLOBAL, not page override
-            if (selfBlend === 'default' || selfBlend === '') return ctx.trueGlobalBlend;
+            if (selfBlend === 'default' || selfBlend === '') {
+                if (debugMode || window.CMSM_DEBUG) debugLog('resolve', 'blend: "' + ctx.trueGlobalBlend + '" (explicit default)');
+                return ctx.trueGlobalBlend;
+            }
+            if (debugMode || window.CMSM_DEBUG) debugLog('resolve', 'blend: "' + ctx.currentBlendIntensity + '" (explicit unknown)');
             return ctx.currentBlendIntensity; // unknown value — no-op
         }
 
@@ -2099,6 +2151,7 @@
 
         if (isWidget && hasCursorSettings(el)) {
             // Dirty widget without blend attribute = use true GLOBAL
+            if (debugMode || window.CMSM_DEBUG) debugLog('resolve', 'blend: "' + ctx.trueGlobalBlend + '" (dirty widget)');
             return ctx.trueGlobalBlend;
         }
 
@@ -2132,16 +2185,27 @@
 
         if (blendEl) {
             var blendValue = blendEl.getAttribute('data-cursor-blend');
-            if (blendValue === 'off' || blendValue === 'no') return '';
-            if (blendValue === 'soft' || blendValue === 'medium' || blendValue === 'strong') return blendValue;
-            if (blendValue === 'yes') {
-                return ctx.currentBlendIntensity === '' ? (ctx.trueGlobalBlend || 'soft') : ctx.currentBlendIntensity;
+            if (blendValue === 'off' || blendValue === 'no') {
+                if (debugMode || window.CMSM_DEBUG) debugLog('resolve', 'blend: "" (walk: off)');
+                return '';
             }
+            if (blendValue === 'soft' || blendValue === 'medium' || blendValue === 'strong') {
+                if (debugMode || window.CMSM_DEBUG) debugLog('resolve', 'blend: "' + blendValue + '" (walk: value)', { from: blendEl.tagName });
+                return blendValue;
+            }
+            if (blendValue === 'yes') {
+                var result = ctx.currentBlendIntensity === '' ? (ctx.trueGlobalBlend || 'soft') : ctx.currentBlendIntensity;
+                if (debugMode || window.CMSM_DEBUG) debugLog('resolve', 'blend: "' + result + '" (walk: yes)');
+                return result;
+            }
+            if (debugMode || window.CMSM_DEBUG) debugLog('resolve', 'blend: "' + ctx.currentBlendIntensity + '" (walk: unknown)');
             return ctx.currentBlendIntensity; // unmatched cascade value — no-op
         }
 
         // No blend found — widget context uses true global, body uses page > global
-        return stoppedAtWidget ? ctx.trueGlobalBlend : ctx.globalBlendIntensity;
+        var fallback = stoppedAtWidget ? ctx.trueGlobalBlend : ctx.globalBlendIntensity;
+        if (debugMode || window.CMSM_DEBUG) debugLog('resolve', 'blend: "' + fallback + '" (no blend found)', { stoppedAtWidget: stoppedAtWidget });
+        return fallback;
     }
 
     function detectCursorMode(x, y) {
