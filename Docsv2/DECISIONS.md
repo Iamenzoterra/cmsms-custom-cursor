@@ -97,4 +97,15 @@
 
 ---
 
-*Last updated: 2026-03-15 | WP-021 Phase 5*
+## DEC-010: Kit Size CSS Vars on :root (Not body)
+
+**Date:** 2026-03-15 (WP-022 Phase 1)
+**Context:** Kit cursor size CSS vars (`--cmsmasters-cursor-dot-size`, `--cmsmasters-cursor-dot-hover-size`) were output on `body.cmsmasters-cursor-enabled[class], body.cmsmasters-cursor-widget-only[class]` — specificity (0,2,0). In the Elementor editor, `cursor-editor-sync.js` applies real-time Kit size changes via `element.style.setProperty()` on `document.documentElement` (`:root`). But `:root` has specificity (0,1,0), which loses to the body selector.
+**Choice:** Move PHP size vars to `:root` selector. Also fix zero-value guard: `!empty()` treats `0` as empty — changed to `'' !== (string)` so `0px` dot size is valid.
+**Why:** `:root` vs `:root` inline style — inline always wins, enabling live Kit preview. The body selector's `[class]` specificity hack was only needed when vars competed with theme defaults; on `:root` they still override CSS defaults (custom properties cascade).
+**Rejected:** Higher-specificity JS override (fragile, would need `!important`), `<style>` injection in JS (heavier, needs cleanup).
+**See:** TRAP-012
+
+---
+
+*Last updated: 2026-03-15 | WP-022 Phase 2*

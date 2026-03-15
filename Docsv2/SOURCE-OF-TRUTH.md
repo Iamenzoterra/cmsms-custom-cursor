@@ -29,8 +29,8 @@
 | **Cursor Color** | `cursor_color` | `color` | `color` (+ `force_color`) | -- | -- | `--cmsmasters-cursor-color`, `--cmsmasters-cursor-color-dark` | `data-cursor-color` |
 | **Adaptive Color** | `adaptive_color` | `adaptive` | -- | `cmsmCursorAdaptive` | `cmsmasters-cursor-on-light` / `cmsmasters-cursor-on-dark` | -- | -- |
 | **Blend Mode** | `blend_mode` | `blend_mode` | `blend_mode` (core) / `special_blend` (special) | `cmsmCursorTrueGlobalBlend` | `cmsmasters-cursor-blend` + `cmsmasters-cursor-blend-{intensity}` | -- | `data-cursor-blend` |
-| **Cursor Size** | `cursor_size` | -- | -- | -- | -- | `--cmsmasters-cursor-dot-size` | -- |
-| **Hover Size** | `size_on_hover` | -- | -- | -- | -- | `--cmsmasters-cursor-dot-hover-size` | -- |
+| **Cursor Size** | `cursor_size` | -- | -- | -- | -- | `--cmsmasters-cursor-dot-size` (on `:root`, not body) | -- |
+| **Hover Size** | `size_on_hover` | -- | -- | -- | -- | `--cmsmasters-cursor-dot-hover-size` (on `:root`, not body) | -- |
 | **Smoothness** | `smoothness` | `smoothness` | -- | `cmsmCursorSmooth` | -- | -- | -- |
 | **Wobble/Effect** | `wobble_effect` | `effect` | `effect` | `cmsmCursorEffect` (non-wobble), `cmsmCursorWobble` (wobble) | `cmsmasters-cursor-wobble` | -- | `data-cursor-effect` |
 | **Editor Preview** | `editor_preview` | -- | -- | -- | -- | -- | -- |

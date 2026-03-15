@@ -4,6 +4,20 @@ Living document tracking development sessions, decisions, and iterations.
 
 ---
 
+## 2026-03-15 — WP-022: Kit Size CSS Vars to :root
+
+**Problem:** In the Elementor editor, changing Kit cursor size/hover-size in Site Settings had no live effect. The slider moved, `cursor-editor-sync.js` applied the new value via `documentElement.style.setProperty()`, but the cursor didn't resize until iframe reload.
+
+**Root cause:** PHP output size CSS vars on `body.cmsmasters-cursor-enabled[class], body.cmsmasters-cursor-widget-only[class]` — specificity (0,2,0). The JS inline override on `:root` (documentElement) loses because CSS custom property declarations on a more-specific selector win, regardless of inline style. The `[class]` specificity hack was inherited from when vars needed to beat theme defaults.
+
+**Fix (Phase 1):** Moved size vars to `:root` in `frontend.php`. Now PHP declares at (0,1,0) and JS inline on same element wins. Also fixed `!empty()` zero-value guard — `!empty(0)` is `true` in PHP, which would filter out a valid `0px` dot size. Changed to `'' !== (string) $val && is_numeric($val)`.
+
+**Phase 2:** Documentation — DEC-010, TRAP-012.
+
+**Key insight:** CSS custom properties don't inherit like normal properties when set on different elements. A declaration on `body[class]` (0,2,0) beats an inline style on `:root` (0,1,0 + inline) because they target different elements — the body declaration wins in the cascade for body's subtree.
+
+---
+
 ## 2026-03-15 — Live Kit Settings Sync in Editor Preview
 
 **Problem:** Kit (global) cursor settings had no live preview — changing color, blend, theme etc. in Site Settings panel required iframe reload to take effect. Page-level settings already had live sync, but Kit was missing.

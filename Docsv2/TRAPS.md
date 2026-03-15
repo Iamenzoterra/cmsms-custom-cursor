@@ -117,4 +117,14 @@ The *UI label* also flips between "Show" and "Hide". Code that assumes a fixed m
 
 ---
 
-*Last updated: 2026-03-15 | WP-021 Phase 5*
+## TRAP-012: Kit Size CSS Vars — :root Required for Editor Live Preview
+
+**Trigger:** Moving cursor size CSS vars to a selector with specificity > (0,1,0), e.g. `body.cmsmasters-cursor-enabled[class]`.
+**Breaks:** Editor real-time Kit size preview. `cursor-editor-sync.js` applies Kit size changes via `element.style.setProperty('--cmsmasters-cursor-dot-size', ...)` on `document.documentElement` (`:root`). Inline styles on `:root` have specificity (0,1,0) + inline — but the custom property resolution uses the highest-specificity *declaration*, not the inline attribute. A `body[class]` declaration at (0,2,0) wins over `:root` inline, making JS size changes invisible.
+**Fix:** Keep size vars on `:root` in PHP. JS inline override on `documentElement` then wins naturally.
+**Also:** Don't use `!empty()` to guard numeric CSS values — `!empty(0)` is `true`, filtering out valid `0px`. Use `'' !== (string) $val` instead.
+**See:** DEC-010
+
+---
+
+*Last updated: 2026-03-15 | WP-022 Phase 2*
