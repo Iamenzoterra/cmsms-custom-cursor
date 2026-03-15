@@ -78,7 +78,7 @@ class Module extends Base_Module {
 		}
 
 		// Prevent duplicate registration
-		if ( $element->get_controls( 'cmsmasters_cursor_hide' ) ) {
+		if ( $element->get_controls( 'cmsmasters_cursor_element_mode' ) ) {
 			return;
 		}
 
@@ -117,22 +117,30 @@ class Module extends Base_Module {
 			return; // No sub-controls registered — settings persist in DB silently
 		}
 
-		// === HIDE / SHOW TOGGLE (contextual label) ===
+		// === ELEMENT MODE SELECT (3-state: default | customize | hide) ===
 		$element->add_control(
-			'cmsmasters_cursor_hide',
+			'cmsmasters_cursor_element_mode',
 			array(
-				'label'       => __( 'Custom Cursor', 'cmsmasters-elementor' ),
-				'type'        => Controls_Manager::SWITCHER,
-				'default'     => '',
-				'label_off'   => __( 'Hide', 'cmsmasters-elementor' ),
-				'label_on'    => __( 'Show', 'cmsmasters-elementor' ),
-				'description' => __( 'When <strong>Hide</strong> is chosen, system cursor will be shown on this element.', 'cmsmasters-elementor' ),
+				'label'   => esc_html__( 'Custom Cursor', 'cmsmasters-elementor' ),
+				'type'    => Controls_Manager::SELECT,
+				'default' => $is_show_mode ? 'hide' : 'default',
+				'options' => $is_show_mode
+					? array(
+						'customize' => esc_html__( 'Show', 'cmsmasters-elementor' ),
+						'hide'      => esc_html__( 'Hide', 'cmsmasters-elementor' ),
+					)
+					: array(
+						'default'   => esc_html__( 'Use global', 'cmsmasters-elementor' ),
+						'customize' => esc_html__( 'Customize', 'cmsmasters-elementor' ),
+						'hide'      => esc_html__( 'Hide', 'cmsmasters-elementor' ),
+					),
+				'separator' => 'before',
 			)
 		);
 
 		// === Toggle condition ===
-		// Both modes: sub-controls visible when toggle=yes (Show)
-		$toggle_condition = array( 'cmsmasters_cursor_hide' => 'yes' );
+		// Sub-controls visible when element mode is 'customize'
+		$toggle_condition = array( 'cmsmasters_cursor_element_mode' => 'customize' );
 
 		// === USE PARENT CURSOR ===
 		$element->add_control(
@@ -1407,39 +1415,24 @@ class Module extends Base_Module {
 	 * @param \Elementor\Element_Base $element
 	 */
 	public function apply_cursor_attributes( $element ) {
-		$raw_settings = $element->get_settings();
-		$toggle = $raw_settings['cmsmasters_cursor_hide'] ?? '';
+		$element_mode = $element->get_settings( 'cmsmasters_cursor_element_mode' );
 
-		$is_show_render = $this->is_show_render_mode();
-
-		if ( $is_show_render ) {
-			// SHOW MODE: toggle=yes → show cursor + attributes
-			if ( 'yes' !== $toggle ) {
-				return;
-			}
-			$settings = $element->get_settings_for_display();
-			$element->add_render_attribute( '_wrapper', 'data-cursor-show', 'yes' );
-		} else {
-			// FULL MODE
-			if ( 'yes' !== $toggle ) {
-				// Hide: check if user had configured cursor settings (saved in element data).
-				// If so, stamp data-cursor="hide" so JS shows system cursor.
-				// Never-touched elements have no saved cursor settings — skip them
-				// so the global cursor applies normally.
-				$saved = $element->get_data()['settings'] ?? array();
-				$has_config = ! empty( $saved['cmsmasters_cursor_hover_style'] )
-					|| ( isset( $saved['cmsmasters_cursor_special_active'] ) && 'yes' === $saved['cmsmasters_cursor_special_active'] )
-					|| ( isset( $saved['cmsmasters_cursor_inherit_parent'] ) && 'yes' === $saved['cmsmasters_cursor_inherit_parent'] );
-
-				if ( $has_config ) {
-					$element->add_render_attribute( '_wrapper', 'data-cursor', 'hide' );
-				}
-
-				return;
-			}
-
-			$settings = $element->get_settings_for_display();
+		if ( empty( $element_mode ) || 'default' === $element_mode ) {
+			return;
 		}
+
+		if ( 'hide' === $element_mode ) {
+			$element->add_render_attribute( '_wrapper', 'data-cursor', 'hide' );
+			return;
+		}
+
+		// 'customize' — render per-element cursor attributes.
+		if ( $this->is_show_render_mode() ) {
+			$element->add_render_attribute( '_wrapper', 'data-cursor-show', 'yes' );
+		}
+
+		$settings     = $element->get_settings_for_display();
+		$raw_settings = $element->get_settings();
 
 		// === Shared dispatcher (inherit → special → core) ===
 
@@ -1483,8 +1476,8 @@ class Module extends Base_Module {
 			}
 		}
 
-		// Core cursor mode — pass $is_show_render to avoid re-calling is_show_render_mode()
-		$this->apply_core_cursor_attributes( $element, $settings, $raw_settings, $is_show_render );
+		// Core cursor mode
+		$this->apply_core_cursor_attributes( $element, $settings, $raw_settings );
 	}
 
 	/**
@@ -1681,7 +1674,7 @@ class Module extends Base_Module {
 	 * @param array                   $settings
 	 * @param array                   $raw_settings
 	 */
-	private function apply_core_cursor_attributes( $element, $settings, $raw_settings, $is_show_render = false ) {
+	private function apply_core_cursor_attributes( $element, $settings, $raw_settings ) {
 		// Hover style
 		$hover_style = ! empty( $settings['cmsmasters_cursor_hover_style'] ) ? $settings['cmsmasters_cursor_hover_style'] : '';
 		if ( $hover_style ) {

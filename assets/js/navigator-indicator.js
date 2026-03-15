@@ -352,45 +352,41 @@
 	function hasNonDefaultCursor(settings) {
 		if (!settings || typeof settings.get !== 'function') return null;
 
-		var toggle = settings.get('cmsmasters_cursor_hide');
+		var elementMode = settings.get('cmsmasters_cursor_element_mode');
 
 		// === DISABLED MODE: no indicators ===
 		if (isDisabledMode) {
 			return null;
 		}
 
-		// === Full mode: detect explicitly hidden elements ===
-		// toggle='' can mean "never touched" OR "user configured then toggled to Hide".
-		// Distinguish by checking if any cursor sub-settings were configured.
-		if (toggle !== 'yes') {
-			if (!isShowMode && (
-				settings.get('cmsmasters_cursor_hover_style') ||
-				settings.get('cmsmasters_cursor_special_active') === 'yes' ||
-				settings.get('cmsmasters_cursor_inherit_parent') === 'yes' ||
-				settings.get('cmsmasters_cursor_force_color') === 'yes' ||
-				settings.get('cmsmasters_cursor_blend_mode') ||
-				settings.get('cmsmasters_cursor_effect')
-			)) {
-				return { type: 'hidden' };
-			}
+		// After disabled guard, derive sitewide flag for readable hide-indicator gate.
+		var isSitewideMode = !isShowMode;
+
+		// 1. Explicit hide — indicator only in sitewide
+		if (elementMode === 'hide' && isSitewideMode) {
+			return { type: 'hidden' };
+		}
+
+		// 2. Not customize → no indicator
+		//    (covers: 'default', 'hide' in widget-only, empty/absent)
+		if (elementMode !== 'customize') {
 			return null;
 		}
 
-		// Priority 1: Inherit (highest — when inherit is ON, special controls
+		// 3. Inherit (highest — when inherit is ON, special controls
 		// are hidden by Elementor condition but may retain stale saved values)
-		var inheritParent = settings.get('cmsmasters_cursor_inherit_parent');
-		if (inheritParent === 'yes') {
+		if (settings.get('cmsmasters_cursor_inherit_parent') === 'yes') {
 			return { type: 'inherit' };
 		}
 
-		// Priority 2: Special cursor
+		// 4. Special cursor
 		var specialActive = settings.get('cmsmasters_cursor_special_active');
 		if (specialActive === 'yes') {
 			var specialType = settings.get('cmsmasters_cursor_special_type') || 'image';
 			return { type: 'special', subtype: specialType };
 		}
 
-		// Priority 3: Core (toggle='yes' with no special/inherit = core indicator)
+		// 5. Core (customize without inherit/special — even with all defaults)
 		return { type: 'core' };
 	}
 

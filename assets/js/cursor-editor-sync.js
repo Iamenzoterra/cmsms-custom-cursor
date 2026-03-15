@@ -670,12 +670,6 @@
     function getSize(v, d) { return v ? (typeof v === 'object' && v.size !== undefined ? v.size : v) : d; }
     function fmtDims(d) { if (!d) return ''; var u = d.unit || 'px'; return (d.top||0)+u+' '+(d.right||0)+u+' '+(d.bottom||0)+u+' '+(d.left||0)+u; }
 
-    function hasCursorConfig(s) {
-        return !!(s.cmsmasters_cursor_hover_style ||
-            s.cmsmasters_cursor_special_active === 'yes' ||
-            s.cmsmasters_cursor_inherit_parent === 'yes');
-    }
-
     function applySettings(elementId, settings, skipClear) {
         var element = findElement(elementId);
         if (!element) return;
@@ -683,19 +677,20 @@
         // Update: always clear — user explicitly changed settings, model is fully loaded.
         if (!skipClear) clearAttributes(element);
 
-        var toggle = settings.cmsmasters_cursor_hide;
+        var elementMode = settings.cmsmasters_cursor_element_mode;
 
-        if (isShowMode) {
-            // Show mode: toggle=yes means "Show cursor on this element" (opt-in)
-            if (toggle !== 'yes') return;
-            element.setAttribute('data-cursor-show', 'yes');
-        } else if (toggle !== 'yes') {
-            // Full mode + Hide: don't apply saved settings.
-            // If user had configured cursor settings, stamp hide zone
-            // so the cursor runtime shows system cursor on this element.
-            if (!skipClear && hasCursorConfig(settings)) {
-                element.setAttribute('data-cursor', 'hide');
+        // clearAttributes() runs above before this block.
+        // hide/default correctness depends on that cleanup — do not move or skip it.
+        if (elementMode === 'customize') {
+            if (isShowMode) {
+                element.setAttribute('data-cursor-show', 'yes');
             }
+            // fall through to dispatcher below
+        } else if (elementMode === 'hide') {
+            element.setAttribute('data-cursor', 'hide');
+            return;
+        } else {
+            // 'default', empty, absent — wrapper already cleaned by clearAttributes()
             return;
         }
 
