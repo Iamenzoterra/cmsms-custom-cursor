@@ -898,6 +898,145 @@
 	}
 
 	/**
+	 * Build normalized payload from Kit (global) cursor settings.
+	 * Value mappings mirror PHP get_page_cursor_setting (frontend.php:1316-1331):
+	 *   cursor_style: dot_ring → classic
+	 *   blend_mode: disabled → ''
+	 *   wobble_effect: yes → effect 'wobble'
+	 *   __globals__ color: resolve via resolveGlobalColor()
+	 *
+	 * @param {Object} json - Kit settings JSON
+	 * @returns {Object|null} Normalized payload or null if no cursor settings present
+	 */
+	function buildKitCursorPayload(json) {
+		if (!json) return null;
+
+		var style = json.cmsmasters_custom_cursor_cursor_style || '';
+		var blend = json.cmsmasters_custom_cursor_blend_mode || '';
+		var wobble = json.cmsmasters_custom_cursor_wobble_effect || '';
+
+		var payload = {
+			visibility:    json.cmsmasters_custom_cursor_visibility || '',
+			theme:         style === 'dot_ring' ? 'classic' : style,
+			color:         json.cmsmasters_custom_cursor_cursor_color || '',
+			smoothness:    json.cmsmasters_custom_cursor_smoothness || '',
+			blend_mode:    blend === 'disabled' ? '' : blend,
+			effect:        wobble === 'yes' ? 'wobble' : 'none',
+			adaptive:      json.cmsmasters_custom_cursor_adaptive_color || '',
+			dot_size:      json.cmsmasters_custom_cursor_cursor_size || '',
+			dot_hover_size: json.cmsmasters_custom_cursor_size_on_hover || '',
+			dual_mode:     json.cmsmasters_custom_cursor_show_system_cursor || ''
+		};
+
+		// Resolve __globals__ color reference
+		var globals = json.__globals__ || {};
+		if (globals.cmsmasters_custom_cursor_cursor_color) {
+			var resolved = resolveGlobalColor(globals.cmsmasters_custom_cursor_cursor_color);
+			if (resolved) payload.color = resolved;
+		} else if (payload.color && payload.color.charAt(0) !== '#') {
+			payload.color = '';
+		}
+
+		// Check if any cursor-related settings exist at all
+		var hasAnySetting = Object.keys(json).some(function(k) {
+			return k.indexOf('cmsmasters_custom_cursor_') === 0 && json[k] !== '' && json[k] !== null && json[k] !== undefined;
+		});
+
+		return hasAnySetting ? payload : null;
+	}
+
+	/**
+	 * Broadcast Kit-level cursor settings to preview iframe.
+	 * Reads current values from Kit document settings model and sends normalized payload.
+	 */
+	function broadcastKitCursorChange() {
+		var previewIframe = document.getElementById('elementor-preview-iframe');
+		if (!previewIframe || !previewIframe.contentWindow) return;
+
+		try {
+			var kitDoc = elementor.documents.get(elementor.config.kit_id);
+			if (!kitDoc || !kitDoc.container || !kitDoc.container.model) return;
+
+			var settings = kitDoc.container.model.get('settings');
+			if (!settings) return;
+			var json = settings.toJSON ? settings.toJSON() : settings.attributes;
+			var payload = buildKitCursorPayload(json);
+
+			if (payload) {
+				previewIframe.contentWindow.postMessage({
+					type: 'cmsmasters:cursor:kit-settings',
+					payload: payload
+				}, TRUSTED_ORIGIN);
+
+				if (window.CMSM_DEBUG) console.log('[NavigatorIndicator] Broadcast Kit cursor settings:', payload);
+			}
+		} catch (e) {
+			if (window.CMSM_DEBUG) console.warn('[NavigatorIndicator] broadcastKitCursorChange failed:', e);
+		}
+	}
+
+	/**
+	 * Get Kit-level cursor settings payload for initial sync.
+	 * Returns null if Kit has no cursor settings.
+	 *
+	 * @returns {Object|null} Normalized Kit cursor payload
+	 */
+	function getKitCursorPayload() {
+		try {
+			var kitDoc = elementor.documents.get(elementor.config.kit_id);
+			if (!kitDoc || !kitDoc.container || !kitDoc.container.model) return null;
+
+			var settings = kitDoc.container.model.get('settings');
+			if (!settings) return null;
+			var json = settings.toJSON ? settings.toJSON() : settings.attributes;
+			return buildKitCursorPayload(json);
+		} catch (e) {
+			if (window.CMSM_DEBUG) console.warn('[NavigatorIndicator] getKitCursorPayload failed:', e);
+			return null;
+		}
+	}
+
+	/**
+	 * Attach Backbone change listener on Kit document settings model.
+	 * Filters for cmsmasters_custom_cursor_* keys and __globals__ with cursor keys.
+	 * Dedup guard: window.cmsmastersKitCursorListenerAttached.
+	 */
+	function initKitSettingsListener() {
+		if (window.cmsmastersKitCursorListenerAttached) return;
+
+		try {
+			var kitDoc = elementor.documents.get(elementor.config.kit_id);
+			if (!kitDoc || !kitDoc.container || !kitDoc.container.model) return;
+
+			var kitSettings = kitDoc.container.model.get('settings');
+			if (!kitSettings) return;
+
+			kitSettings.on('change', function(settings) {
+				var changed = settings.changed || {};
+				var changedKeys = Object.keys(changed);
+				var hasKitCursor = changedKeys.some(function(k) {
+					return k.indexOf('cmsmasters_custom_cursor_') === 0;
+				});
+				// Also detect __globals__ changes (global color via globe picker)
+				if (!hasKitCursor && changedKeys.indexOf('__globals__') !== -1) {
+					var globals = settings.get('__globals__') || {};
+					hasKitCursor = Object.keys(globals).some(function(gk) {
+						return gk.indexOf('cmsmasters_custom_cursor_') === 0;
+					});
+				}
+				if (hasKitCursor) {
+					broadcastKitCursorChange();
+				}
+			});
+
+			window.cmsmastersKitCursorListenerAttached = true;
+			if (window.CMSM_DEBUG) console.log('[NavigatorIndicator] Kit settings listener attached');
+		} catch (e) {
+			if (window.CMSM_DEBUG) console.warn('[NavigatorIndicator] initKitSettingsListener failed:', e);
+		}
+	}
+
+	/**
 	 * P2 FIX: Broadcast cursor settings for all children of a container
 	 * This ensures children don't lose their cursor settings when parent re-renders
 	 */
@@ -1079,17 +1218,19 @@
 		}
 
 
-		// Include page-level cursor settings in initial sync
+		// Include page-level and Kit-level cursor settings in initial sync
 		var pagePayload = getPageCursorPayload();
+		var kitPayload = getKitCursorPayload();
 
 		// Send all cursor settings to preview
 		previewIframe.contentWindow.postMessage({
 			type: 'cmsmasters:cursor:init',
 			elements: elements,
+			kitSettings: kitPayload,
 			pageSettings: pagePayload
 		}, TRUSTED_ORIGIN);  // SEC-003 FIX
 
-		if (window.CMSM_DEBUG) console.log('[NavigatorIndicator] Sent initial cursor settings for', elements.length, 'elements', pagePayload ? '(+ page settings)' : '');
+		if (window.CMSM_DEBUG) console.log('[NavigatorIndicator] Sent initial cursor settings for', elements.length, 'elements', kitPayload ? '(+ Kit settings)' : '', pagePayload ? '(+ page settings)' : '');
 	}
 
 
@@ -1322,6 +1463,8 @@
 			if (window.CMSM_DEBUG) console.log('[NavigatorIndicator] Page cursor settings reset to defaults');
 		});
 
+		// Eager attach: Kit settings listener (Kit doc may already be loaded)
+		initKitSettingsListener();
 	}
 
 
@@ -1535,6 +1678,8 @@
 			clearInterval(watchModelInterval);
 			watchModelInterval = null;
 		}
+		// Reset Kit listener dedup guard so it re-attaches on next preview:loaded
+		window.cmsmastersKitCursorListenerAttached = false;
 		if (window.CMSM_DEBUG) console.log('[NavigatorIndicator] Cleanup completed');
 	}
 
@@ -1618,6 +1763,11 @@
 					type: 'cmsmasters:cursor:template-check',
 					isThemeBuilder: isThemeBuilder
 				}, TRUSTED_ORIGIN);
+			}
+
+			// Lazy attach: Kit settings listener when Kit doc loads
+			if (loadedDoc && loadedDoc.id == elementor.config.kit_id) {
+				initKitSettingsListener();
 			}
 		});
 

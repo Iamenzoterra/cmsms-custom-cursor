@@ -38,9 +38,14 @@
     var isResponsiveHidden = false;
     var wasEnabledBeforeResponsive = false;
 
+    // Last page-level payload applied (or null = no page overrides active).
+    // Stored by applyPageCursorSettings, re-applied after Kit baseline changes.
+    var activePageOverrides = null;
+
     // Snapshot of PHP-rendered cursor state (global defaults).
     // Captured once on load, before any editor sync changes.
     // Used to restore defaults when page settings are cleared to ''.
+    // Updated by applyKitBaseline() when Kit settings change live.
     var initialCursorState = (function() {
         var body = document.body;
         var state = {
@@ -364,6 +369,10 @@
             setResponsiveHidden(isTouchMode);
             return;
         }
+        if (event.data.type === 'cmsmasters:cursor:kit-settings') {
+            if (event.data.payload) applyKitBaseline(event.data.payload);
+            return;
+        }
         if (event.data.type === 'cmsmasters:cursor:page-settings') {
             if (event.data.payload) {
                 applyPageCursorSettings(event.data.payload);
@@ -387,7 +396,11 @@
                     }
                 });
             }
-            // Apply page-level settings if included in init payload
+            // Apply Kit baseline BEFORE page settings (cascade: Kit → Page)
+            if (event.data.kitSettings) {
+                applyKitBaseline(event.data.kitSettings);
+            }
+            // Apply page-level settings on top (overrides Kit for non-empty fields)
             if (event.data.pageSettings) {
                 applyPageCursorSettings(event.data.pageSettings);
             }
@@ -841,6 +854,7 @@
      */
     function applyPageCursorSettings(p) {
         if (!p) return;
+        activePageOverrides = p;
         var body = document.body;
         var ini = initialCursorState;
 
@@ -948,6 +962,151 @@
         }
 
         if (window.CMSM_DEBUG) console.log('[CursorEditorSync] Applied page cursor settings:', p);
+    }
+
+    /**
+     * Apply Kit (global) cursor baseline to preview.
+     * Updates initialCursorState so page "Default" falls back to latest Kit values,
+     * then applies Kit values to DOM. If page overrides are active, re-applies them
+     * on top so the cascade contract holds: effective = Kit + page overrides.
+     *
+     * Kit-specific fields (no page equivalent) are always applied directly:
+     *   visibility, dot_size, dot_hover_size, dual_mode
+     *
+     * NOTE: editor_preview live toggle is NOT handled here — reload by design.
+     *
+     * @param {Object} p - Normalized Kit payload from navigator-indicator.js
+     */
+    function applyKitBaseline(p) {
+        if (!p) return;
+        var body = document.body;
+        var ini = initialCursorState;
+
+        // --- 1. Update initialCursorState (so page '' fallback reads latest Kit) ---
+
+        if (p.theme) {
+            ini.themeClasses = ['cmsmasters-cursor-theme-' + p.theme];
+        }
+
+        if (p.smoothness) {
+            ini.smooth = p.smoothness;
+        }
+
+        if (p.blend_mode) {
+            var bm = p.blend_mode === 'yes' ? 'medium' : p.blend_mode;
+            ini.blendClasses = [];
+            ini.blendIntensity = '';
+            if (['soft', 'medium', 'strong'].indexOf(bm) !== -1) {
+                ini.blendClasses = ['cmsmasters-cursor-blend', 'cmsmasters-cursor-blend-' + bm];
+                ini.blendIntensity = bm;
+            }
+        } else {
+            // Kit blend cleared — no blend
+            ini.blendClasses = [];
+            ini.blendIntensity = '';
+        }
+
+        if (p.effect === 'wobble') {
+            ini.hasWobble = true;
+            ini.effect = undefined;
+        } else if (p.effect === 'none' || p.effect === '') {
+            ini.hasWobble = false;
+            ini.effect = undefined;
+        }
+
+        if (p.adaptive) {
+            ini.adaptive = p.adaptive === 'yes' ? true : undefined;
+        }
+
+        // --- 2. Apply Kit values to DOM ---
+
+        // Visibility (Kit-only, no page equivalent)
+        if (p.visibility === 'show') {
+            body.classList.add('cmsmasters-cursor-enabled');
+            body.classList.remove('cmsmasters-cursor-widget-only');
+        } else if (p.visibility === 'elements') {
+            body.classList.add('cmsmasters-cursor-enabled');
+            body.classList.add('cmsmasters-cursor-widget-only');
+        } else if (p.visibility === 'hide') {
+            body.classList.remove('cmsmasters-cursor-enabled');
+            body.classList.remove('cmsmasters-cursor-widget-only');
+        }
+
+        // Theme
+        removeClassByPrefix(body, 'cmsmasters-cursor-theme-');
+        if (p.theme) {
+            body.classList.add('cmsmasters-cursor-theme-' + p.theme);
+        }
+
+        // Color
+        if (p.color && p.color.charAt(0) === '#') {
+            document.documentElement.style.setProperty('--cmsmasters-cursor-color', p.color);
+            document.documentElement.style.setProperty('--cmsmasters-cursor-color-dark', p.color);
+        } else {
+            document.documentElement.style.removeProperty('--cmsmasters-cursor-color');
+            document.documentElement.style.removeProperty('--cmsmasters-cursor-color-dark');
+        }
+
+        // Smoothness
+        window.cmsmastersCursorSmooth = p.smoothness || undefined;
+        window.cmsmCursorSmooth = p.smoothness || undefined;
+
+        // Blend mode
+        removeClassByPrefix(body, 'cmsmasters-cursor-blend');
+        if (ini.blendIntensity) {
+            body.classList.add('cmsmasters-cursor-blend');
+            body.classList.add('cmsmasters-cursor-blend-' + ini.blendIntensity);
+        }
+        // Notify custom-cursor.js of blend change
+        body.dispatchEvent(new CustomEvent('cmsmasters:cursor:page-blend-update', {
+            detail: { blend: ini.blendIntensity || '' }
+        }));
+
+        // trueGlobalBlend (Kit-only — always applied directly)
+        if (p.blend_mode) {
+            var tbm = p.blend_mode === 'yes' ? 'medium' : p.blend_mode;
+            if (['soft', 'medium', 'strong'].indexOf(tbm) !== -1) {
+                window.cmsmCursorTrueGlobalBlend = tbm;
+            } else {
+                window.cmsmCursorTrueGlobalBlend = undefined;
+            }
+        } else {
+            window.cmsmCursorTrueGlobalBlend = undefined;
+        }
+
+        // Effect
+        body.classList.remove('cmsmasters-cursor-wobble');
+        if (ini.hasWobble) body.classList.add('cmsmasters-cursor-wobble');
+        window.cmsmastersCursorEffect = ini.effect;
+        window.cmsmCursorEffect = ini.effect;
+
+        // Adaptive
+        window.cmsmastersCursorAdaptive = ini.adaptive;
+        window.cmsmCursorAdaptive = ini.adaptive;
+
+        // Dot size (Kit-only — CSS vars)
+        if (p.dot_size) {
+            var dotSize = (typeof p.dot_size === 'object' && p.dot_size.size) ? p.dot_size.size : p.dot_size;
+            document.documentElement.style.setProperty('--cmsmasters-cursor-dot-size', dotSize + 'px');
+        }
+        if (p.dot_hover_size) {
+            var dotHoverSize = (typeof p.dot_hover_size === 'object' && p.dot_hover_size.size) ? p.dot_hover_size.size : p.dot_hover_size;
+            document.documentElement.style.setProperty('--cmsmasters-cursor-dot-hover-size', dotHoverSize + 'px');
+        }
+
+        // Dual mode (Kit-only — body class)
+        if (p.dual_mode === 'yes') {
+            body.classList.add('cmsmasters-cursor-dual');
+        } else {
+            body.classList.remove('cmsmasters-cursor-dual');
+        }
+
+        // --- 3. Re-apply page overrides on top (if any) ---
+        if (activePageOverrides) {
+            applyPageCursorSettings(activePageOverrides);
+        }
+
+        if (window.CMSM_DEBUG) console.log('[CursorEditorSync] Applied Kit baseline:', p, activePageOverrides ? '(+ re-applied page overrides)' : '');
     }
 
     /**
