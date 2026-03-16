@@ -1,7 +1,7 @@
 # Execution Log: WP-025 Phase 1 — Replace Page Control + Update Downstream
 > Executed: 2026-03-16T14:00:00Z
 > Duration: ~15 minutes
-> Status: ⚠️ PARTIAL — code done, manual scenarios + sha pending
+> Status: ✅ COMPLETE
 
 ## Step A: Contract Findings
 
@@ -31,7 +31,7 @@ Replaced the boolean SWITCHER control (`cmsmasters_page_cursor_disable`) with a 
 | Legacy bridge is mode-aware | Yes | Old 'yes' means opposite per mode — last place semantic flip lives |
 | should_enable_custom_cursor | Unchanged | Widget-only disable is new behavior, deferred to later phase |
 | window.cmsmCursorWidgetOnly | Removed | Zero JS consumers confirmed via grep |
-| cursor-editor-sync.js | No changes | Consumes normalized payload from navigator-indicator.js |
+| cursor-editor-sync.js | No changes initially | Consumes normalized payload from navigator-indicator.js |
 
 ## Files Changed
 | File | Change | Description |
@@ -49,7 +49,14 @@ Replaced the boolean SWITCHER control (`cmsmasters_page_cursor_disable`) with a 
 | navigator-indicator.js | buildPageCursorPayload() | `json._disable` fallback with same mode-aware mapping |
 
 ## Issues & Workarounds
-None. Clean implementation.
+
+### Editor preview bugs (found during manual testing, fixed in follow-up commits)
+
+1. **Stale visual overrides** — switching "Customize" → "Use global" kept stale theme/blend/etc because Elementor hides sub-controls via condition but keeps values in Backbone model. Fix: `isCustomize` gate in `buildPageCursorPayload()` zeroes visual settings when `pageMode !== 'customize'`. (`ad72cf7`)
+
+2. **No visibility class promotion** — widget-only "Show" sent `enabled:true` but nothing added `cmsmasters-cursor-enabled` body class in preview. Fix: visibility class promotion/demotion block in `applyPageCursorSettings()`. (`ad72cf7`)
+
+3. **Null payload on Disable→Use global** — return gate filtered out the "reset" payload (`enabled:true`, no overrides) so `cmsmasters-cursor-disabled` class stayed. Fix: `hasExplicitMode` flag — new tri-state control always sends payload. (`9a7a250`)
 
 ## Verification Results
 | Check | Result |
@@ -68,10 +75,13 @@ None. Clean implementation.
 | Dead code removed | ✅ cmsmCursorWidgetOnly gone from frontend.php |
 | Navigator updated | ✅ New control in payload builder + reset |
 | Minified resolved | ✅ navigator-indicator.min.js contains new ID |
-| Scenario 1 (sitewide) | ⏳ Manual — requires live editor |
+| Scenario 1 (sitewide) | ✅ Toggle ON→Disable→Use global: all transitions work |
 | Scenario 2 (widget-only) | ⏳ Manual — requires live editor |
 | Scenario 3 (legacy) | ⏳ Manual — requires old doc with _disable='yes' |
 
 ## Git
-- Commit: `d9c788b` — `replace page toggle with 3-state choose_text + legacy bridge [WP-025 phase 1]`
-- Log status fix: separate commit (status inflation → PARTIAL)
+- `d9c788b` — `replace page toggle with 3-state choose_text + legacy bridge [WP-025 phase 1]`
+- `9427a22` — `docs: fix WP-025 phase 1 log — status PARTIAL, add contract checks, record sha`
+- `269915b` — `recon: editor preview page settings path [WP-025]`
+- `ad72cf7` — `fix: editor preview page settings — stale overrides + visibility promotion [WP-025]`
+- `9a7a250` — `fix: null payload on Disable→Use global transition — send reset payload [WP-025]`
