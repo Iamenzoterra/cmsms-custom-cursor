@@ -76,8 +76,32 @@ Replaced the boolean SWITCHER control (`cmsmasters_page_cursor_disable`) with a 
 | Navigator updated | ✅ New control in payload builder + reset |
 | Minified resolved | ✅ navigator-indicator.min.js contains new ID |
 | Scenario 1 (sitewide) | ✅ Toggle ON→Disable→Use global: all transitions work |
-| Scenario 2 (widget-only) | ⏳ Manual — requires live editor |
+| Scenario 2 (widget-only) | ✅ Show→Hide→Show works, cursor follows toggle state |
 | Scenario 3 (legacy) | ⏳ Manual — requires old doc with _disable='yes' |
+
+## Phase 2 — Editor Preview Fixes (2026-03-16)
+
+### 4. Widget-only Show/Hide toggle not working in editor preview
+**Root cause:** `isWidgetOnly` closure var in `custom-cursor.js` captured once at init. Body class swaps by `cursor-editor-sync.js` didn't update the runtime flag. The mouseover handler checked the stale `isWidgetOnly = true` and re-hid the cursor on every mouse move.
+
+**Failed attempt (d5d1f42, reverted):** Dispatched event that only toggled `hidden` state without updating `isWidgetOnly`. Next mousemove re-hid cursor.
+
+**Fix:** Added `cmsmasters:cursor:page-visibility-update` event (same pattern as `page-blend-update` / `smoothness-update`):
+- `cursor-editor-sync.js` dispatches after body class swap with `{ promoted: true/false }`
+- `custom-cursor.js` listener updates `isWidgetOnly` flag AND transitions hidden state
+- Commit: `837c9ba`
+
+### 5. Reset to Defaults flipping Show→Hide
+**Root cause:** Reset button in `navigator-indicator.js` included `cmsmasters_page_cursor_mode: 'default'` in `settingsToReset`. In Show mode, `default` = Hide.
+
+**Fix:** Removed `cmsmasters_page_cursor_mode` from reset list — only visual overrides are reset (theme, smoothness, blend, effect, adaptive). Show/Hide state is preserved.
+- Commit: `25f8ed9`
+
+### 6. Cursor flashing at stale position on toggle
+**Root cause:** When user toggles Show while mouse is on editor panel (outside preview iframe), `hidden: false` transition made cursor appear at last known coordinates (often top-left corner).
+
+**Fix:** Gate unhide with `document.documentElement.matches(':hover')`. If mouse isn't in the iframe, skip unhide — the existing `mouseenter` handler shows cursor at correct position when pointer returns.
+- Commit: `e90834e`
 
 ## Git
 - `d9c788b` — `replace page toggle with 3-state choose_text + legacy bridge [WP-025 phase 1]`
@@ -85,3 +109,6 @@ Replaced the boolean SWITCHER control (`cmsmasters_page_cursor_disable`) with a 
 - `269915b` — `recon: editor preview page settings path [WP-025]`
 - `ad72cf7` — `fix: editor preview page settings — stale overrides + visibility promotion [WP-025]`
 - `9a7a250` — `fix: null payload on Disable→Use global transition — send reset payload [WP-025]`
+- `837c9ba` — `fix: update isWidgetOnly at runtime on Show/Hide toggle [WP-025]`
+- `25f8ed9` — `fix: Reset to Defaults no longer changes Show/Hide state [WP-025]`
+- `e90834e` — `fix: don't flash cursor at stale position when toggling from editor panel [WP-025]`
