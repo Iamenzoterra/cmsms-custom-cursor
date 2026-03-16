@@ -179,12 +179,6 @@ body:not(.cmsmasters-cursor-dual) [data-cursor=none] input[type="submit"] {
    Blend Modes
    ========================================================================== */
 
-body.cmsmasters-cursor-blend-medium,
-body.cmsmasters-cursor-blend-soft,
-body.cmsmasters-cursor-blend-strong {
-    --cmsmasters-cursor-color:#fff
-}
-
 body.cmsmasters-cursor-blend-medium #cmsmasters-cursor-container,
 body.cmsmasters-cursor-blend-soft #cmsmasters-cursor-container,
 body.cmsmasters-cursor-blend-strong #cmsmasters-cursor-container {
