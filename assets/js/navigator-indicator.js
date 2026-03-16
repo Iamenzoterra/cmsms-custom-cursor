@@ -913,11 +913,14 @@
 		}
 
 		var hasOverride = isCustomize || pageMode === 'disable';
+		// New tri-state control always has a value — send payload so receiver can
+		// clean up previous state (e.g. remove cmsmasters-cursor-disabled after Disable→Use global).
+		var hasExplicitMode = !!json.cmsmasters_page_cursor_mode;
 		var hasVisualSetting = ['theme', 'color', 'smoothness', 'blend_mode', 'effect', 'adaptive'].some(function(key) {
 			return payload[key] !== '';
 		});
 
-		return (hasOverride || hasVisualSetting || payload.enabled === false) ? payload : null;
+		return (hasOverride || hasVisualSetting || hasExplicitMode || payload.enabled === false) ? payload : null;
 	}
 
 	/**
