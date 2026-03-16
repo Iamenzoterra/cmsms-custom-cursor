@@ -1,7 +1,7 @@
 # Execution Log: WP-025 Phase 1 — Replace Page Control + Update Downstream
 > Executed: 2026-03-16T14:00:00Z
 > Duration: ~15 minutes
-> Status: ✅ COMPLETE
+> Status: ⚠️ PARTIAL — code done, manual scenarios + sha pending
 
 ## Step A: Contract Findings
 
@@ -60,15 +60,18 @@ None. Clean implementation.
 | Widget-only Hide = default | ✅ 2 options: customize (Show), default (Hide) |
 | Toggle condition unified | ✅ `'cmsmasters_page_cursor_mode' => 'customize'` — same both modes |
 | get_document_cursor_state canonical no inversion | ✅ Direct if/else on page_mode values |
-| Legacy bridge correct | ✅ Mode-aware: yes → customize (widgets) or disable (sitewide) |
+| Legacy bridge correct | ✅ All 3 files consistent: yes→customize (widgets), yes→disable (sitewide) |
+| Legacy bridge no drift | ✅ module.php only in widgets context, frontend+navigator mode-aware |
 | is_page_promoted updated | ✅ Reads new control, falls back to _disable |
-| should_enable unchanged | ✅ No modifications |
+| should_enable unchanged | ✅ No modifications — safe because widget-only can never produce 'disable' |
+| Widget-only no-disable contract | ✅ Options: customize+default only, reset→default, legacy→customize |
 | Dead code removed | ✅ cmsmCursorWidgetOnly gone from frontend.php |
 | Navigator updated | ✅ New control in payload builder + reset |
 | Minified resolved | ✅ navigator-indicator.min.js contains new ID |
-| Scenario 1 (sitewide) | ⏳ Manual testing required |
-| Scenario 2 (widget-only) | ⏳ Manual testing required |
-| Scenario 3 (legacy) | ⏳ Manual testing required |
+| Scenario 1 (sitewide) | ⏳ Manual — requires live editor |
+| Scenario 2 (widget-only) | ⏳ Manual — requires live editor |
+| Scenario 3 (legacy) | ⏳ Manual — requires old doc with _disable='yes' |
 
 ## Git
-- Commit: pending user confirmation
+- Commit: `d9c788b` — `replace page toggle with 3-state choose_text + legacy bridge [WP-025 phase 1]`
+- Log status fix: separate commit (status inflation → PARTIAL)
