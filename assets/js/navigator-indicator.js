@@ -856,9 +856,8 @@
 	/**
 	 * Normalize page/template cursor settings into a preview-ready payload.
 	 *
-	 * The stored switcher field is context-sensitive:
-	 * - full mode: yes => disabled on this document
-	 * - widgets mode: yes => enabled on this document
+	 * Reads tri-state cmsmasters_page_cursor_mode (default|customize|disable)
+	 * with legacy fallback to old cmsmasters_page_cursor_disable switcher.
 	 *
 	 * @param {Object} json - Document settings JSON.
 	 * @returns {Object|null}
@@ -866,9 +865,32 @@
 	function buildPageCursorPayload(json) {
 		if (!json) return null;
 
-		var toggle = json.cmsmasters_page_cursor_disable || '';
+		// Read new tri-state control with legacy fallback
+		var pageMode = json.cmsmasters_page_cursor_mode || '';
+		if (!pageMode) {
+			var oldToggle = json.cmsmasters_page_cursor_disable || '';
+			if (oldToggle === 'yes') {
+				pageMode = isShowMode ? 'customize' : 'disable';
+			} else {
+				pageMode = 'default';
+			}
+		}
+
+		// Compute enabled from canonical tri-state
+		var enabled;
+		if (isDisabledMode) {
+			enabled = false;
+		} else if (pageMode === 'disable') {
+			enabled = false;
+		} else if (pageMode === 'customize') {
+			enabled = true;
+		} else {
+			// default — defer to global mode
+			enabled = isShowMode ? null : true;
+		}
+
 		var payload = {
-			enabled:    isDisabledMode ? false : (isShowMode ? (toggle === 'yes' ? true : null) : toggle !== 'yes'),
+			enabled:    enabled,
 			theme:      json.cmsmasters_page_cursor_theme || '',
 			color:      json.cmsmasters_page_cursor_color || '',
 			smoothness: json.cmsmasters_page_cursor_smoothness || '',
@@ -885,7 +907,7 @@
 			payload.color = '';
 		}
 
-		var hasOverride = isShowMode ? toggle === 'yes' : toggle !== '';
+		var hasOverride = pageMode === 'customize' || pageMode === 'disable';
 		var hasVisualSetting = ['theme', 'color', 'smoothness', 'blend_mode', 'effect', 'adaptive'].some(function(key) {
 			return payload[key] !== '';
 		});
@@ -1428,7 +1450,7 @@
 
 			// Build settings to reset (color excluded — user clears via built-in clear button)
 			var settingsToReset = {
-				cmsmasters_page_cursor_disable: '',
+				cmsmasters_page_cursor_mode: 'default',
 				cmsmasters_page_cursor_theme: '',
 				cmsmasters_page_cursor_smoothness: '',
 				cmsmasters_page_cursor_blend_mode: '',

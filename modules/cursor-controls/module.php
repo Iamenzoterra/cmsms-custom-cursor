@@ -943,7 +943,7 @@ class Module extends Base_Module {
 		}
 
 		// Prevent duplicate registration (critical — multiple sections may trigger this)
-		if ( $element->get_controls( 'cmsmasters_page_cursor_disable' ) || $element->get_controls( 'cmsmasters_page_cursor_disabled_notice' ) ) {
+		if ( $element->get_controls( 'cmsmasters_page_cursor_mode' ) || $element->get_controls( 'cmsmasters_page_cursor_disabled_notice' ) ) {
 			return;
 		}
 
@@ -983,33 +983,31 @@ class Module extends Base_Module {
 			)
 		);
 
-		// === SHOW / DISABLE TOGGLE (contextual label) ===
+		// === PAGE CURSOR MODE (3-state: default | customize | disable/hide) ===
 		$element->add_control(
-			'cmsmasters_page_cursor_disable',
+			'cmsmasters_page_cursor_mode',
 			array(
-				'label'       => $is_show_mode
-					/* translators: %s: document type (Page, Header, Footer, Popup, etc.) */
-					? sprintf( __( 'Show Custom Cursor on This %s', 'cmsmasters-elementor' ), $doc_type_label )
-					/* translators: %s: document type (Page, Header, Footer, Popup, etc.) */
-					: sprintf( __( 'Disable Cursor on This %s', 'cmsmasters-elementor' ), $doc_type_label ),
-				'type'        => Controls_Manager::SWITCHER,
-				'default'     => '',
-				'label_off'   => __( 'No', 'cmsmasters-elementor' ),
-				'label_on'    => __( 'Yes', 'cmsmasters-elementor' ),
-				'description' => $is_show_mode
-					/* translators: %s: document type (Page, Header, Footer, Popup, etc.) */
-					? sprintf( __( 'Enable custom cursor on this %s.', 'cmsmasters-elementor' ), strtolower( $doc_type_label ) )
-					/* translators: %s: document type (Page, Header, Footer, Popup, etc.) */
-					: sprintf( __( 'Completely disable custom cursor on this %s.', 'cmsmasters-elementor' ), strtolower( $doc_type_label ) ),
+				'label'       => esc_html__( 'Custom Cursor', 'cmsmasters-elementor' ),
+				'type'        => Cmsmasters_Controls_Manager::CHOOSE_TEXT,
+				'label_block' => ! $is_show_mode,
+				'default'     => 'default',
+				'options'     => $is_show_mode
+					? array(
+						'customize' => array( 'title' => esc_html__( 'Show', 'cmsmasters-elementor' ) ),
+						'default'   => array( 'title' => esc_html__( 'Hide', 'cmsmasters-elementor' ) ),
+					)
+					: array(
+						'default'   => array( 'title' => esc_html__( 'Use global', 'cmsmasters-elementor' ) ),
+						'customize' => array( 'title' => esc_html__( 'Customize', 'cmsmasters-elementor' ) ),
+						'disable'   => array( 'title' => esc_html__( 'Disable', 'cmsmasters-elementor' ) ),
+					),
+				'toggle'      => false,
 			)
 		);
 
-		// === Toggle condition (contextual) ===
-		// Show mode: settings visible when toggle=yes (opt-in)
-		// Full mode: settings visible when toggle='' (not disabled, opt-out)
-		$page_toggle_condition = $is_show_mode
-			? array( 'cmsmasters_page_cursor_disable' => 'yes' )
-			: array( 'cmsmasters_page_cursor_disable' => '' );
+		// === Toggle condition ===
+		// Sub-controls visible when page mode is 'customize' — same in both modes.
+		$page_toggle_condition = array( 'cmsmasters_page_cursor_mode' => 'customize' );
 
 		$element->add_control(
 			'cmsmasters_page_cursor_theme',
@@ -1261,8 +1259,15 @@ class Module extends Base_Module {
 		$result = false;
 
 		if ( 'widgets' === self::get_cursor_mode() ) {
-			$toggle = $document->get_settings( 'cmsmasters_page_cursor_disable' );
-			$result = ( 'yes' === $toggle );
+			$page_mode = $document->get_settings( 'cmsmasters_page_cursor_mode' );
+
+			// Legacy fallback: old SWITCHER control
+			if ( empty( $page_mode ) ) {
+				$old_toggle = $document->get_settings( 'cmsmasters_page_cursor_disable' );
+				$page_mode  = ( 'yes' === $old_toggle ) ? 'customize' : 'default';
+			}
+
+			$result = ( 'customize' === $page_mode );
 		}
 
 		$this->page_promoted_cache[ $doc_id ] = $result;

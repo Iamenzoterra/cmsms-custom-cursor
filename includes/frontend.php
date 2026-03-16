@@ -1260,28 +1260,60 @@ class Frontend extends Base_App {
 			$mode = $this->get_cursor_mode();
 		}
 
-		$raw_toggle = '';
+		// Read new tri-state control
+		$page_mode = '';
 		if ( $document ) {
-			$raw_toggle = (string) $document->get_settings( 'cmsmasters_page_cursor_disable' );
+			$page_mode = (string) $document->get_settings( 'cmsmasters_page_cursor_mode' );
 		}
 
+		// Legacy bridge: old SWITCHER → new tri-state
+		if ( empty( $page_mode ) && $document ) {
+			$old_toggle = (string) $document->get_settings( 'cmsmasters_page_cursor_disable' );
+			if ( 'yes' === $old_toggle ) {
+				// In widget-only mode 'yes' meant "show" → customize; in sitewide 'yes' meant "disable" → disable
+				$page_mode = ( 'widgets' === $mode ) ? 'customize' : 'disable';
+			} else {
+				$page_mode = 'default';
+			}
+		}
+
+		// Disabled mode — cursor off globally
 		if ( '' === $mode ) {
 			return array(
-				'raw'     => $raw_toggle,
+				'raw'     => $page_mode,
 				'enabled' => false,
 			);
 		}
 
-		if ( 'widgets' === $mode ) {
+		// Explicit disable
+		if ( 'disable' === $page_mode ) {
 			return array(
-				'raw'     => $raw_toggle,
-				'enabled' => ( 'yes' === $raw_toggle ) ? true : null,
+				'raw'     => $page_mode,
+				'enabled' => false,
 			);
 		}
 
+		// Explicit customize — cursor on with page overrides
+		if ( 'customize' === $page_mode ) {
+			return array(
+				'raw'     => $page_mode,
+				'enabled' => true,
+			);
+		}
+
+		// Default — defer to global mode
+		if ( 'yes' === $mode ) {
+			// Sitewide: default means cursor on (inherits global)
+			return array(
+				'raw'     => $page_mode,
+				'enabled' => true,
+			);
+		}
+
+		// Widget-only: default means cursor hidden (enabled:null keeps runtime loaded)
 		return array(
-			'raw'     => $raw_toggle,
-			'enabled' => 'yes' !== $raw_toggle,
+			'raw'     => $page_mode,
+			'enabled' => null,
 		);
 	}
 
@@ -1534,11 +1566,6 @@ class Frontend extends Base_App {
 		}
 		if ( ! empty( $global_blend_only ) ) {
 			$inline_js_parts[] = 'window.cmsmCursorTrueGlobalBlend = "' . esc_js( $global_blend_only ) . '";';
-		}
-
-		// Widget-only mode flag — JS uses this to start cursor hidden
-		if ( $this->is_widget_only_mode() ) {
-			$inline_js_parts[] = 'window.cmsmCursorWidgetOnly=true;';
 		}
 
 		// Wobble effect (page > global) — window var for JS, no body class needed
