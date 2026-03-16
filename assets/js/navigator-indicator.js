@@ -1453,9 +1453,8 @@
 			if (!doc || !doc.container) return;
 			if (typeof $e === 'undefined' || !$e.run) return;
 
-			// Build settings to reset (color excluded — user clears via built-in clear button)
+			// Reset visual overrides only (mode + color excluded — user clears via built-in clear button)
 			var settingsToReset = {
-				cmsmasters_page_cursor_mode: 'default',
 				cmsmasters_page_cursor_theme: '',
 				cmsmasters_page_cursor_smoothness: '',
 				cmsmasters_page_cursor_blend_mode: '',
