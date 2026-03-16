@@ -1754,11 +1754,9 @@ class Module extends Base_Module {
 			}
 		}
 
-		// Blend mode
-		$blend_mode = ! empty( $settings['cmsmasters_cursor_blend_mode'] ) ? $settings['cmsmasters_cursor_blend_mode'] : '';
-		if ( $blend_mode ) {
-			$element->add_render_attribute( '_wrapper', 'data-cursor-blend', $blend_mode );
-		}
+		// Blend mode — always stamp to prevent page blend cascade leak
+		$blend_mode = ! empty( $settings['cmsmasters_cursor_blend_mode'] ) ? $settings['cmsmasters_cursor_blend_mode'] : 'off';
+		$element->add_render_attribute( '_wrapper', 'data-cursor-blend', $blend_mode );
 
 		// Effect
 		$effect = ! empty( $settings['cmsmasters_cursor_effect'] ) ? $settings['cmsmasters_cursor_effect'] : '';
