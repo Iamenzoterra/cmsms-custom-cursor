@@ -1640,6 +1640,13 @@ class Frontend extends Base_App {
 		// Skip in widget-only mode — cursor starts hidden, no instant response needed
 		if ( ! $this->is_widget_only_mode() ) {
 			$this->print_cursor_critical_js();
+		} else {
+			// Kit is widget-only, but page may be promoted via Page Settings toggle
+			$cursor_document = $this->get_cursor_context_document();
+			$doc_state = $this->get_document_cursor_state( $cursor_document );
+			if ( true === $doc_state['enabled'] ) {
+				$this->print_cursor_critical_js();
+			}
 		}
 	}
 

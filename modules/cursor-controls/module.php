@@ -13,6 +13,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class Module extends Base_Module {
 
+	/**
+	 * Cache for page promotion checks (Kit=widgets + page toggle=yes).
+	 *
+	 * @var array<int,bool>
+	 */
+	private $page_promoted_cache = array();
+
 	public function get_name() {
 		return 'cursor-controls';
 	}
@@ -1233,15 +1240,56 @@ class Module extends Base_Module {
 	}
 
 	/**
+	 * Check if a page is "promoted" — Kit=widgets but page toggle=yes.
+	 *
+	 * Promoted pages should render full cursor attributes, not show-render.
+	 *
+	 * @param \Elementor\Core\Base\Document|null $document Document instance.
+	 * @return bool
+	 */
+	private function is_page_promoted( $document ) {
+		if ( ! $document ) {
+			return false;
+		}
+
+		$doc_id = $document->get_id();
+
+		if ( isset( $this->page_promoted_cache[ $doc_id ] ) ) {
+			return $this->page_promoted_cache[ $doc_id ];
+		}
+
+		$result = false;
+
+		if ( 'widgets' === self::get_cursor_mode() ) {
+			$toggle = $document->get_settings( 'cmsmasters_page_cursor_disable' );
+			$result = ( 'yes' === $toggle );
+		}
+
+		$this->page_promoted_cache[ $doc_id ] = $result;
+
+		return $result;
+	}
+
+	/**
 	 * Check if current context is "show render mode" (widget-only).
 	 *
 	 * Widgets-only mode: toggle=yes means "show cursor" (opt-in).
 	 * Enabled mode: toggle=yes means "hide cursor" (opt-out).
+	 * Promoted pages (widget-only + page toggle=yes) use full render, not show-render.
 	 *
+	 * @param \Elementor\Core\Base\Document|null $document Optional document for promotion check.
 	 * @return bool
 	 */
-	private function is_show_render_mode() {
-		return 'widgets' === self::get_cursor_mode();
+	private function is_show_render_mode( $document = null ) {
+		if ( 'widgets' !== self::get_cursor_mode() ) {
+			return false;
+		}
+
+		if ( $document && $this->is_page_promoted( $document ) ) {
+			return false;
+		}
+
+		return true;
 	}
 
 	/**
@@ -1429,7 +1477,8 @@ class Module extends Base_Module {
 		}
 
 		// 'customize' — render per-element cursor attributes.
-		if ( $this->is_show_render_mode() ) {
+		$document = method_exists( $element, 'get_document' ) ? $element->get_document() : null;
+		if ( $this->is_show_render_mode( $document ) ) {
 			$element->add_render_attribute( '_wrapper', 'data-cursor-show', 'yes' );
 		}
 
