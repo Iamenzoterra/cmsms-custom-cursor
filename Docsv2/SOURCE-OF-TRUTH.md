@@ -1,6 +1,6 @@
 # Source of Truth — Functional Map
 
-**Version:** 5.7 | **Last Verified:** March 15, 2026
+**Version:** 5.7 | **Last Verified:** March 16, 2026
 **Scope:** Every cursor feature end-to-end, from UI control to visual result.
 
 > This document is the single source of truth for cursor feature behavior.
@@ -23,7 +23,7 @@
 
 | Feature | Kit Control Suffix | Page Control | Element Control | Window Var | Body Class | CSS Var | Data Attribute |
 |---|---|---|---|---|---|---|---|
-| **Visibility/Mode** | `visibility` | `disable` (toggle) | `hide` (toggle) | `cmsmCursorWidgetOnly` | `cmsmasters-cursor-enabled` / `cmsmasters-cursor-widget-only` | -- | `data-cursor-show` / `data-cursor="hide"` |
+| **Visibility/Mode** | `visibility` | `page_cursor_mode` (choose_text) | `element_mode` (choose_text) | -- | `cmsmasters-cursor-enabled` / `cmsmasters-cursor-widget-only` | -- | `data-cursor-show` / `data-cursor="hide"` |
 | **Cursor Theme** | `cursor_style` | `theme` | -- | `cmsmCursorTheme` | `cmsmasters-cursor-theme-{name}` | -- | -- |
 | **System Cursor** | `show_system_cursor` | -- | -- | -- | `cmsmasters-cursor-dual` | -- | -- |
 | **Cursor Color** | `cursor_color` | `color` | `color` (+ `force_color`) | -- | -- | `--cmsmasters-cursor-color`, `--cmsmasters-cursor-color-dark` | `data-cursor-color` |
@@ -172,41 +172,59 @@ Blend source tracking: every return path logs a source string, e.g. `(explicit v
 3. `should_enable_custom_cursor()` returns true (widgets mode keeps runtime available)
 4. `add_cursor_body_class()` adds `cmsmasters-cursor-widget-only` (unless page promotes -- see Scenario 3)
 5. `print_custom_cursor_html()` outputs container but **skips** critical JS (cursor starts hidden)
-6. `enqueue_custom_cursor()` sets `window.cmsmCursorWidgetOnly = true`
-7. JS checks `body.classList.contains('cmsmasters-cursor-widget-only')` -> `isWidgetOnly = true`
-8. `CursorState.transition({ hidden: true })` on init -- cursor invisible
-9. Only `[data-cursor-show]` zones trigger cursor visibility via `resolveVisibility()`
+6. JS checks `body.classList.contains('cmsmasters-cursor-widget-only')` -> `isWidgetOnly = true`
+7. `CursorState.transition({ hidden: true })` on init -- cursor invisible
+8. Only `[data-cursor-show]` zones trigger cursor visibility via `resolveVisibility()`
 
 **What can break:**
 - Page promotion changes body class unexpectedly
 - Element without `data-cursor-show` = cursor stays hidden
-- Missing `cmsmCursorWidgetOnly` window var = JS doesn't know it's widget-only (but body class is backup)
 
 ---
 
-### Scenario 3: Toggle Semantic Flip
+### Scenario 3: Page Mode Control (WP-025)
 
-**What the user does:** Toggles `cmsmasters_cursor_hide` on an element
+**What the user does:** Changes `cmsmasters_page_cursor_mode` in Page Settings -> Advanced -> Custom Cursor
 
-**The same control has DIFFERENT semantics in each mode:**
+**Three explicit values, same meaning in both modes:**
 
-| Mode | Toggle = `yes` | Toggle = `''` (off) |
-|---|---|---|
-| **Widget-only** (show render) | `data-cursor-show="yes"` stamped -> this is a reveal zone | Nothing stamped -> element ignored |
-| **Full** (normal render) | Cursor config rendered (hover, special, core attrs) | If element had saved config -> `data-cursor="hide"`; if never configured -> nothing stamped |
+| `page_mode` | Sitewide UI | Widget-only UI | `enabled` | Body class |
+|---|---|---|---|---|
+| `default` | "Auto" | "Auto" | `true` (sitewide) / `null` (widget-only) | `cursor-enabled` / `cursor-widget-only` |
+| `customize` | "Customize" | "Customize" | `true` | `cursor-enabled` (promotion in widget-only) |
+| `disable` | "Disable" | not offered | `false` | nothing (not loaded) |
 
-**Code paths** (`apply_cursor_attributes()` in module.php):
-- `is_show_render_mode()` determines which branch
-- Full mode "hide" detection: checks `$element->get_data()['settings']` for saved cursor config
+**`get_document_cursor_state()` — no inversion:**
+- `disable` -> `enabled: false` (nothing loads)
+- `customize` -> `enabled: true` (cursor active, sub-controls visible)
+- `default` -> sitewide: `true`, widget-only: `null`
+
+**Legacy bridge:** old documents with `cmsmasters_page_cursor_disable = 'yes'` mapped to canonical tri-state per mode (last place semantic flip lives).
+
+**Editor preview:** `applyPageCursorSettings()` handles body class swap. Custom event `cmsmasters:cursor:page-visibility-update` updates `isWidgetOnly` flag in custom-cursor.js runtime. Gate: `document.documentElement.matches(':hover')` prevents cursor flash at stale position.
+
+---
+
+### Scenario 3b: Element Mode Control (WP-023 + WP-025)
+
+**What the user does:** Changes `cmsmasters_cursor_element_mode` on a widget/section/container
+
+| `element_mode` | UI Label | Default? | Frontend attrs |
+|---|---|---|---|
+| `default` | "Auto" | **Yes (both modes)** | Nothing stamped (transparent) |
+| `customize` | "Customize" | No | Per-element attrs (+ `data-cursor-show` in widget-only non-promoted) |
+| `hide` | "Hide" | No | `data-cursor="hide"` |
+
+**Key: `default` = transparent in both modes.** `apply_cursor_attributes()` early-returns when `element_mode = 'default'` — no data attributes stamped. On non-promoted widget-only page: JS widget-only mode hides cursor (no show zone). On promoted page: no hide instruction, cursor works through element.
 
 ---
 
 ### Scenario 4: Activate Special Cursor on Widget
 
-**What the user does:** Enable toggle -> Special Cursor = Yes -> Type = Image -> uploads image
+**What the user does:** Element mode = Customize -> Special Cursor = Yes -> Type = Image -> uploads image
 
 **Chain:**
-1. Element stores: `cmsmasters_cursor_hide` = `yes`, `cmsmasters_cursor_special_active` = `yes`, `cmsmasters_cursor_special_type` = `image`
+1. Element stores: `cmsmasters_cursor_element_mode` = `customize`, `cmsmasters_cursor_special_active` = `yes`, `cmsmasters_cursor_special_type` = `image`
 2. `apply_cursor_attributes()` -> dispatches to `apply_image_cursor_attributes()`
 3. PHP stamps: `data-cursor-image="URL"`, size/rotate/effect/blend attributes
 4. JS `resolveSpecialCandidate(el)`: `findWithBoundary(el, 'data-cursor-image', null)`
@@ -330,21 +348,18 @@ Global: resolveEffect(cursorEffect, globalWobble)
 
 ---
 
-### Scenario 9: Hide Cursor on Element (Full Mode)
+### Scenario 9: Hide Cursor on Element
 
-**What the user does:** Element had cursor configured -> user turns toggle off
+**What the user does:** Sets element mode to "Hide"
 
 **Chain:**
-1. `apply_cursor_attributes()` -> full mode branch
-2. `toggle !== 'yes'` -> check if element had saved config
-3. `$saved = $element->get_data()['settings']` -- reads raw `_elementor_data` JSON
-4. `has_config` check: `cmsmasters_cursor_hover_style` OR `cmsmasters_cursor_special_active=yes` OR `cmsmasters_cursor_inherit_parent=yes`
-5. If `has_config` true -> `data-cursor="hide"` stamped
-6. JS `resolveVisibility(el)`: `el.closest('[data-cursor="hide"],[data-cursor="none"]')` -> terminal action
-7. If found -> return immediately -- skips ALL detection (color, blend, effect, adaptive)
-8. System cursor shown on that element
+1. `apply_cursor_attributes()` -> `element_mode = 'hide'`
+2. `data-cursor="hide"` stamped on element wrapper
+3. JS `resolveVisibility(el)`: `el.closest('[data-cursor="hide"],[data-cursor="none"]')` -> terminal action
+4. If found -> return immediately -- skips ALL detection (color, blend, effect, adaptive)
+5. System cursor shown on that element
 
-**If element was NEVER configured:** nothing stamped -> global cursor applies normally.
+**Element mode "Auto" (default):** nothing stamped -> cursor follows page/global behavior.
 
 ---
 
@@ -402,7 +417,7 @@ See TRAP-007 for why color doesn't use `get_page_cursor_setting()`.
 
 | # | Page Control ID | Type | Default | Values | Condition |
 |---|---|---|---|---|---|
-| 1 | `cmsmasters_page_cursor_disable` | SWITCHER | `''` | `yes` / `''` | Always visible (label flips per mode) |
+| 1 | `cmsmasters_page_cursor_mode` | CHOOSE_TEXT | `default` | `default` / `customize` / `disable` (sitewide) or `default` / `customize` (widget-only) | Always visible |
 | 2 | `cmsmasters_page_cursor_theme` | SELECT | `''` | `''` / `classic` / `dot` | Toggle-dependent |
 | 3 | `cmsmasters_page_cursor_smoothness` | SELECT | `''` | `''` / `precise` / `snappy` / `normal` / `smooth` / `fluid` | Toggle-dependent |
 | 4 | `cmsmasters_page_cursor_blend_mode` | SELECT | `''` | `''` / `off` / `soft` / `medium` / `strong` | Toggle-dependent |
@@ -411,15 +426,15 @@ See TRAP-007 for why color doesn't use `get_page_cursor_setting()`.
 | 7 | `cmsmasters_page_cursor_color` | COLOR | `''` | hex / global ref | Toggle-dependent |
 | 8 | `cmsmasters_page_cursor_reset` | RAW_HTML | -- | Button | Toggle-dependent |
 
-**Page toggle semantics:**
-- Widget-only mode: controls visible when `cmsmasters_page_cursor_disable` = `yes` (opt-in)
-- Full mode: controls visible when `cmsmasters_page_cursor_disable` = `''` (opt-out)
+**Page mode semantics:**
+- Both modes: sub-controls visible when `cmsmasters_page_cursor_mode` = `customize`
+- No mode-dependent condition inversion
 
 #### Element Controls (key controls, registered on widgets/sections/containers -> Advanced -> Custom Cursor)
 
 | # | Element Control ID | Type | Default | Role |
 |---|---|---|---|---|
-| 1 | `cmsmasters_cursor_hide` | SWITCHER | `''` | Master toggle (semantic flip per mode) |
+| 1 | `cmsmasters_cursor_element_mode` | CHOOSE_TEXT | `default` | Element mode — Auto (`default`) / Customize / Hide. Default = transparent (both modes). |
 | 2 | `cmsmasters_cursor_inherit_parent` | SWITCHER | `''` | Transparent cursor boundary |
 | 3 | `cmsmasters_cursor_inherit_blend` | SELECT | `''` | Blend override in inherit mode |
 | 4 | `cmsmasters_cursor_inherit_effect` | SELECT | `''` | Effect override in inherit mode |
@@ -548,7 +563,7 @@ All set by `enqueue_custom_cursor()` via `wp_add_inline_script()` (frontend.php)
 | `window.cmsmCursorEffect` | `page_effect != '' && != 'none' && != 'wobble'` | string (`'pulse'`, `'shake'`, `'buzz'`) | `resolveEffect()` | Page-level non-wobble effect fallback |
 | `window.cmsmCursorWobble` | `wobble = 'yes'` (Kit or page) | `true` (bool) | `isWobbleEnabled()` | Wobble enable flag (DEC-002) |
 | `window.cmsmCursorTrueGlobalBlend` | Kit `blend_mode != 'disabled'` | string (`'soft'`, `'medium'`, `'strong'`) | Init, `resolveBlendForElement()` | Kit-only blend for widget "Default" fallback |
-| `window.cmsmCursorWidgetOnly` | `mode = 'widgets'` | `true` (bool) | -- (body class is primary) | Redundant flag (body class check is primary) |
+| ~~`window.cmsmCursorWidgetOnly`~~ | -- | -- | -- | **Removed (WP-025).** Body class `cmsmasters-cursor-widget-only` is the sole signal. |
 
 **Not set via window vars** (derived from body classes instead):
 - Blend intensity -> read from `cmsmasters-cursor-blend-{value}` classes
@@ -561,11 +576,11 @@ All set by `enqueue_custom_cursor()` via `wp_add_inline_script()` (frontend.php)
 See `TRAPS.md` for the full catalog with grep-friendly IDs. Summary:
 
 1. **CursorState Blend Sync** (TRAP-001) -- null===null no-op if not synced from PHP body class
-2. **Toggle Semantic Flip** (TRAP-002) -- same control, different meaning per mode
+2. **~~Toggle Semantic Flip~~ (TRAP-002)** -- **Resolved** (WP-023 elements, WP-025 pages). Only lives in legacy read bridges.
 3. **"Default" Blend != "Default" Effect** (TRAP-003) -- different resolution by design
 4. **Page Blend Does NOT Cascade to Dirty Widgets** (TRAP-004) -- widget boundary is intentional
 5. **Dual CSS Variable Output** -- Kit vars are dead weight, inline CSS vars are real
-6. **Widget-Only Page Promotion** (TRAP-008) -- page enable silently promotes to full mode
+6. **Widget-Only Page Promotion** (TRAP-008) -- now explicit via `page_cursor_mode = 'customize'` (WP-025)
 7. **Color Resolution Has Separate Path** (TRAP-007) -- doesn't use get_page_cursor_setting()
 8. **Effect Window Var Exclusions** -- only pulse/shake/buzz get window var, wobble uses separate mechanism
 

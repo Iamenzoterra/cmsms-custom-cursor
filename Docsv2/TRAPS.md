@@ -16,16 +16,12 @@
 
 ---
 
-## TRAP-002: Toggle Semantic Flip
+## TRAP-002: Toggle Semantic Flip — RESOLVED
 
-**Trigger:** Reading `cmsmasters_cursor_hide` value without checking which mode is active.
-**Breaks:** The same value `'yes'` means "render cursor attributes" in both modes, but:
-- **Full mode**, toggle off + had config -> `data-cursor="hide"` (hides cursor)
-- **Widget-only**, toggle off -> element simply skipped (no attrs)
-
-The *UI label* also flips between "Show" and "Hide". Code that assumes a fixed meaning will produce wrong output.
-**Fix:** Always call `is_show_render_mode()` first to determine which branch applies.
-**See:** SOURCE-OF-TRUTH.md Scenario 3
+**Status:** Resolved (WP-023 elements, WP-025 pages).
+**Was:** `cmsmasters_cursor_hide` and `cmsmasters_page_cursor_disable` boolean toggles had mode-dependent meaning. Same value `'yes'` meant opposite things in sitewide vs widget-only.
+**Now:** Replaced with explicit CHOOSE_TEXT controls (`element_mode`, `page_cursor_mode`) with canonical values (`default`/`customize`/`hide`/`disable`). No mode-dependent inversion. Legacy read bridges in 3 files map old `'yes'` to canonical values per mode — last place the semantic flip lives.
+**See:** SOURCE-OF-TRUTH.md Scenario 3/3b, DEC-011, DEC-012
 
 ---
 
@@ -77,12 +73,13 @@ The *UI label* also flips between "Show" and "Hide". Code that assumes a fixed m
 
 ---
 
-## TRAP-008: Widget-Only Page Promotion
+## TRAP-008: Widget-Only Page Promotion (Updated WP-025)
 
-**Trigger:** Setting `cmsmasters_page_cursor_disable = yes` in widget-only mode.
-**Breaks:** In widget-only mode, this promotes the page to full cursor mode silently. `get_document_cursor_state()` returns `enabled: true`, and `add_cursor_body_class()` uses `cmsmasters-cursor-enabled` instead of `cmsmasters-cursor-widget-only`.
-**Fix:** Known behavior. Document for users that page-level "enable" in widget-only mode = full cursor on that page.
-**See:** SOURCE-OF-TRUTH.md Appendix pitfall #6
+**Trigger:** Setting `cmsmasters_page_cursor_mode = 'customize'` in widget-only mode.
+**Effect:** Promotion is now explicit: `customize` in widget-only = full cursor on this page. `get_document_cursor_state()` returns `enabled: true`, `add_cursor_body_class()` adds `cmsmasters-cursor-enabled`, `is_page_promoted()` returns true.
+**Editor preview:** `applyPageCursorSettings()` handles visibility class swap. Custom event `cmsmasters:cursor:page-visibility-update` updates `isWidgetOnly` flag in custom-cursor.js runtime.
+**Element transparency:** Elements with `element_mode = 'default'` (Auto) are transparent on promoted pages — no attrs stamped, cursor works through. Elements with `element_mode = 'hide'` still block cursor locally.
+**See:** SOURCE-OF-TRUTH.md Scenario 3/3b, DEC-011
 
 ---
 
@@ -129,4 +126,4 @@ The *UI label* also flips between "Show" and "Hide". Code that assumes a fixed m
 
 ---
 
-*Last updated: 2026-03-15 | Dot theme size hotfix*
+*Last updated: 2026-03-16 | WP-025 page toggle cleanup*
