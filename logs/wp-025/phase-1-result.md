@@ -103,6 +103,12 @@ Replaced the boolean SWITCHER control (`cmsmasters_page_cursor_disable`) with a 
 **Fix:** Gate unhide with `document.documentElement.matches(':hover')`. If mouse isn't in the iframe, skip unhide — the existing `mouseenter` handler shows cursor at correct position when pointer returns.
 - Commit: `e90834e`
 
+### 7. Element transparency on promoted pages + unified labels
+**Root cause:** In widget-only mode, element control defaulted to `'hide'`, stamping `data-cursor="hide"` on every untouched element. On promoted pages (page=Customize), cursor was blocked by these hide attrs even though page said "show everywhere".
+
+**Fix:** Changed element default from `'hide'` to `'default'` in both modes. `apply_cursor_attributes()` already treats `'default'` as transparent (early return, no attrs stamped). Unified all labels to `Auto/Customize/Hide|Disable` with contextual descriptions. Element widget-only now has 3 options (was 2).
+- Commit: `2c0612d`
+
 ## Git
 - `d9c788b` — `replace page toggle with 3-state choose_text + legacy bridge [WP-025 phase 1]`
 - `9427a22` — `docs: fix WP-025 phase 1 log — status PARTIAL, add contract checks, record sha`
@@ -112,3 +118,4 @@ Replaced the boolean SWITCHER control (`cmsmasters_page_cursor_disable`) with a 
 - `837c9ba` — `fix: update isWidgetOnly at runtime on Show/Hide toggle [WP-025]`
 - `25f8ed9` — `fix: Reset to Defaults no longer changes Show/Hide state [WP-025]`
 - `e90834e` — `fix: don't flash cursor at stale position when toggling from editor panel [WP-025]`
+- `2c0612d` — `UX: Auto labels + element transparency on promoted pages [WP-025]`
