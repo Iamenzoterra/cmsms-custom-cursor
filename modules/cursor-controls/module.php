@@ -125,25 +125,29 @@ class Module extends Base_Module {
 		}
 
 		// === ELEMENT MODE SELECT (3-state: default | customize | hide) ===
+		// Default = 'default' (Auto) in both modes.
+		// In widget-only: 'default' = transparent. No data-cursor-* attrs stamped.
+		// On non-promoted page: JS in widget-only mode → no show zone → cursor hidden.
+		// On promoted page: JS in full mode → no hide instruction → cursor works.
+		// Using 'hide' here would stamp data-cursor="hide" and block cursor
+		// on promoted pages — making page-level "Customize" useless.
 		$element->add_control(
 			'cmsmasters_cursor_element_mode',
 			array(
-				'label'   => esc_html__( 'Custom Cursor', 'cmsmasters-elementor' ),
+				'label'       => esc_html__( 'Custom Cursor', 'cmsmasters-elementor' ),
 				'type'        => Cmsmasters_Controls_Manager::CHOOSE_TEXT,
-				'label_block' => ! $is_show_mode,
-				'default'     => $is_show_mode ? 'hide' : 'default',
-				'options'     => $is_show_mode
-					? array(
-						'customize' => array( 'title' => esc_html__( 'Show', 'cmsmasters-elementor' ) ),
-						'hide'      => array( 'title' => esc_html__( 'Hide', 'cmsmasters-elementor' ) ),
-					)
-					: array(
-						'default'   => array( 'title' => esc_html__( 'Use global', 'cmsmasters-elementor' ) ),
-						'customize' => array( 'title' => esc_html__( 'Customize', 'cmsmasters-elementor' ) ),
-						'hide'      => array( 'title' => esc_html__( 'Hide', 'cmsmasters-elementor' ) ),
-					),
-				'toggle'    => false,
-				'separator' => 'before',
+				'label_block' => true,
+				'default'     => 'default',
+				'options'     => array(
+					'default'   => array( 'title' => esc_html__( 'Auto', 'cmsmasters-elementor' ) ),
+					'customize' => array( 'title' => esc_html__( 'Customize', 'cmsmasters-elementor' ) ),
+					'hide'      => array( 'title' => esc_html__( 'Hide', 'cmsmasters-elementor' ) ),
+				),
+				'description' => $is_show_mode
+					? esc_html__( 'Auto: no element override; follows page/global cursor state. Customize: enable and style cursor on this element.', 'cmsmasters-elementor' )
+					: esc_html__( 'Auto: no element override; follows page/global cursor state.', 'cmsmasters-elementor' ),
+				'toggle'      => false,
+				'separator'   => 'before',
 			)
 		);
 
@@ -983,7 +987,10 @@ class Module extends Base_Module {
 			)
 		);
 
-		// === PAGE CURSOR MODE (3-state: default | customize | disable/hide) ===
+		// === PAGE CURSOR MODE (3-state: default | customize | disable) ===
+		// Description differs per mode because "Auto" means different things:
+		// Sitewide: cursor active from Kit (user may not realize it's "automatic")
+		// Widget-only: cursor hidden (user needs to know this is the inactive state)
 		$element->add_control(
 			'cmsmasters_page_cursor_mode',
 			array(
@@ -993,14 +1000,17 @@ class Module extends Base_Module {
 				'default'     => 'default',
 				'options'     => $is_show_mode
 					? array(
-						'customize' => array( 'title' => esc_html__( 'Show', 'cmsmasters-elementor' ) ),
-						'default'   => array( 'title' => esc_html__( 'Hide', 'cmsmasters-elementor' ) ),
+						'default'   => array( 'title' => esc_html__( 'Auto', 'cmsmasters-elementor' ) ),
+						'customize' => array( 'title' => esc_html__( 'Customize', 'cmsmasters-elementor' ) ),
 					)
 					: array(
-						'default'   => array( 'title' => esc_html__( 'Use global', 'cmsmasters-elementor' ) ),
+						'default'   => array( 'title' => esc_html__( 'Auto', 'cmsmasters-elementor' ) ),
 						'customize' => array( 'title' => esc_html__( 'Customize', 'cmsmasters-elementor' ) ),
 						'disable'   => array( 'title' => esc_html__( 'Disable', 'cmsmasters-elementor' ) ),
 					),
+				'description' => $is_show_mode
+					? esc_html__( 'Auto: cursor is hidden. Customize: enable cursor on this page.', 'cmsmasters-elementor' )
+					: esc_html__( 'Auto: inherits cursor from global settings.', 'cmsmasters-elementor' ),
 				'toggle'      => false,
 			)
 		);
