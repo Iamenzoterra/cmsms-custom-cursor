@@ -1356,7 +1356,6 @@ class Frontend extends Base_App {
 		// Map Kit values → internal values consumed by frontend code
 		static $kit_value_map = array(
 			'cursor_style' => array( 'dot_ring' => 'classic' ),
-			'blend_mode'   => array( 'disabled' => '' ),
 		);
 		if ( isset( $kit_value_map[ $kit_suffix ][ $value ] ) ) {
 			return $kit_value_map[ $kit_suffix ][ $value ];
@@ -1555,19 +1554,6 @@ class Frontend extends Base_App {
 			$inline_js_parts[] = 'window.cmsmCursorEffect = "' . esc_js( $page_effect ) . '";';
 		}
 
-		// True global blend (for widget fallback — NOT page > global).
-		// Widgets with "Default (Global)" use this instead of the page override.
-		$global_blend_only = AddonUtils::get_kit_option( 'cmsmasters_custom_cursor_blend_mode', 'disabled' );
-		if ( 'disabled' === $global_blend_only ) {
-			$global_blend_only = '';
-		}
-		if ( 'yes' === $global_blend_only ) {
-			$global_blend_only = 'medium'; // legacy
-		}
-		if ( ! empty( $global_blend_only ) ) {
-			$inline_js_parts[] = 'window.cmsmCursorTrueGlobalBlend = "' . esc_js( $global_blend_only ) . '";';
-		}
-
 		// Wobble effect (page > global) — window var for JS, no body class needed
 		$page_effect = $this->get_page_cursor_setting( 'effect', '', '' );
 		if ( 'wobble' === $page_effect ) {
@@ -1627,8 +1613,9 @@ class Frontend extends Base_App {
 			$classes[] = 'cmsmasters-cursor-dual';
 		}
 
-		// Add blend mode class based on intensity (page > global)
-		$blend_mode = $this->get_page_cursor_setting( 'blend_mode', 'blend_mode', 'disabled' );
+		// Blend mode class — page-only, no Kit fallback (WP-026).
+		$cursor_doc = $this->get_cursor_context_document();
+		$blend_mode = $cursor_doc ? $cursor_doc->get_settings( 'cmsmasters_page_cursor_blend_mode' ) : '';
 		if ( $blend_mode ) {
 			// Legacy support: 'yes' maps to 'medium'
 			if ( 'yes' === $blend_mode ) {

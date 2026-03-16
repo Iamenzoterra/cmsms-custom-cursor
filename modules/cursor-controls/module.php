@@ -178,8 +178,7 @@ class Module extends Base_Module {
 				'type'        => Controls_Manager::SELECT,
 				'default'     => '',
 				'options'     => array(
-					''       => __( 'Default (Global)', 'cmsmasters-elementor' ),
-					'off'    => __( 'Disabled', 'cmsmasters-elementor' ),
+					''       => __( 'Off', 'cmsmasters-elementor' ),
 					'soft'   => __( 'Soft (Exclusion)', 'cmsmasters-elementor' ),
 					'medium' => __( 'Medium (Difference)', 'cmsmasters-elementor' ),
 					'strong' => __( 'Strong (High Contrast)', 'cmsmasters-elementor' ),
@@ -1059,8 +1058,7 @@ class Module extends Base_Module {
 				'type'      => Controls_Manager::SELECT,
 				'default'   => '',
 				'options'   => array(
-					''       => __( 'Default (Global)', 'cmsmasters-elementor' ),
-					'off'    => __( 'Disabled', 'cmsmasters-elementor' ),
+					''       => __( 'Off', 'cmsmasters-elementor' ),
 					'soft'   => __( 'Soft (Exclusion)', 'cmsmasters-elementor' ),
 					'medium' => __( 'Medium (Difference)', 'cmsmasters-elementor' ),
 					'strong' => __( 'Strong (High Contrast)', 'cmsmasters-elementor' ),
