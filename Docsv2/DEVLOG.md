@@ -20,6 +20,10 @@ Living document tracking development sessions, decisions, and iterations.
 
 **Iterations:** 2 — first attempt (d5d1f42) missed the closure var update; this fix addresses the actual root cause.
 
+**Follow-up fix 1: Reset to Defaults flipping Show→Hide.** Reset button included `cmsmasters_page_cursor_mode: 'default'` in `settingsToReset` (navigator-indicator.js). In Show mode `default` = Hide, so cursor disappeared. Fix: removed `cmsmasters_page_cursor_mode` from reset — it only resets visual overrides (theme, smoothness, blend, effect, adaptive), not the Show/Hide state.
+
+**Follow-up fix 2: Cursor flashing at stale position.** When toggling Show while mouse is on editor panel (not in preview iframe), `hidden: false` made the cursor appear at its last known coordinates (often top-left). Fix: gate unhide with `document.documentElement.matches(':hover')` — if mouse isn't in the iframe, skip unhide. The existing `mouseenter` handler will show the cursor at the correct position when the pointer returns.
+
 ---
 
 ## 2026-03-15 — Hotfix: Dot Theme Kit Size Override
