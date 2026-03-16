@@ -877,6 +877,11 @@
                 body.classList.remove('cmsmasters-cursor-enabled');
                 body.classList.add('cmsmasters-cursor-widget-only');
             }
+            // Tell custom-cursor.js runtime to show/hide cursor.
+            // Body class alone doesn't work — runtime captures isWidgetOnly once at init.
+            body.dispatchEvent(new CustomEvent('cmsmasters:cursor:page-visibility-update', {
+                detail: { hidden: p.enabled !== true }
+            }));
         }
 
         // --- Theme ---

@@ -734,6 +734,16 @@
         dotL = Math.min(L * DOT_SPEED_MULTIPLIER, 1);
     });
 
+    // Editor live preview: widget-only promotion/demotion
+    // isWidgetOnly is captured once at init — this event lets editor-sync
+    // tell the runtime to show/hide cursor when page mode changes.
+    body.addEventListener('cmsmasters:cursor:page-visibility-update', function(e) {
+        var shouldHide = !!e.detail.hidden;
+        if (CursorState.get('hidden') !== shouldHide) {
+            CursorState.transition({ hidden: shouldHide }, 'editor:page-visibility');
+        }
+    });
+
     // === SPECIAL CURSOR LIFECYCLE MANAGER (Phase 3 — MEM-004 fix) ===
     // Coordinates create/remove of image/text/icon cursors.
     // Prevents accumulation by deduplication and atomic cleanup.
