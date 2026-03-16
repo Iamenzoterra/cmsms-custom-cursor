@@ -741,7 +741,12 @@
         var promoted = !!e.detail.promoted;
         isWidgetOnly = !promoted;
         if (promoted) {
-            CursorState.transition({ hidden: false }, 'editor:promoted');
+            // Only unhide if mouse is actually inside the preview iframe.
+            // Otherwise cursor flashes at stale position while user is on editor panel.
+            // mouseenter will handle unhide when pointer returns.
+            if (document.documentElement.matches(':hover')) {
+                CursorState.transition({ hidden: false }, 'editor:promoted');
+            }
         } else {
             CursorState.transition({ hidden: true }, 'editor:demoted');
         }
