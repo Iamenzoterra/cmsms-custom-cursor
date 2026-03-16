@@ -4,6 +4,16 @@ Living document tracking development sessions, decisions, and iterations.
 
 ---
 
+## 2026-03-16 — Remove Kit Blend — per-page/per-element only [WP-026]
+
+**Problem:** Kit-level blend forced `--cmsmasters-cursor-color: #fff` globally. Any Kit blend setting killed the user's custom cursor color on every page.
+
+**Fix:** Deleted Kit blend emission (`cmsmCursorTrueGlobalBlend`), switched body class blend to page-only read (no Kit fallback), removed `blend_mode` from `kit_value_map`. Updated labels: page/promoted `'Default (Global)'` → `'Off'`, element `'Default'` removed (Off is the default). JS untouched — `trueGlobalBlend = ''` makes all "Default" paths resolve to no blend automatically.
+
+**Iterations:** 0 — recon was accurate, direct implementation.
+
+---
+
 ## 2026-03-16 — UX: Auto Labels + Element Transparency on Promoted Pages [WP-025]
 
 **Problem:** In widget-only mode, element control defaulted to `'hide'`, which stamped `data-cursor="hide"` on every untouched element. When a page was promoted (page = Customize/Show), cursor still didn't work on those elements because the hide attribute blocked it. Also, labels were inconsistent across controls ("Use global" vs "Show" vs "Hide").
