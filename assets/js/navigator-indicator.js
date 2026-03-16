@@ -912,15 +912,12 @@
 			}
 		}
 
-		var hasOverride = isCustomize || pageMode === 'disable';
-		// New tri-state control always has a value — send payload so receiver can
-		// clean up previous state (e.g. remove cmsmasters-cursor-disabled after Disable→Use global).
-		var hasExplicitMode = !!json.cmsmasters_page_cursor_mode;
-		var hasVisualSetting = ['theme', 'color', 'smoothness', 'blend_mode', 'effect', 'adaptive'].some(function(key) {
-			return payload[key] !== '';
-		});
-
-		return (hasOverride || hasVisualSetting || hasExplicitMode || payload.enabled === false) ? payload : null;
+		// Always return payload. This function is only called when a page cursor
+		// setting changed, so the receiver always needs the current state to
+		// clean up previous overrides (e.g. remove disabled class, restore widget-only).
+		// Elementor strips default values from the model, so we can't rely on
+		// json.cmsmasters_page_cursor_mode being present to detect "has control".
+		return payload;
 	}
 
 	/**
