@@ -889,25 +889,30 @@
 			enabled = isShowMode ? null : true;
 		}
 
+		// Visual settings only meaningful when customize is active.
+		// Elementor hides sub-controls via condition but keeps stale values in model.
+		var isCustomize = (pageMode === 'customize');
 		var payload = {
 			enabled:    enabled,
-			theme:      json.cmsmasters_page_cursor_theme || '',
-			color:      json.cmsmasters_page_cursor_color || '',
-			smoothness: json.cmsmasters_page_cursor_smoothness || '',
-			blend_mode: json.cmsmasters_page_cursor_blend_mode || '',
-			effect:     json.cmsmasters_page_cursor_effect || '',
-			adaptive:   json.cmsmasters_page_cursor_adaptive || ''
+			theme:      isCustomize ? (json.cmsmasters_page_cursor_theme || '') : '',
+			color:      isCustomize ? (json.cmsmasters_page_cursor_color || '') : '',
+			smoothness: isCustomize ? (json.cmsmasters_page_cursor_smoothness || '') : '',
+			blend_mode: isCustomize ? (json.cmsmasters_page_cursor_blend_mode || '') : '',
+			effect:     isCustomize ? (json.cmsmasters_page_cursor_effect || '') : '',
+			adaptive:   isCustomize ? (json.cmsmasters_page_cursor_adaptive || '') : ''
 		};
 
-		var globals = json.__globals__ || {};
-		if (globals.cmsmasters_page_cursor_color) {
-			var resolved = resolveGlobalColor(globals.cmsmasters_page_cursor_color);
-			if (resolved) payload.color = resolved;
-		} else if (payload.color && payload.color.charAt(0) !== '#') {
-			payload.color = '';
+		if (isCustomize) {
+			var globals = json.__globals__ || {};
+			if (globals.cmsmasters_page_cursor_color) {
+				var resolved = resolveGlobalColor(globals.cmsmasters_page_cursor_color);
+				if (resolved) payload.color = resolved;
+			} else if (payload.color && payload.color.charAt(0) !== '#') {
+				payload.color = '';
+			}
 		}
 
-		var hasOverride = pageMode === 'customize' || pageMode === 'disable';
+		var hasOverride = isCustomize || pageMode === 'disable';
 		var hasVisualSetting = ['theme', 'color', 'smoothness', 'blend_mode', 'effect', 'adaptive'].some(function(key) {
 			return payload[key] !== '';
 		});

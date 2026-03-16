@@ -866,6 +866,19 @@
             body.classList.add('cmsmasters-cursor-disabled');
         }
 
+        // --- Visibility class promotion/demotion (widget-only mode) ---
+        if (isShowMode) {
+            if (p.enabled === true) {
+                // Promoted: widget-only → full cursor mode on this page
+                body.classList.add('cmsmasters-cursor-enabled');
+                body.classList.remove('cmsmasters-cursor-widget-only');
+            } else {
+                // Default (enabled:null): restore widget-only mode
+                body.classList.remove('cmsmasters-cursor-enabled');
+                body.classList.add('cmsmasters-cursor-widget-only');
+            }
+        }
+
         // --- Theme ---
         if (p.theme) {
             // Page override
