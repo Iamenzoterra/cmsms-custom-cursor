@@ -28,7 +28,7 @@
 | **System Cursor** | `show_system_cursor` | -- | -- | -- | `cmsmasters-cursor-dual` | -- | -- |
 | **Cursor Color** | `cursor_color` | `color` | `color` (+ `force_color`) | -- | -- | `--cmsmasters-cursor-color`, `--cmsmasters-cursor-color-dark` | `data-cursor-color` |
 | **Adaptive Color** | `adaptive_color` | `adaptive` | -- | `cmsmCursorAdaptive` | `cmsmasters-cursor-on-light` / `cmsmasters-cursor-on-dark` | -- | -- |
-| **Blend Mode** | `blend_mode` | `blend_mode` | `blend_mode` (core) / `special_blend` (special) | `cmsmCursorTrueGlobalBlend` | `cmsmasters-cursor-blend` + `cmsmasters-cursor-blend-{intensity}` | -- | `data-cursor-blend` |
+| **Blend Mode** | -- (removed WP-026) | `blend_mode` | `blend_mode` (core) / `special_blend` (special) | -- (removed WP-026) | `cmsmasters-cursor-blend` + `cmsmasters-cursor-blend-{intensity}` | -- | `data-cursor-blend` |
 | **Cursor Size** | `cursor_size` | -- | -- | -- | -- | `--cmsmasters-cursor-dot-size` (on `:root`, not body) | -- |
 | **Hover Size** | `size_on_hover` | -- | -- | -- | -- | `--cmsmasters-cursor-dot-hover-size` (on `:root`, not body) | -- |
 | **Smoothness** | `smoothness` | `smoothness` | -- | `cmsmCursorSmooth` | -- | -- | -- |
@@ -60,7 +60,6 @@
 | Kit Suffix | Kit Value | Runtime Value |
 |---|---|---|
 | `cursor_style` | `dot_ring` | `classic` |
-| `blend_mode` | `disabled` | `''` |
 
 **Blend Legacy** (`add_cursor_body_class()` and `enqueue_custom_cursor()` in frontend.php):
 
@@ -244,52 +243,51 @@ Blend source tracking: every return path logs a source string, e.g. `(explicit v
 
 ---
 
-### Scenario 5: Enable Blend Mode Globally
+### Scenario 5: Enable Blend Mode
 
-**What the user does:** Sets Kit -> Blend Mode to "Soft"
+**Blend is per-page or per-element only.** Kit-level blend was removed (WP-026) because
+it forced `--cmsmasters-cursor-color: #fff` globally, killing user's custom color.
 
-**Chain:**
-1. Kit stores `cmsmasters_custom_cursor_blend_mode` = `soft`
-2. `get_page_cursor_setting('blend_mode', 'blend_mode', 'disabled')` -- page empty -> falls back to Kit -> `soft`
+**Page blend:**
+1. Page setting `cmsmasters_page_cursor_blend_mode` = `soft`
+2. PHP reads page setting directly (no Kit fallback)
 3. `add_cursor_body_class()` adds `cmsmasters-cursor-blend` + `cmsmasters-cursor-blend-soft`
-4. JS reads body classes -> `globalBlendIntensity = 'soft'`
-5. Sync: `CursorState._state.blend = globalBlendIntensity` -- prevents no-op transition bug (TRAP-001)
-6. `cmsmCursorTrueGlobalBlend` (frontend.php): Kit-only blend, NOT page > global
-7. JS: `trueGlobalBlend = window.cmsmCursorTrueGlobalBlend || ''`
+4. CSS activates `mix-blend-mode: exclusion` on cursor container + forces color to `#fff`
+5. Cursor blends with page background on that page only
 
-**Two "global" blend values exist simultaneously:**
+**Element blend:**
+1. Element `data-cursor-blend` = `strong`
+2. JS `resolveBlendForElement()` finds explicit value -> returns `'strong'`
+3. `setBlendIntensity('strong')` -> `CursorState.transition({blend: 'strong'})` -> body classes added
+4. Cursor blends while hovering over that element
+5. On mouseout -> blend removed, user's cursor color restored
 
-| Variable | Source | Contains | Used For |
-|---|---|---|---|
-| `globalBlendIntensity` | Body classes (page > Kit) | Page override or Kit fallback | Body-level fallback when no widget boundary |
-| `trueGlobalBlend` | Window var (Kit only) | Kit-only value | Widget "Default" fallback, dirty widget boundary fallback |
+**"Off" = no blend.** Page and element blend labels default to "Off".
+There is no global blend to inherit. `trueGlobalBlend` is always `''` (WP-026).
 
 ---
 
-### Scenario 6: Blend Resolution for Widgets
-
-**What the user does:** Widget A has blend = "Default", nested inside Section B with blend = "Strong"
+### Scenario 6: Blend Resolution for Elements
 
 **Resolution logic** (`resolveBlendForElement(el, ctx)` in custom-cursor.js):
 
 ```
 1. Element has explicit data-cursor-blend?
-   -> "off"/"no" -> blend = ''
+   -> "off"/"no" -> no blend
    -> "soft"/"medium"/"strong" -> use that value
-   -> "yes" -> use trueGlobalBlend || 'soft'
-   -> "default"/"" -> use trueGlobalBlend (Kit only, NOT page)
+   -> empty/"default" -> no blend (no global to inherit, WP-026)
 
 2. Element has NO blend attribute?
-   -> Is it a dirty widget (data-id + has cursor settings)?
-     -> Yes -> use trueGlobalBlend
-   -> Is it inner content (no data-id)?
-     -> Walk up to find blend:
-       -> Hit dirty widget boundary -> STOP -> use its blend or trueGlobalBlend
-       -> Hit clean element with blend -> use that blend
-       -> Hit body -> use globalBlendIntensity (page > Kit)
+   -> Walk up DOM tree via findWithBoundary()
+   -> If ancestor has blend -> use it (respects widget boundaries)
+   -> If no ancestor has blend -> no blend
 ```
 
-**13 resolution paths verified** (see DEC-009 for pure extraction design).
+`trueGlobalBlend` is always `''` (Kit blend removed, WP-026). Widget "Default" = no blend.
+`globalBlendIntensity` comes from page blend body classes only.
+
+**13 resolution paths still exist** in code (see DEC-009 for pure extraction design).
+Paths that previously fell through to `trueGlobalBlend` now resolve to `''` (no blend).
 
 ---
 
@@ -377,10 +375,12 @@ Global: resolveEffect(cursorEffect, globalWobble)
 
 3. Read Kit setting: cmsmasters_custom_cursor_{$kit_suffix}
 
-4. Map Kit values to internal (dot_ring->classic, disabled->'')
+4. Map Kit values to internal (dot_ring->classic)
 
 5. Return Kit value or $default
 ```
+
+**Note:** Blend is NOT read through this function (WP-026). Page blend is read directly via `$cursor_doc->get_settings('cmsmasters_page_cursor_blend_mode')` with no Kit fallback.
 
 **Color resolution is special** -- `get_cursor_color()` (frontend.php):
 1. Page `__globals__` reference -> resolve via Kit system/custom colors
@@ -397,7 +397,7 @@ See TRAP-007 for why color doesn't use `get_page_cursor_setting()`.
 
 ### Matrix A: Complete Settings Resolution
 
-#### Kit Controls (11 controls, registered in Kit -> Theme Settings -> Custom Cursor)
+#### Kit Controls (10 controls, registered in Kit -> Theme Settings -> Custom Cursor)
 
 | # | Kit Suffix | Type | Default | Values | frontend.php Usage |
 |---|---|---|---|---|---|
@@ -406,12 +406,11 @@ See TRAP-007 for why color doesn't use `get_page_cursor_setting()`.
 | 3 | `show_system_cursor` | SWITCHER | `yes` | `yes` / `''` | `add_cursor_body_class()` |
 | 4 | `cursor_color` | COLOR | `''` | hex | `get_cursor_color()` |
 | 5 | `adaptive_color` | SELECT | `yes` | `yes` / `no` | `get_page_cursor_setting('adaptive','adaptive')` |
-| 6 | `blend_mode` | SELECT | `disabled` | `disabled` / `soft` / `medium` / `strong` | `get_page_cursor_setting()` + `enqueue_custom_cursor()` |
-| 7 | `cursor_size` | SLIDER | `8` | 4-20 px | `enqueue_custom_cursor()` |
-| 8 | `size_on_hover` | SLIDER | `40` | 20-80 px | `enqueue_custom_cursor()` |
-| 9 | `smoothness` | SELECT | `smooth` | `precise` / `snappy` / `normal` / `smooth` / `fluid` | `get_page_cursor_setting('smoothness','smoothness')` |
-| 10 | `wobble_effect` | SWITCHER | `yes` | `yes` / `''` | `add_cursor_body_class()` |
-| 11 | `editor_preview` | SWITCHER | `''` | `yes` / `''` | `should_enable_custom_cursor()` |
+| 6 | `cursor_size` | SLIDER | `8` | 4-20 px | `enqueue_custom_cursor()` |
+| 7 | `size_on_hover` | SLIDER | `40` | 20-80 px | `enqueue_custom_cursor()` |
+| 8 | `smoothness` | SELECT | `smooth` | `precise` / `snappy` / `normal` / `smooth` / `fluid` | `get_page_cursor_setting('smoothness','smoothness')` |
+| 9 | `wobble_effect` | SWITCHER | `yes` | `yes` / `''` | `add_cursor_body_class()` |
+| 10 | `editor_preview` | SWITCHER | `''` | `yes` / `''` | `should_enable_custom_cursor()` |
 
 #### Page Controls (8 controls, registered in Page Settings -> Advanced -> Custom Cursor)
 
@@ -562,7 +561,7 @@ All set by `enqueue_custom_cursor()` via `wp_add_inline_script()` (frontend.php)
 | `window.cmsmCursorSmooth` | `smoothness != 'normal'` | string | Init, smoothMap lookup | Lerp factor for cursor follow |
 | `window.cmsmCursorEffect` | `page_effect != '' && != 'none' && != 'wobble'` | string (`'pulse'`, `'shake'`, `'buzz'`) | `resolveEffect()` | Page-level non-wobble effect fallback |
 | `window.cmsmCursorWobble` | `wobble = 'yes'` (Kit or page) | `true` (bool) | `isWobbleEnabled()` | Wobble enable flag (DEC-002) |
-| `window.cmsmCursorTrueGlobalBlend` | Kit `blend_mode != 'disabled'` | string (`'soft'`, `'medium'`, `'strong'`) | Init, `resolveBlendForElement()` | Kit-only blend for widget "Default" fallback |
+| ~~`window.cmsmCursorTrueGlobalBlend`~~ | -- | -- | -- | **Removed (WP-026).** Kit blend no longer emitted. `trueGlobalBlend` in JS always `''`. |
 | ~~`window.cmsmCursorWidgetOnly`~~ | -- | -- | -- | **Removed (WP-025).** Body class `cmsmasters-cursor-widget-only` is the sole signal. |
 
 **Not set via window vars** (derived from body classes instead):
@@ -577,8 +576,8 @@ See `TRAPS.md` for the full catalog with grep-friendly IDs. Summary:
 
 1. **CursorState Blend Sync** (TRAP-001) -- null===null no-op if not synced from PHP body class
 2. **~~Toggle Semantic Flip~~ (TRAP-002)** -- **Resolved** (WP-023 elements, WP-025 pages). Only lives in legacy read bridges.
-3. **"Default" Blend != "Default" Effect** (TRAP-003) -- different resolution by design
-4. **Page Blend Does NOT Cascade to Dirty Widgets** (TRAP-004) -- widget boundary is intentional
+3. **"Default" Blend != "Default" Effect** (TRAP-003) -- blend "Default" = Off (no global), effect "Default" still falls through
+4. **Page Blend Does NOT Cascade to Dirty Widgets** (TRAP-004) -- widget boundary is intentional, `trueGlobalBlend` always empty (WP-026)
 5. **Dual CSS Variable Output** -- Kit vars are dead weight, inline CSS vars are real
 6. **Widget-Only Page Promotion** (TRAP-008) -- now explicit via `page_cursor_mode = 'customize'` (WP-025)
 7. **Color Resolution Has Separate Path** (TRAP-007) -- doesn't use get_page_cursor_setting()

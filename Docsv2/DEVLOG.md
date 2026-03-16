@@ -10,6 +10,8 @@ Living document tracking development sessions, decisions, and iterations.
 
 **Fix:** Deleted Kit blend emission (`cmsmCursorTrueGlobalBlend`), switched body class blend to page-only read (no Kit fallback), removed `blend_mode` from `kit_value_map`. Updated labels: page/promoted `'Default (Global)'` → `'Off'`, element `'Default'` removed (Off is the default). JS untouched — `trueGlobalBlend = ''` makes all "Default" paths resolve to no blend automatically.
 
+**Docs (phase 2):** Removed Kit blend from cross-reference, Kit controls table (11→10), Matrix E. Rewrote Scenarios 5+6 for page/element-only blend. Updated TRAP-001/003/004, added DEC-013. Kuzmich theme Kit blend control still registered in theme (separate repo) — shows a control that does nothing, to be removed separately.
+
 **Iterations:** 0 — recon was accurate, direct implementation.
 
 ---

@@ -11,6 +11,7 @@
 **Context:** Blend needs body classes for CSS transitions. JS CursorState manages runtime transitions. But PHP also pre-renders blend body classes on page load.
 **Choice:** Keep dual ownership. PHP pre-renders blend classes, JS syncs to CursorState on init + manages runtime transitions. Add JSDoc documenting FOUC prevention rationale.
 **Why:** Removing PHP pre-rendering causes 100-200ms of unstyled cursor (Flash of Unstyled Cursor) between page load and JS init. PHP gets the blend right from the first paint frame.
+**WP-026 note:** Kit blend removed — dual ownership now applies only when page sets blend. Pattern unchanged.
 **Rejected:** JS-only (flash), PHP-only (can't transition at runtime).
 **See:** TRAP-001 for the sync requirement this creates.
 
@@ -130,4 +131,15 @@
 
 ---
 
-*Last updated: 2026-03-16 | WP-025 page toggle cleanup + Auto labels*
+## DEC-013: Remove Kit-Level Blend
+
+**Date:** 2026-03-16 (WP-026)
+**Context:** Kit `blend_mode` forced `--cmsmasters-cursor-color: #fff` on body globally. Any Kit blend setting killed user's custom cursor color on every page. Blend under `mix-blend-mode: exclusion/difference` requires white for correct inversion math — but this should be a conscious per-page or per-element choice, not a global override.
+**Choice:** Remove Kit blend entirely. PHP no longer reads Kit `blend_mode` or emits `window.cmsmCursorTrueGlobalBlend`. Blend available only via page settings or element `data-cursor-blend` attribute. Labels changed from "Default (Global)" to "Off".
+**Why:** User's cursor color is a primary design choice. Global blend silently overrides it. Per-page/element blend is a conscious decision where `#fff` trade-off is acceptable.
+**Rejected:** Feature flag (unnecessary complexity for dev-phase product), fix `#fff` override (mathematically impossible — exclusion requires white for contrast).
+**See:** TRAP-003 (updated), TRAP-004 (updated), SOURCE-OF-TRUTH.md Scenario 5
+
+---
+
+*Last updated: 2026-03-16 | WP-026 Kit blend removal*

@@ -12,6 +12,7 @@
 **Fix:** Sync `_state.prop` from existing body classes on init, BEFORE any transitions fire.
 **Example:** `blend` was missed — `_state.blend = null` but body had `cmsmasters-cursor-blend-soft`. Transitioning to `null` did nothing. Fixed by syncing `_state.blend = globalBlendIntensity` after reading body classes.
 **Rule:** ANY future CursorState property that PHP pre-renders MUST be synced from body classes on init.
+**WP-026 note:** Kit blend removed — sync only needed when page sets blend. Pattern still applies to any future CursorState property.
 **See:** SOURCE-OF-TRUTH.md Matrix D, DECISIONS.md DEC-001
 
 ---
@@ -28,8 +29,8 @@
 ## TRAP-003: "Default" Blend != "Default" Effect
 
 **Trigger:** Assuming "default" resolves the same way for blend and effect.
-**Breaks:** Widget "Default" blend -> `trueGlobalBlend` (Kit only, ignores page override). Widget "Default" effect -> `window.cmsmCursorEffect` (page > Kit resolution). These resolve differently **by design**.
-**Why:** Widgets with "Default" blend should be consistent across pages (Kit = brand). Effects are more contextual (page can override).
+**Breaks:** Widget "Default" blend -> no blend (Kit blend removed, WP-026). Widget "Default" effect -> `window.cmsmCursorEffect` (page > Kit resolution). These resolve differently **by design**.
+**WP-026 update:** Blend "Default" is now "Off" — resolves to `''` (no blend, no global to inherit). Effect "Default" still falls through to page/Kit effect. The asymmetry remains by design but is simpler: blend has no fallback, effect does.
 **Fix:** Don't "fix" the inconsistency. It's intentional.
 **See:** SOURCE-OF-TRUTH.md Scenario 6, DECISIONS.md DEC-003 note
 
@@ -38,8 +39,9 @@
 ## TRAP-004: Page Blend Does NOT Cascade to Dirty Widgets
 
 **Trigger:** Expecting a page-level blend override to apply inside widgets that have ANY cursor settings.
-**Breaks:** Dirty widgets (those with `data-id` + any cursor setting) form a "floor". Unset blend within them falls to Kit-only `trueGlobalBlend`, NOT the page blend override (`globalBlendIntensity`).
+**Breaks:** Dirty widgets (those with `data-id` + any cursor setting) form a "floor". Unset blend within them falls to `trueGlobalBlend` (now always `''`, WP-026), NOT the page blend override (`globalBlendIntensity`).
 **Code:** `var fallbackBlend = stoppedAtWidget ? trueGlobalBlend : globalBlendIntensity;`
+**WP-026 update:** `trueGlobalBlend` is always `''` — dirty widget fallback = no blend. Page blend still reaches clean elements via `globalBlendIntensity`. Boundary logic unchanged.
 **Fix:** By design. Widget boundary prevents page overrides from bleeding into configured widgets.
 **See:** SOURCE-OF-TRUTH.md Scenario 6, `resolveBlendForElement()` in custom-cursor.js
 
@@ -126,4 +128,4 @@
 
 ---
 
-*Last updated: 2026-03-16 | WP-025 page toggle cleanup*
+*Last updated: 2026-03-16 | WP-026 Kit blend removal*
