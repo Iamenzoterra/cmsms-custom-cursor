@@ -734,6 +734,19 @@
         dotL = Math.min(L * DOT_SPEED_MULTIPLIER, 1);
     });
 
+    // Editor live preview: widget-only promotion/demotion
+    // When page mode changes between Show/Hide, update the isWidgetOnly flag
+    // so the mouseover handler uses the correct behavior.
+    body.addEventListener('cmsmasters:cursor:page-visibility-update', function(e) {
+        var promoted = !!e.detail.promoted;
+        isWidgetOnly = !promoted;
+        if (promoted) {
+            CursorState.transition({ hidden: false }, 'editor:promoted');
+        } else {
+            CursorState.transition({ hidden: true }, 'editor:demoted');
+        }
+    });
+
     // === SPECIAL CURSOR LIFECYCLE MANAGER (Phase 3 — MEM-004 fix) ===
     // Coordinates create/remove of image/text/icon cursors.
     // Prevents accumulation by deduplication and atomic cleanup.

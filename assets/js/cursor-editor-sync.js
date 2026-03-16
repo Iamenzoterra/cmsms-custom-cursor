@@ -877,6 +877,12 @@
                 body.classList.remove('cmsmasters-cursor-enabled');
                 body.classList.add('cmsmasters-cursor-widget-only');
             }
+
+            // Tell custom-cursor.js runtime to update isWidgetOnly flag + hidden state.
+            // Body class swap alone doesn't work — runtime captures isWidgetOnly at init.
+            body.dispatchEvent(new CustomEvent('cmsmasters:cursor:page-visibility-update', {
+                detail: { promoted: p.enabled === true }
+            }));
         }
 
         // --- Theme ---
