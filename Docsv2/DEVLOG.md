@@ -4,6 +4,20 @@ Living document tracking development sessions, decisions, and iterations.
 
 ---
 
+## 2026-03-16 — UX: Auto Labels + Element Transparency on Promoted Pages [WP-025]
+
+**Problem:** In widget-only mode, element control defaulted to `'hide'`, which stamped `data-cursor="hide"` on every untouched element. When a page was promoted (page = Customize/Show), cursor still didn't work on those elements because the hide attribute blocked it. Also, labels were inconsistent across controls ("Use global" vs "Show" vs "Hide").
+
+**Root cause:** `apply_cursor_attributes()` (line 1475) treats `'default'` as transparent (early return, no attrs). But widget-only elements defaulted to `'hide'` — an active instruction that blocks cursor regardless of page state.
+
+**Fix:** Changed element default from `'hide'` to `'default'` in both modes. Unified all controls to `Auto/Customize/Hide|Disable` labels with contextual descriptions. Same 3 options (`Auto/Customize/Hide`) for elements in both sitewide and widget-only modes. No render logic changes — `apply_cursor_attributes()` already handles `'default'` correctly.
+
+**Key insight:** `'default'` = transparent = "no element opinion". On non-promoted page, JS widget-only mode hides cursor anyway. On promoted page, no hide instruction means cursor works through. This is the same pattern as page-level `'default'` from Phase 1.
+
+**Iterations:** 0 — single-file change (module.php), render logic already correct.
+
+---
+
 ## 2026-03-16 — Fix: Widget-Only Show/Hide Toggle in Editor Preview [WP-025]
 
 **Problem:** In editor preview, switching page cursor between Show and Hide had no effect. Cursor stayed visible (or hidden) regardless of toggle state.
