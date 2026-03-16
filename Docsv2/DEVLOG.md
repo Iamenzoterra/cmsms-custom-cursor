@@ -4,6 +4,24 @@ Living document tracking development sessions, decisions, and iterations.
 
 ---
 
+## 2026-03-16 — Fix: Widget-Only Show/Hide Toggle in Editor Preview [WP-025]
+
+**Problem:** In editor preview, switching page cursor between Show and Hide had no effect. Cursor stayed visible (or hidden) regardless of toggle state.
+
+**Root cause:** `isWidgetOnly` in `custom-cursor.js` is a closure variable captured once at init. When `cursor-editor-sync.js` swaps body classes (`cursor-enabled` ↔ `cursor-widget-only`), the runtime still sees the old cached value. The mouseover handler checks `if (isWidgetOnly)` and forces `hidden: true` outside show zones — so even after promoting to Show, the cursor immediately re-hides on next mouse move.
+
+**Failed approach (d5d1f42, reverted):** Dispatched a visibility event that only toggled `hidden: true/false`. The mouseover handler still read `isWidgetOnly = true` and re-hid the cursor on the next mouse move.
+
+**Fix:** Added `cmsmasters:cursor:page-visibility-update` event (same pattern as `page-blend-update` and `smoothness-update`):
+- `cursor-editor-sync.js` dispatches event after body class swap with `{ promoted: true/false }`
+- `custom-cursor.js` listener updates **both** `isWidgetOnly` flag AND transitions hidden state via CursorState
+
+**Why this works:** When promoting (Show), `isWidgetOnly` becomes `false`. The mouseover widget-only guard (`if (isWidgetOnly)`) no longer fires, so the cursor stays visible. When demoting (Hide), `isWidgetOnly` becomes `true` and cursor hides.
+
+**Iterations:** 2 — first attempt (d5d1f42) missed the closure var update; this fix addresses the actual root cause.
+
+---
+
 ## 2026-03-15 — Hotfix: Dot Theme Kit Size Override
 
 **Problem:** Kit size controls (`--cmsmasters-cursor-dot-size`, `--cmsmasters-cursor-dot-hover-size`) had no effect on dot theme. Slider moved, value saved, but dot stayed 10px / 20px hover.
