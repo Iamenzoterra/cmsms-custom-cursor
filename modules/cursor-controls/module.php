@@ -318,14 +318,13 @@ class Module extends Base_Module {
 				'type'        => Cmsmasters_Controls_Manager::CHOOSE_TEXT,
 				'default'     => '',
 				'options'     => array(
-					''       => array( 'title' => __( 'Default', 'cmsmasters-elementor' ) ),
-					'off'    => array( 'title' => __( 'Off', 'cmsmasters-elementor' ) ),
+					''       => array( 'title' => __( 'Off', 'cmsmasters-elementor' ) ),
 					'soft'   => array( 'title' => __( 'Soft', 'cmsmasters-elementor' ) ),
 					'medium' => array( 'title' => __( 'Medium', 'cmsmasters-elementor' ) ),
 					'strong' => array( 'title' => __( 'Strong', 'cmsmasters-elementor' ) ),
 				),
 				/* translators: %s: element type (widget, container, section, column) */
-				'description' => sprintf( __( 'Override global blend mode on this %s.', 'cmsmasters-elementor' ), $type_label ),
+				'description' => sprintf( __( 'Blend mode on this %s.', 'cmsmasters-elementor' ), $type_label ),
 				'condition'   => array_merge( $toggle_condition, array(
 					'cmsmasters_cursor_inherit_parent' => '',
 					'cmsmasters_cursor_special_active' => '',
