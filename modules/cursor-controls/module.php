@@ -855,9 +855,8 @@ class Module extends Base_Module {
 				'label_block' => true,
 				'type'        => Cmsmasters_Controls_Manager::CHOOSE_TEXT,
 				'default'     => 'off',
-				'description' => __( 'Override global blend mode on this element.', 'cmsmasters-elementor' ),
+				'description' => __( 'Blend mode on this element.', 'cmsmasters-elementor' ),
 				'options'     => array(
-					''       => array( 'title' => __( 'Default', 'cmsmasters-elementor' ) ),
 					'off'    => array( 'title' => __( 'Off', 'cmsmasters-elementor' ) ),
 					'soft'   => array( 'title' => __( 'Soft', 'cmsmasters-elementor' ) ),
 					'medium' => array( 'title' => __( 'Medium', 'cmsmasters-elementor' ) ),
