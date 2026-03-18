@@ -1019,7 +1019,7 @@ class Module extends Base_Module {
 		$element->add_control(
 			'cmsmasters_page_cursor_theme',
 			array(
-				'label'     => __( 'Cursor Theme', 'cmsmasters-elementor' ),
+				'label'     => __( 'Cursor Style', 'cmsmasters-elementor' ),
 				'type'      => Controls_Manager::SELECT,
 				'default'   => '',
 				'options'   => array(
@@ -1083,20 +1083,20 @@ class Module extends Base_Module {
 			)
 		);
 
-		$element->add_control(
-			'cmsmasters_page_cursor_adaptive',
-			array(
-				'label'     => __( 'Adaptive Mode', 'cmsmasters-elementor' ),
-				'type'      => Controls_Manager::SELECT,
-				'default'   => '',
-				'options'   => array(
-					''    => __( 'Default (Global)', 'cmsmasters-elementor' ),
-					'yes' => __( 'Enabled', 'cmsmasters-elementor' ),
-					'no'  => __( 'Disabled', 'cmsmasters-elementor' ),
-				),
-				'condition' => $page_toggle_condition,
-			)
-		);
+		// $element->add_control(
+		// 	'cmsmasters_page_cursor_adaptive',
+		// 	array(
+		// 		'label'     => __( 'Adaptive Mode', 'cmsmasters-elementor' ),
+		// 		'type'      => Controls_Manager::SELECT,
+		// 		'default'   => '',
+		// 		'options'   => array(
+		// 			''    => __( 'Default (Global)', 'cmsmasters-elementor' ),
+		// 			'yes' => __( 'Enabled', 'cmsmasters-elementor' ),
+		// 			'no'  => __( 'Disabled', 'cmsmasters-elementor' ),
+		// 		),
+		// 		'condition' => $page_toggle_condition,
+		// 	)
+		// );
 
 		$element->add_control(
 			'cmsmasters_page_cursor_reset',
