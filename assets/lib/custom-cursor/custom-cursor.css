@@ -9,13 +9,16 @@
 
 :root {
     --cmsmasters-cursor-color:#222;
+    /* DISABLED: Adaptive color vars — adaptive mode commented out
     --cmsmasters-cursor-color-light:#fff;
     --cmsmasters-cursor-color-dark:#222;
+    */
     --cmsmasters-cursor-dot-size:8px;
     --cmsmasters-cursor-dot-hover-size:40px;
     --cmsmasters-cursor-ring-offset:32px
 }
 
+/* DISABLED: Adaptive color mode — cursor color no longer changes by background
 body.cmsmasters-cursor-on-dark {
     --cmsmasters-cursor-color:var(--cmsmasters-cursor-color-light)!important
 }
@@ -23,6 +26,7 @@ body.cmsmasters-cursor-on-dark {
 body.cmsmasters-cursor-on-light {
     --cmsmasters-cursor-color:var(--cmsmasters-cursor-color-dark)!important
 }
+*/
 
 /* ==========================================================================
    Core Cursor Elements (container, base, cursor:none)
@@ -452,7 +456,7 @@ body.cmsmasters-cursor-blend-strong .cmsmasters-cursor-icon-el {
         background-color: rgba(34, 34, 34, 0.9)
     }
 
-    /* Adaptive: light cursor (#fff) on dark background */
+    /* DISABLED: Adaptive fallback — adaptive mode commented out
     body.cmsmasters-cursor-on-dark.cmsmasters-cursor-hover .cmsmasters-cursor-ring {
         background-color: rgba(255, 255, 255, 0.1)
     }
@@ -460,4 +464,5 @@ body.cmsmasters-cursor-blend-strong .cmsmasters-cursor-icon-el {
     body.cmsmasters-cursor-on-dark.cmsmasters-cursor-down .cmsmasters-cursor-ring {
         background-color: rgba(255, 255, 255, 0.9)
     }
+    */
 }

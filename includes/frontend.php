@@ -1492,10 +1492,10 @@ class Frontend extends Base_App {
 		// Collect inline CSS parts
 		$inline_css_parts = array();
 
-		// Custom color (low specificity so adaptive can override)
+		// Custom color
 		$cursor_color = $this->get_cursor_color();
 		if ( ! empty( $cursor_color ) ) {
-			$inline_css_parts[] = ':root { --cmsmasters-cursor-color: ' . esc_attr( $cursor_color ) . '; --cmsmasters-cursor-color-dark: ' . esc_attr( $cursor_color ) . '; }';
+			$inline_css_parts[] = ':root { --cmsmasters-cursor-color: ' . esc_attr( $cursor_color ) . '; }';
 		}
 
 		// Dot sizes (on :root so editor JS inline override wins)
@@ -1529,11 +1529,11 @@ class Frontend extends Base_App {
 		// Collect inline JS parts (window properties — NOT subject to cmsmasters- → cmsmasters- rename)
 		$inline_js_parts = array();
 
-		// Adaptive cursor setting (page > global)
-		$adaptive = $this->get_page_cursor_setting( 'adaptive', 'adaptive', 'yes' );
-		if ( 'yes' === $adaptive ) {
-			$inline_js_parts[] = 'window.cmsmCursorAdaptive = true;';
-		}
+		// DISABLED: Adaptive cursor — color no longer changes by background
+		// $adaptive = $this->get_page_cursor_setting( 'adaptive', 'adaptive', 'yes' );
+		// if ( 'yes' === $adaptive ) {
+		// 	$inline_js_parts[] = 'window.cmsmCursorAdaptive = true;';
+		// }
 
 		// Cursor theme setting (page > global)
 		$cursor_theme = $this->get_page_cursor_setting( 'theme', 'theme', 'dot' );

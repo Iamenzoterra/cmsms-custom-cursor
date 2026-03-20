@@ -179,27 +179,21 @@
     var SMOOTH_FLUID = 0.06;
     var DOT_SPEED_MULTIPLIER = 2;
 
-    /**
-     * Adaptive mode — background luminance detection
+    /* DISABLED: Adaptive mode — background luminance detection
      * See: DOCS/12-REF-BODY-CLASSES.md → on-light/on-dark
-     */
-    var DETECT_DISTANCE = 5;            // Min pixels moved before re-detecting
-    var HYSTERESIS = 3;                 // Consecutive frames before mode change
-    var MAX_DEPTH = 10;                 // Max DOM depth for background search
-    var STICKY_MODE_DURATION = 500;     // Lock mode for 500ms after change (prevents flicker)
-
-    /**
-     * sRGB Luminance — WCAG 2.0 / ITU-R BT.709 color space constants
-     * Used for adaptive mode background detection
-     */
-    var SRGB_LINEAR_THRESHOLD = 0.03928;  // sRGB linearization threshold
-    var SRGB_LINEAR_SCALE = 12.92;        // sRGB linear scale factor
-    var SRGB_GAMMA_OFFSET = 0.055;        // sRGB gamma offset
-    var SRGB_GAMMA_SCALE = 1.055;         // sRGB gamma scale
-    var SRGB_GAMMA_EXPONENT = 2.4;        // sRGB gamma exponent
-    var LUMINANCE_R = 0.2126;             // ITU-R BT.709 red weight
-    var LUMINANCE_G = 0.7152;             // ITU-R BT.709 green weight
-    var LUMINANCE_B = 0.0722;             // ITU-R BT.709 blue weight
+    var DETECT_DISTANCE = 5;
+    var HYSTERESIS = 3;
+    var MAX_DEPTH = 10;
+    var STICKY_MODE_DURATION = 500;
+    var SRGB_LINEAR_THRESHOLD = 0.03928;
+    var SRGB_LINEAR_SCALE = 12.92;
+    var SRGB_GAMMA_OFFSET = 0.055;
+    var SRGB_GAMMA_SCALE = 1.055;
+    var SRGB_GAMMA_EXPONENT = 2.4;
+    var LUMINANCE_R = 0.2126;
+    var LUMINANCE_G = 0.7152;
+    var LUMINANCE_B = 0.0722;
+    */
 
     /**
      * Spring physics — size/rotate transitions
@@ -359,7 +353,7 @@
 
         var lines = [];
         lines.push('=== CURSOR DEBUG ===');
-        lines.push('Mode: ' + (CursorState.get('mode') || 'none') + (adaptive ? ' (adaptive)' : ' (fixed)'));
+        lines.push('Mode: fixed (adaptive disabled)');
         lines.push('Blend: ' + (CursorState.get('blend') || 'off'));
         lines.push('Hover: ' + (CursorState.get('hover') ? 'YES' : 'no'));
 
@@ -396,7 +390,7 @@
      *   down: boolean           — mouse button pressed
      *   hidden: boolean         — cursor hidden (form/video/iframe/leave)
      *   text: boolean           — text input mode
-     *   mode: null|'on-light'|'on-dark'  — adaptive mode
+     *   mode: null                       — adaptive mode (DISABLED)
      *   size: null|'sm'|'md'|'lg'        — ring size modifier
      *   blend: null|'soft'|'medium'|'strong' — blend intensity
      *
@@ -408,7 +402,7 @@
             down: false,
             hidden: false,
             text: false,
-            mode: null,       // 'on-light' | 'on-dark' | null
+            mode: null,       // DISABLED: adaptive mode ('on-light' | 'on-dark' | null)
             size: null,       // 'sm' | 'md' | 'lg' | null
             blend: null       // 'soft' | 'medium' | 'strong' | null
         },
@@ -509,15 +503,15 @@
                 body.classList.toggle('cmsmasters-cursor-text', this._state.text);
             }
 
-            // --- Mutually exclusive: Adaptive mode ---
-            if ('mode' in prev) {
-                if (prev.mode) {
-                    body.classList.remove('cmsmasters-cursor-' + prev.mode);
-                }
-                if (this._state.mode) {
-                    body.classList.add('cmsmasters-cursor-' + this._state.mode);
-                }
-            }
+            // --- Mutually exclusive: Adaptive mode (DISABLED) ---
+            // if ('mode' in prev) {
+            //     if (prev.mode) {
+            //         body.classList.remove('cmsmasters-cursor-' + prev.mode);
+            //     }
+            //     if (this._state.mode) {
+            //         body.classList.add('cmsmasters-cursor-' + this._state.mode);
+            //     }
+            // }
 
             // --- Mutually exclusive: Size ---
             if ('size' in prev) {
@@ -625,15 +619,15 @@
     var SHOW_ZONE_SELECTOR = '[data-cursor-show]';
 
     // Adaptive cursor
-    var adaptive = window.cmsmCursorAdaptive || false;
-    var lastMode = '';
-    var pendingMode = '';
-    var pendingCount = 0;
+    // DISABLED: Adaptive mode vars
+    // var adaptive = window.cmsmCursorAdaptive || false;
+    // var lastMode = '';
+    // var pendingMode = '';
+    // var pendingCount = 0;
     var lastDetect = 0;
     var lastDetectX = OFFSCREEN_POSITION; // Last detection position X (for pixel debounce)
     var lastDetectY = OFFSCREEN_POSITION; // Last detection position Y (for pixel debounce)
-    // BUG-002 FIX: Sticky mode prevents flicker at light/dark boundaries
-    var lastModeChangeTime = 0;         // Timestamp of last mode change
+    // var lastModeChangeTime = 0;
 
     // Forced color (per-element override via data-cursor-color)
     var forcedColor = null;
@@ -1218,8 +1212,8 @@
                 createDebugOverlay();
                 debugLog('init', 'Debug mode ENABLED');
                 debugLog('init', 'State:', {
-                    mode: CursorState.get('mode'),
-                    adaptive: adaptive,
+                    mode: 'disabled',
+                    adaptive: false,
                     blend: CursorState.get('blend'),
                     specialCursor: SpecialCursorManager.getActive(),
                     paused: isPaused,
@@ -1292,12 +1286,13 @@
         if (currentBlendIntensity !== globalBlendIntensity) {
             setBlendIntensity(globalBlendIntensity);
         }
-        if (adaptive) {
-            pendingMode = '';
-            pendingCount = 0;
-            lastMode = '';
-            if (mx > 0) detectCursorMode(mx, my);
-        }
+        // DISABLED: Adaptive mode reset on popup leave
+        // if (adaptive) {
+        //     pendingMode = '';
+        //     pendingCount = 0;
+        //     lastMode = '';
+        //     if (mx > 0) detectCursorMode(mx, my);
+        // }
     }
 
     // === IMAGE CURSOR FUNCTIONS ===
@@ -1699,7 +1694,7 @@
         return url.replace(/["'()\\]/g, '\\$&');
     }
 
-    // === ADAPTIVE DETECTION ===
+    /* DISABLED: Adaptive detection functions
     function getLuminance(r, g, b) {
         var a = [r, g, b].map(function(v) {
             v /= 255;
@@ -1711,13 +1706,13 @@
     }
 
     function applyMode(mode) {
-        // Delegate to CursorState for mutually exclusive mode classes
         CursorState.transition({ mode: mode }, 'applyMode');
         lastMode = mode;
         pendingMode = '';
         pendingCount = 0;
-        lastModeChangeTime = Date.now(); // BUG-002: Start sticky period
+        lastModeChangeTime = Date.now();
     }
+    */
 
     // =========================================================================
     // DOM CASCADE HELPERS (pure functions — no side effects)
@@ -2233,11 +2228,10 @@
     }
 
     function detectCursorMode(x, y) {
-        // BUG-002 FIX: Skip detection during sticky period to prevent boundary flicker
-        // After a color mode change, lock the mode for STICKY_MODE_DURATION ms
-        if (lastModeChangeTime && Date.now() - lastModeChangeTime < STICKY_MODE_DURATION) {
-            return; // Still in sticky period - keep current mode
-        }
+        // DISABLED: Adaptive sticky period (BUG-002)
+        // if (lastModeChangeTime && Date.now() - lastModeChangeTime < STICKY_MODE_DURATION) {
+        //     return;
+        // }
 
         var el = resolveElement(x, y);
         if (!el) return;
@@ -2476,7 +2470,7 @@
         coreEffect = effectResult.coreEffect;
         perElementWobble = effectResult.perElementWobble;
 
-        // Adaptive background detection (only if enabled)
+        /* DISABLED: Adaptive background detection
         if (adaptive) {
             var depth = 0;
             while (el && el !== document.body && depth < MAX_DEPTH) {
@@ -2484,58 +2478,29 @@
             if (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') {
                 var match = bg.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
                 if (match) {
-                    // RAPIRA C: Only skip very transparent (alpha < 0.15)
                     var alpha = match[4] !== undefined ? parseFloat(match[4]) : 1;
                     if (alpha < 0.15) {
                         el = el.parentElement;
                         depth++;
                         continue;
                     }
-
                     var lum = getLuminance(+match[1], +match[2], +match[3]);
                     var newMode = lum > 0.35 ? 'on-light' : 'on-dark';
-
-                    // RAPIRA F: First detection - apply immediately
-                    if (lastMode === '') {
-                        applyMode(newMode);
-                        return;
-                    }
-
-                    // Already in correct mode
-                    if (newMode === lastMode) {
-                        pendingMode = '';
-                        pendingCount = 0;
-                        return;
-                    }
-
-                    // RAPIRA B: Canonical hysteresis
-                    if (newMode !== pendingMode) {
-                        pendingMode = newMode;
-                        pendingCount = 1;
-                    } else {
-                        pendingCount++;
-                    }
-
-                    if (pendingCount >= HYSTERESIS) {
-                        applyMode(newMode);
-                    }
+                    if (lastMode === '') { applyMode(newMode); return; }
+                    if (newMode === lastMode) { pendingMode = ''; pendingCount = 0; return; }
+                    if (newMode !== pendingMode) { pendingMode = newMode; pendingCount = 1; }
+                    else { pendingCount++; }
+                    if (pendingCount >= HYSTERESIS) { applyMode(newMode); }
                     return;
                 }
             }
                 el = el.parentElement;
                 depth++;
             }
-            // No background found in DOM tree - use hysteresis to reset mode
-            // This prevents "sticking" when cursor moves to transparent areas
             if (lastMode !== '') {
-                if (pendingMode !== 'none') {
-                    pendingMode = 'none';
-                    pendingCount = 1;
-                } else {
-                    pendingCount++;
-                }
+                if (pendingMode !== 'none') { pendingMode = 'none'; pendingCount = 1; }
+                else { pendingCount++; }
                 if (pendingCount >= HYSTERESIS) {
-                    // Reset to default state (no adaptive class)
                     CursorState.transition({ mode: null }, 'detectCursorMode:reset');
                     lastMode = '';
                     pendingMode = '';
@@ -2543,6 +2508,7 @@
                 }
             }
         }
+        */
     }
 
     // === RENDER ===
