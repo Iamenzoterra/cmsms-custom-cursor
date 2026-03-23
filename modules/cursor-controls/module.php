@@ -40,7 +40,8 @@ class Module extends Base_Module {
 		// before_render hooks add data-cursor-* attributes for frontend JS.
 		// Not needed in admin (CSS regeneration, imports) — skip to avoid timeout.
 		// Elementor preview iframe is NOT is_admin(), so editor preview still works.
-		if ( is_admin() ) {
+		// AJAX (admin-ajax.php) needs hooks for lazy-loaded content (Post Grid, etc.).
+		if ( is_admin() && ! wp_doing_ajax() ) {
 			return;
 		}
 
