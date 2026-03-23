@@ -1807,15 +1807,16 @@ class Module extends Base_Module {
 			$element->add_render_attribute( '_wrapper', 'data-cursor-type', $core_type );
 		}
 
-		// Dot size override
-		$dot_size = $raw_settings['cmsmasters_cursor_core_dot_size'] ?? array();
-		if ( ! empty( $dot_size['size'] ) && is_numeric( $dot_size['size'] ) ) {
+		// Dot size overrides — read from raw element data to bypass default merging
+		$saved = $element->get_data()['settings'] ?? array();
+
+		$dot_size = $saved['cmsmasters_cursor_core_dot_size'] ?? null;
+		if ( is_array( $dot_size ) && ! empty( $dot_size['size'] ) && is_numeric( $dot_size['size'] ) ) {
 			$element->add_render_attribute( '_wrapper', 'data-cursor-dot-size', intval( $dot_size['size'] ) );
 		}
 
-		// Dot hover size override
-		$dot_hover_size = $raw_settings['cmsmasters_cursor_core_dot_hover_size'] ?? array();
-		if ( ! empty( $dot_hover_size['size'] ) && is_numeric( $dot_hover_size['size'] ) ) {
+		$dot_hover_size = $saved['cmsmasters_cursor_core_dot_hover_size'] ?? null;
+		if ( is_array( $dot_hover_size ) && ! empty( $dot_hover_size['size'] ) && is_numeric( $dot_hover_size['size'] ) ) {
 			$element->add_render_attribute( '_wrapper', 'data-cursor-dot-hover-size', intval( $dot_hover_size['size'] ) );
 		}
 	}
