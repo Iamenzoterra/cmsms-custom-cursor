@@ -251,24 +251,6 @@ class Module extends Base_Module {
 		);
 
 		$element->add_control(
-			'cmsmasters_cursor_hover_style',
-			array(
-				'label'       => __( 'Hover Style', 'cmsmasters-elementor' ),
-				'type'        => Controls_Manager::SELECT,
-				'default'     => '',
-				'options'     => array(
-					''      => __( 'Default (Global)', 'cmsmasters-elementor' ),
-					'hover' => __( 'Enlarged', 'cmsmasters-elementor' ),
-				),
-				'description' => __( 'Cursor style when hovering this element', 'cmsmasters-elementor' ),
-				'condition'   => array_merge( $toggle_condition, array(
-					'cmsmasters_cursor_inherit_parent' => '',
-					'cmsmasters_cursor_special_active' => '',
-				) ),
-			)
-		);
-
-		$element->add_control(
 			'cmsmasters_cursor_force_color',
 			array(
 				'label'        => __( 'Force Cursor Color', 'cmsmasters-elementor' ),
@@ -1738,12 +1720,6 @@ class Module extends Base_Module {
 	 * @param array                   $raw_settings
 	 */
 	private function apply_core_cursor_attributes( $element, $settings, $raw_settings ) {
-		// Hover style
-		$hover_style = ! empty( $settings['cmsmasters_cursor_hover_style'] ) ? $settings['cmsmasters_cursor_hover_style'] : '';
-		if ( $hover_style ) {
-			$element->add_render_attribute( '_wrapper', 'data-cursor', $hover_style );
-		}
-
 		// Color
 		$force_color = ! empty( $settings['cmsmasters_cursor_force_color'] ) ? $settings['cmsmasters_cursor_force_color'] : '';
 		if ( 'yes' === $force_color ) {

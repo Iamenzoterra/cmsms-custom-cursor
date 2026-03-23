@@ -724,7 +724,6 @@
     }
 
     function applyCoreSettings(el, s) {
-        if (s.cmsmasters_cursor_hover_style) el.setAttribute('data-cursor', s.cmsmasters_cursor_hover_style);
         if (s.cmsmasters_cursor_force_color === 'yes' && s.cmsmasters_cursor_color) el.setAttribute('data-cursor-color', s.cmsmasters_cursor_color);
         if (s.cmsmasters_cursor_blend_mode) el.setAttribute('data-cursor-blend', s.cmsmasters_cursor_blend_mode);
         if (s.cmsmasters_cursor_effect) el.setAttribute('data-cursor-effect', s.cmsmasters_cursor_effect);
