@@ -659,6 +659,36 @@ class Module extends Base_Module {
 			)
 		);
 
+		$element->add_control(
+			'cmsmasters_cursor_text_border_width',
+			array(
+				'label'      => __( 'Border Width', 'cmsmasters-elementor' ),
+				'type'       => Controls_Manager::SLIDER,
+				'size_units' => array( 'px' ),
+				'range'      => array( 'px' => array( 'min' => 0, 'max' => 10, 'step' => 1 ) ),
+				'condition'  => array_merge( $toggle_condition, array(
+					'cmsmasters_cursor_inherit_parent' => '',
+					'cmsmasters_cursor_special_active' => 'yes',
+					'cmsmasters_cursor_special_type'   => 'text',
+				) ),
+			)
+		);
+
+		$element->add_control(
+			'cmsmasters_cursor_text_border_color',
+			array(
+				'label'     => __( 'Border Color', 'cmsmasters-elementor' ),
+				'type'      => Controls_Manager::COLOR,
+				'default'   => '',
+				'condition' => array_merge( $toggle_condition, array(
+					'cmsmasters_cursor_inherit_parent'        => '',
+					'cmsmasters_cursor_special_active'        => 'yes',
+					'cmsmasters_cursor_special_type'          => 'text',
+					'cmsmasters_cursor_text_border_width[size]!' => '',
+				) ),
+			)
+		);
+
 
 		// === ICON CURSOR CONTROLS ===
 		$element->add_control(
@@ -878,6 +908,37 @@ class Module extends Base_Module {
 				) ),
 			)
 		);
+
+		$element->add_control(
+			'cmsmasters_cursor_icon_border_width',
+			array(
+				'label'      => __( 'Border Width', 'cmsmasters-elementor' ),
+				'type'       => Controls_Manager::SLIDER,
+				'size_units' => array( 'px' ),
+				'range'      => array( 'px' => array( 'min' => 0, 'max' => 10, 'step' => 1 ) ),
+				'condition'  => array_merge( $toggle_condition, array(
+					'cmsmasters_cursor_inherit_parent' => '',
+					'cmsmasters_cursor_special_active' => 'yes',
+					'cmsmasters_cursor_special_type'   => 'icon',
+				) ),
+			)
+		);
+
+		$element->add_control(
+			'cmsmasters_cursor_icon_border_color',
+			array(
+				'label'     => __( 'Border Color', 'cmsmasters-elementor' ),
+				'type'      => Controls_Manager::COLOR,
+				'default'   => '',
+				'condition' => array_merge( $toggle_condition, array(
+					'cmsmasters_cursor_inherit_parent'        => '',
+					'cmsmasters_cursor_special_active'        => 'yes',
+					'cmsmasters_cursor_special_type'          => 'icon',
+					'cmsmasters_cursor_icon_border_width[size]!' => '',
+				) ),
+			)
+		);
+
 		// === SHARED: Special Effects heading + Blend + Effect ===
 		$element->add_control(
 			'cmsmasters_cursor_special_effects_heading',
@@ -1878,6 +1939,17 @@ class Module extends Base_Module {
 				floatval( $padding['left'] ?? $default_padding ), $unit
 			);
 			$element->add_render_attribute( '_wrapper', $attr_prefix . '-padding', $padding_value );
+		}
+
+		// Border
+		$border_width = $settings[ $prefix . '_border_width' ] ?? array();
+		if ( is_array( $border_width ) && ! empty( $border_width['size'] ) && is_numeric( $border_width['size'] ) ) {
+			$element->add_render_attribute( '_wrapper', $attr_prefix . '-border-width', intval( $border_width['size'] ) . 'px' );
+
+			$border_color = ! empty( $settings[ $prefix . '_border_color' ] ) ? $settings[ $prefix . '_border_color' ] : '';
+			if ( $border_color ) {
+				$element->add_render_attribute( '_wrapper', $attr_prefix . '-border-color', $border_color );
+			}
 		}
 	}
 

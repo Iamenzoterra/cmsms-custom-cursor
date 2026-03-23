@@ -660,11 +660,11 @@
          'data-cursor-image-rotate','data-cursor-image-rotate-hover','data-cursor-image-effect',
          'data-cursor-text','data-cursor-text-typography','data-cursor-text-color',
          'data-cursor-text-bg','data-cursor-text-circle','data-cursor-text-circle-spacing',
-         'data-cursor-text-radius','data-cursor-text-padding','data-cursor-text-effect',
+         'data-cursor-text-radius','data-cursor-text-padding','data-cursor-text-border-width','data-cursor-text-border-color','data-cursor-text-effect',
          'data-cursor-icon','data-cursor-icon-color','data-cursor-icon-bg',
          'data-cursor-icon-preserve','data-cursor-icon-size','data-cursor-icon-size-hover',
          'data-cursor-icon-rotate','data-cursor-icon-rotate-hover','data-cursor-icon-circle',
-         'data-cursor-icon-circle-spacing','data-cursor-icon-radius','data-cursor-icon-padding',
+         'data-cursor-icon-circle-spacing','data-cursor-icon-radius','data-cursor-icon-padding','data-cursor-icon-border-width','data-cursor-icon-border-color',
          'data-cursor-icon-effect'].forEach(function(a) { el.removeAttribute(a); });
     }
 
@@ -807,6 +807,11 @@
             if (s.cmsmasters_cursor_text_border_radius) el.setAttribute('data-cursor-text-radius', fmtDims(s.cmsmasters_cursor_text_border_radius));
             if (s.cmsmasters_cursor_text_padding) el.setAttribute('data-cursor-text-padding', fmtDims(s.cmsmasters_cursor_text_padding));
         }
+        var txtBW = getSize(s.cmsmasters_cursor_text_border_width, null);
+        if (txtBW) {
+            el.setAttribute('data-cursor-text-border-width', txtBW + 'px');
+            if (s.cmsmasters_cursor_text_border_color) el.setAttribute('data-cursor-text-border-color', s.cmsmasters_cursor_text_border_color);
+        }
         if (s.cmsmasters_cursor_effect) el.setAttribute('data-cursor-text-effect', s.cmsmasters_cursor_effect);
         if (s.cmsmasters_cursor_special_blend) el.setAttribute('data-cursor-blend', s.cmsmasters_cursor_special_blend);
     }
@@ -837,6 +842,11 @@
         } else {
             if (s.cmsmasters_cursor_icon_border_radius) el.setAttribute('data-cursor-icon-radius', fmtDims(s.cmsmasters_cursor_icon_border_radius));
             if (s.cmsmasters_cursor_icon_padding) el.setAttribute('data-cursor-icon-padding', fmtDims(s.cmsmasters_cursor_icon_padding));
+        }
+        var icoBW = getSize(s.cmsmasters_cursor_icon_border_width, null);
+        if (icoBW) {
+            el.setAttribute('data-cursor-icon-border-width', icoBW + 'px');
+            if (s.cmsmasters_cursor_icon_border_color) el.setAttribute('data-cursor-icon-border-color', s.cmsmasters_cursor_icon_border_color);
         }
         if (s.cmsmasters_cursor_effect) el.setAttribute('data-cursor-icon-effect', s.cmsmasters_cursor_effect);
         if (s.cmsmasters_cursor_special_blend) el.setAttribute('data-cursor-blend', s.cmsmasters_cursor_special_blend);

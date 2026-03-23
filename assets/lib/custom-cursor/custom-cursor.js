@@ -1416,6 +1416,13 @@
         if (styles.color) textCursorInner.style.color = styles.color;
         if (styles.bgColor) textCursorEl.style.backgroundColor = styles.bgColor;
 
+        // Border
+        if (styles.borderWidth) {
+            textCursorEl.style.border = styles.borderWidth + ' solid ' + (styles.borderColor || styles.color || '#000');
+        } else {
+            textCursorEl.style.border = 'none';
+        }
+
         // Fit in Circle mode: auto-calculate padding to inscribe text in a circle
         if (styles.fitCircle) {
             // Reset padding to measure natural text size
@@ -1585,6 +1592,13 @@
                 // (fill: currentColor already set via CSS rule .cmsmasters-cursor-icon-el svg)
                 svgEl.style.stroke = 'currentColor';
             }
+        }
+
+        // Border
+        if (styles.borderWidth) {
+            iconCursorEl.style.border = styles.borderWidth + ' solid ' + (styles.borderColor || styles.color || '#000');
+        } else {
+            iconCursorEl.style.border = 'none';
         }
 
         // Fit in Circle mode
@@ -2512,6 +2526,8 @@
                 bgColor: textEl.getAttribute('data-cursor-text-bg') || '#ffffff',
                 borderRadius: textEl.getAttribute('data-cursor-text-radius') || '150px',
                 padding: textEl.getAttribute('data-cursor-text-padding') || '10px',
+                borderWidth: textEl.getAttribute('data-cursor-text-border-width') || '',
+                borderColor: textEl.getAttribute('data-cursor-text-border-color') || '',
                 fitCircle: textEl.getAttribute('data-cursor-text-circle') === 'yes',
                 circleSpacing: textEl.hasAttribute('data-cursor-text-circle-spacing') ? parseInt(textEl.getAttribute('data-cursor-text-circle-spacing')) : 10,
                 effect: txtEffect
@@ -2578,6 +2594,8 @@
                 circleSpacing: iconElSpecial.hasAttribute('data-cursor-icon-circle-spacing') ? parseInt(iconElSpecial.getAttribute('data-cursor-icon-circle-spacing')) : 10,
                 borderRadius: iconElSpecial.getAttribute('data-cursor-icon-radius') || '',
                 padding: iconElSpecial.getAttribute('data-cursor-icon-padding') || '',
+                borderWidth: iconElSpecial.getAttribute('data-cursor-icon-border-width') || '',
+                borderColor: iconElSpecial.getAttribute('data-cursor-icon-border-color') || '',
                 effect: icoEffect
             };
 
