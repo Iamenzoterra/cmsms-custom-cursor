@@ -1283,6 +1283,16 @@
          */
         refreshZone: function(el) {
             SpecialCursorManager.refreshFromDOM(el);
+        },
+        /**
+         * Force re-detection at current mouse position.
+         * Used by editor sync to immediately apply core settings
+         * (type, dot size) without waiting for mouse movement.
+         */
+        redetect: function() {
+            if (mx !== OFFSCREEN_POSITION && my !== OFFSCREEN_POSITION) {
+                detectCursorMode(mx, my);
+            }
         }
     };
 

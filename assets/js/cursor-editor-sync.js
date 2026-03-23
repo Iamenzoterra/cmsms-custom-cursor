@@ -712,8 +712,9 @@
         }
 
         // Notify running cursor to re-read attributes for live slider feedback
-        if (window.cmsmastersCursor && window.cmsmastersCursor.refreshZone) {
-            window.cmsmastersCursor.refreshZone(element);
+        if (window.cmsmastersCursor) {
+            if (window.cmsmastersCursor.refreshZone) window.cmsmastersCursor.refreshZone(element);
+            if (window.cmsmastersCursor.redetect) window.cmsmastersCursor.redetect();
         }
     }
 
