@@ -281,6 +281,67 @@ class Module extends Base_Module {
 		);
 
 		$element->add_control(
+			'cmsmasters_cursor_core_appearance_heading',
+			array(
+				'label'     => __( 'Appearance', 'cmsmasters-elementor' ),
+				'type'      => Controls_Manager::HEADING,
+				'separator' => 'before',
+				'condition' => array_merge( $toggle_condition, array(
+					'cmsmasters_cursor_inherit_parent' => '',
+					'cmsmasters_cursor_special_active' => '',
+				) ),
+			)
+		);
+
+		$element->add_control(
+			'cmsmasters_cursor_core_type',
+			array(
+				'label'       => __( 'Cursor Type', 'cmsmasters-elementor' ),
+				'label_block' => true,
+				'type'        => Cmsmasters_Controls_Manager::CHOOSE_TEXT,
+				'default'     => '',
+				'options'     => array(
+					''        => array( 'title' => __( 'Default', 'cmsmasters-elementor' ) ),
+					'classic' => array( 'title' => __( 'Dot + Ring', 'cmsmasters-elementor' ) ),
+					'dot'     => array( 'title' => __( 'Dot Only', 'cmsmasters-elementor' ) ),
+				),
+				'description' => __( 'Override the global cursor type on this element.', 'cmsmasters-elementor' ),
+				'condition'   => array_merge( $toggle_condition, array(
+					'cmsmasters_cursor_inherit_parent' => '',
+					'cmsmasters_cursor_special_active' => '',
+				) ),
+			)
+		);
+
+		$element->add_control(
+			'cmsmasters_cursor_core_dot_size',
+			array(
+				'label'      => __( 'Dot Size', 'cmsmasters-elementor' ),
+				'type'       => Controls_Manager::SLIDER,
+				'size_units' => array( 'px' ),
+				'range'      => array( 'px' => array( 'min' => 2, 'max' => 40, 'step' => 1 ) ),
+				'condition'  => array_merge( $toggle_condition, array(
+					'cmsmasters_cursor_inherit_parent' => '',
+					'cmsmasters_cursor_special_active' => '',
+				) ),
+			)
+		);
+
+		$element->add_control(
+			'cmsmasters_cursor_core_dot_hover_size',
+			array(
+				'label'      => __( 'Dot Hover Size', 'cmsmasters-elementor' ),
+				'type'       => Controls_Manager::SLIDER,
+				'size_units' => array( 'px' ),
+				'range'      => array( 'px' => array( 'min' => 2, 'max' => 80, 'step' => 1 ) ),
+				'condition'  => array_merge( $toggle_condition, array(
+					'cmsmasters_cursor_inherit_parent' => '',
+					'cmsmasters_cursor_special_active' => '',
+				) ),
+			)
+		);
+
+		$element->add_control(
 			'cmsmasters_cursor_core_effects_heading',
 			array(
 				'label'     => __( 'Special Effects', 'cmsmasters-elementor' ),
@@ -1738,6 +1799,24 @@ class Module extends Base_Module {
 		$effect = ! empty( $settings['cmsmasters_cursor_effect'] ) ? $settings['cmsmasters_cursor_effect'] : '';
 		if ( $effect ) {
 			$element->add_render_attribute( '_wrapper', 'data-cursor-effect', $effect );
+		}
+
+		// Cursor type (theme) override
+		$core_type = ! empty( $settings['cmsmasters_cursor_core_type'] ) ? $settings['cmsmasters_cursor_core_type'] : '';
+		if ( $core_type ) {
+			$element->add_render_attribute( '_wrapper', 'data-cursor-type', $core_type );
+		}
+
+		// Dot size override
+		$dot_size = $raw_settings['cmsmasters_cursor_core_dot_size'] ?? array();
+		if ( ! empty( $dot_size['size'] ) && is_numeric( $dot_size['size'] ) ) {
+			$element->add_render_attribute( '_wrapper', 'data-cursor-dot-size', intval( $dot_size['size'] ) );
+		}
+
+		// Dot hover size override
+		$dot_hover_size = $raw_settings['cmsmasters_cursor_core_dot_hover_size'] ?? array();
+		if ( ! empty( $dot_hover_size['size'] ) && is_numeric( $dot_hover_size['size'] ) ) {
+			$element->add_render_attribute( '_wrapper', 'data-cursor-dot-hover-size', intval( $dot_hover_size['size'] ) );
 		}
 	}
 

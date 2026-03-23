@@ -632,6 +632,12 @@
     // Forced color (per-element override via data-cursor-color)
     var forcedColor = null;
 
+    // Per-element cursor type override (dot/classic, null = use global theme)
+    var forcedType = null;
+    // Per-element dot size overrides (null = use global CSS var)
+    var forcedDotSize = null;
+    var forcedDotHoverSize = null;
+
     // Image cursor state (Special mode)
     var imageCursorEl = null;           // Outer wrapper element in DOM
     var imageCursorInner = null;        // Inner wrapper for counter-rotation
@@ -1339,18 +1345,22 @@
     function showDefaultCursor() {
         dot.style.opacity = '';
         dot.style.transform = dot.style.transform.replace(/ scale\([^)]+\)/, '') || dot.style.transform;
-        isRingHidden = false;
-        ring.style.visibility = '';
-        // Snap ring to mouse position and show instantly to prevent trail/ghost
-        rx = mx;
-        ry = my;
-        ring.style.transition = 'none';
-        ring.style.transform = 'translate3d(' + rx + 'px,' + ry + 'px,0)';
-        ring.style.opacity = '';
-        // Re-enable transitions next frame
-        requestAnimationFrame(function() {
-            ring.style.transition = '';
-        });
+        // Respect per-element type: if forced to 'dot', keep ring hidden
+        var effectiveTheme = forcedType || theme;
+        if (effectiveTheme !== 'dot') {
+            isRingHidden = false;
+            ring.style.visibility = '';
+            // Snap ring to mouse position and show instantly to prevent trail/ghost
+            rx = mx;
+            ry = my;
+            ring.style.transition = 'none';
+            ring.style.transform = 'translate3d(' + rx + 'px,' + ry + 'px,0)';
+            ring.style.opacity = '';
+            // Re-enable transitions next frame
+            requestAnimationFrame(function() {
+                ring.style.transition = '';
+            });
+        }
     }
 
     function hideDefaultCursor() {
@@ -1734,7 +1744,10 @@
                el.getAttribute('data-cursor-icon') ||
                el.getAttribute('data-cursor-color') ||
                el.getAttribute('data-cursor-effect') ||
-               el.getAttribute('data-cursor-blend');
+               el.getAttribute('data-cursor-blend') ||
+               el.getAttribute('data-cursor-type') ||
+               el.getAttribute('data-cursor-dot-size') ||
+               el.getAttribute('data-cursor-dot-hover-size');
     }
 
     /**
@@ -2097,6 +2110,163 @@
             debugLog('resolve', 'effect:', { coreEffect: coreEffect, perElementWobble: perElementWobble, inherited: !!inheritElForEffect });
         }
         return { coreEffect: coreEffect, perElementWobble: perElementWobble };
+    }
+
+    /**
+     * Resolve the cursor type (theme) for the given element.
+     * Uses findWithBoundary cascade. Modifier — does not create boundaries.
+     * PURE — no side effects.
+     *
+     * @param {Element} el - Target element
+     * @returns {string|null} 'classic', 'dot', or null (use global)
+     */
+    function resolveTypeForElement(el) {
+        var typeEl = findWithBoundary(el, 'data-cursor-type', null);
+        if (typeEl) {
+            var val = typeEl.getAttribute('data-cursor-type');
+            if (val === 'classic' || val === 'dot') return val;
+        }
+        return null;
+    }
+
+    /**
+     * Resolve dot size for the given element.
+     * Uses findWithBoundary cascade. Modifier — does not create boundaries.
+     * PURE — no side effects.
+     *
+     * @param {Element} el - Target element
+     * @returns {number|null} Size in px, or null (use global)
+     */
+    function resolveDotSizeForElement(el) {
+        var sizeEl = findWithBoundary(el, 'data-cursor-dot-size', null);
+        if (sizeEl) {
+            var val = parseInt(sizeEl.getAttribute('data-cursor-dot-size'));
+            if (val > 0) return val;
+        }
+        return null;
+    }
+
+    /**
+     * Resolve dot hover size for the given element.
+     * PURE — no side effects.
+     *
+     * @param {Element} el - Target element
+     * @returns {number|null} Size in px, or null (use global)
+     */
+    function resolveDotHoverSizeForElement(el) {
+        var sizeEl = findWithBoundary(el, 'data-cursor-dot-hover-size', null);
+        if (sizeEl) {
+            var val = parseInt(sizeEl.getAttribute('data-cursor-dot-hover-size'));
+            if (val > 0) return val;
+        }
+        return null;
+    }
+
+    /**
+     * Apply per-element cursor type override.
+     * Shows/hides ring dynamically + toggles body class.
+     */
+    function applyForcedType(newType) {
+        if (newType === forcedType) return;
+        forcedType = newType;
+
+        var effectiveTheme = forcedType || theme;
+
+        if (effectiveTheme === 'dot') {
+            if (!isRingHidden) {
+                isRingHidden = true;
+                ring.style.visibility = 'hidden';
+                ring.style.opacity = '0';
+            }
+            body.classList.add('cmsmasters-cursor-theme-dot');
+            body.classList.remove('cmsmasters-cursor-theme-classic');
+        } else {
+            if (isRingHidden && !SpecialCursorManager.isActive()) {
+                isRingHidden = false;
+                ring.style.visibility = '';
+                rx = mx; ry = my;
+                ring.style.transition = 'none';
+                ring.style.transform = 'translate3d(' + rx + 'px,' + ry + 'px,0)';
+                ring.style.opacity = '';
+                requestAnimationFrame(function() {
+                    ring.style.transition = '';
+                });
+            }
+            body.classList.remove('cmsmasters-cursor-theme-dot');
+            body.classList.add('cmsmasters-cursor-theme-classic');
+        }
+    }
+
+    /**
+     * Restore cursor type to global theme.
+     */
+    function restoreForcedType() {
+        if (forcedType === null) return;
+        forcedType = null;
+
+        if (theme === 'dot') {
+            if (!isRingHidden) {
+                isRingHidden = true;
+                ring.style.visibility = 'hidden';
+                ring.style.opacity = '0';
+            }
+            body.classList.add('cmsmasters-cursor-theme-dot');
+            body.classList.remove('cmsmasters-cursor-theme-classic');
+        } else {
+            if (isRingHidden && !SpecialCursorManager.isActive()) {
+                isRingHidden = false;
+                ring.style.visibility = '';
+                rx = mx; ry = my;
+                ring.style.transition = 'none';
+                ring.style.transform = 'translate3d(' + rx + 'px,' + ry + 'px,0)';
+                ring.style.opacity = '';
+                requestAnimationFrame(function() {
+                    ring.style.transition = '';
+                });
+            }
+            body.classList.remove('cmsmasters-cursor-theme-dot');
+            body.classList.add('cmsmasters-cursor-theme-classic');
+        }
+    }
+
+    /**
+     * Apply per-element dot size override via CSS custom property.
+     */
+    function applyForcedDotSize(newSize) {
+        if (newSize === forcedDotSize) return;
+        forcedDotSize = newSize;
+        if (forcedDotSize !== null) {
+            body.style.setProperty('--cmsmasters-cursor-dot-size', forcedDotSize + 'px', 'important');
+        } else {
+            body.style.removeProperty('--cmsmasters-cursor-dot-size');
+        }
+    }
+
+    /**
+     * Apply per-element dot hover size override via CSS custom property.
+     */
+    function applyForcedDotHoverSize(newSize) {
+        if (newSize === forcedDotHoverSize) return;
+        forcedDotHoverSize = newSize;
+        if (forcedDotHoverSize !== null) {
+            body.style.setProperty('--cmsmasters-cursor-dot-hover-size', forcedDotHoverSize + 'px', 'important');
+        } else {
+            body.style.removeProperty('--cmsmasters-cursor-dot-hover-size');
+        }
+    }
+
+    /**
+     * Restore dot sizes to global CSS vars.
+     */
+    function restoreForcedDotSizes() {
+        if (forcedDotSize !== null) {
+            forcedDotSize = null;
+            body.style.removeProperty('--cmsmasters-cursor-dot-size');
+        }
+        if (forcedDotHoverSize !== null) {
+            forcedDotHoverSize = null;
+            body.style.removeProperty('--cmsmasters-cursor-dot-hover-size');
+        }
     }
 
     /**
@@ -2469,6 +2639,13 @@
         var effectResult = resolveEffectForElement(el);
         coreEffect = effectResult.coreEffect;
         perElementWobble = effectResult.perElementWobble;
+
+        // Per-element cursor type override (dot/classic)
+        applyForcedType(resolveTypeForElement(el));
+
+        // Per-element dot size overrides
+        applyForcedDotSize(resolveDotSizeForElement(el));
+        applyForcedDotHoverSize(resolveDotHoverSizeForElement(el));
 
         /* DISABLED: Adaptive background detection
         if (adaptive) {
@@ -2991,6 +3168,8 @@
 
         if (el || (t.matches && t.matches(textSel))) {
             CursorState.resetHover();
+            restoreForcedType();
+            restoreForcedDotSizes();
         }
     }, {passive:true});
 

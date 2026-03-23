@@ -654,6 +654,7 @@
 
     function clearAttributes(el) {
         ['data-cursor-show','data-cursor','data-cursor-color','data-cursor-blend','data-cursor-effect',
+         'data-cursor-type','data-cursor-dot-size','data-cursor-dot-hover-size',
          'data-cursor-inherit','data-cursor-inherit-blend','data-cursor-inherit-effect',
          'data-cursor-image','data-cursor-image-size','data-cursor-image-size-hover',
          'data-cursor-image-rotate','data-cursor-image-rotate-hover','data-cursor-image-effect',
@@ -727,6 +728,11 @@
         if (s.cmsmasters_cursor_force_color === 'yes' && s.cmsmasters_cursor_color) el.setAttribute('data-cursor-color', s.cmsmasters_cursor_color);
         if (s.cmsmasters_cursor_blend_mode) el.setAttribute('data-cursor-blend', s.cmsmasters_cursor_blend_mode);
         if (s.cmsmasters_cursor_effect) el.setAttribute('data-cursor-effect', s.cmsmasters_cursor_effect);
+        if (s.cmsmasters_cursor_core_type) el.setAttribute('data-cursor-type', s.cmsmasters_cursor_core_type);
+        var dotSize = getSize(s.cmsmasters_cursor_core_dot_size, null);
+        if (dotSize) el.setAttribute('data-cursor-dot-size', dotSize);
+        var dotHoverSize = getSize(s.cmsmasters_cursor_core_dot_hover_size, null);
+        if (dotHoverSize) el.setAttribute('data-cursor-dot-hover-size', dotHoverSize);
     }
 
     function applyImageSettings(el, s) {
