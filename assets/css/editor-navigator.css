@@ -262,7 +262,7 @@
 /* Position indicators container absolutely to avoid overflow clipping */
 .elementor-navigator__element__indicators {
 	position: absolute !important;
-	right: 8px !important;
+	right: 2px !important;
 	top: 50% !important;
 	transform: translateY(-50%) !important;
 	display: flex !important;

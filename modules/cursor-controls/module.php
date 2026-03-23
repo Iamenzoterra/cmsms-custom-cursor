@@ -367,7 +367,7 @@ class Module extends Base_Module {
 			array(
 				'label'     => __( 'Cursor Image', 'cmsmasters-elementor' ),
 				'type'      => Controls_Manager::MEDIA,
-				'dynamic'   => array( 'active' => true ),
+				'dynamic'   => array( 'active' => false ),
 				'default'   => array( 'url' => \Elementor\Utils::get_placeholder_image_src() ),
 				'condition' => array_merge( $toggle_condition, array(
 					'cmsmasters_cursor_inherit_parent' => '',
