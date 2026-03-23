@@ -179,9 +179,10 @@
     var SMOOTH_FLUID = 0.06;
     var DOT_SPEED_MULTIPLIER = 2;
 
+    var DETECT_DISTANCE = 5; // Min pixels moved before re-detecting
+
     /* DISABLED: Adaptive mode — background luminance detection
      * See: DOCS/12-REF-BODY-CLASSES.md → on-light/on-dark
-    var DETECT_DISTANCE = 5;
     var HYSTERESIS = 3;
     var MAX_DEPTH = 10;
     var STICKY_MODE_DURATION = 500;
