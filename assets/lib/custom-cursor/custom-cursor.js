@@ -894,30 +894,73 @@
                     });
                     break;
                 case 'icon':
+                    var icoStyles = {
+                        color: z.getAttribute('data-cursor-icon-color') || '#000000',
+                        bgColor: z.getAttribute('data-cursor-icon-bg') || '#ffffff',
+                        preserveColors: z.getAttribute('data-cursor-icon-preserve') === 'yes',
+                        size: parseInt(z.getAttribute('data-cursor-icon-size')) || 32,
+                        sizeHover: parseInt(z.getAttribute('data-cursor-icon-size-hover')) || 48,
+                        rotate: parseInt(z.getAttribute('data-cursor-icon-rotate')) || 0,
+                        rotateHover: parseInt(z.getAttribute('data-cursor-icon-rotate-hover')) || 0,
+                        fitCircle: z.getAttribute('data-cursor-icon-circle') === 'yes',
+                        circleSpacing: z.hasAttribute('data-cursor-icon-circle-spacing') ? parseInt(z.getAttribute('data-cursor-icon-circle-spacing')) : 10,
+                        borderRadius: z.getAttribute('data-cursor-icon-radius') || '',
+                        padding: z.getAttribute('data-cursor-icon-padding') || '',
+                        borderWidth: z.getAttribute('data-cursor-icon-border-width') || '',
+                        borderColor: z.getAttribute('data-cursor-icon-border-color') || '',
+                        effect: z.getAttribute('data-cursor-icon-effect') || ''
+                    };
                     this._updateProps('icon', {
                         content: z.getAttribute('data-cursor-icon'),
-                        styles: {
-                            color: z.getAttribute('data-cursor-icon-color') || '#000000',
-                            bgColor: z.getAttribute('data-cursor-icon-bg') || '#ffffff',
-                            preserveColors: z.getAttribute('data-cursor-icon-preserve') === 'yes',
-                            size: parseInt(z.getAttribute('data-cursor-icon-size')) || 32,
-                            sizeHover: parseInt(z.getAttribute('data-cursor-icon-size-hover')) || 48,
-                            rotate: parseInt(z.getAttribute('data-cursor-icon-rotate')) || 0,
-                            rotateHover: parseInt(z.getAttribute('data-cursor-icon-rotate-hover')) || 0,
-                            fitCircle: z.getAttribute('data-cursor-icon-circle') === 'yes',
-                            circleSpacing: z.hasAttribute('data-cursor-icon-circle-spacing') ? parseInt(z.getAttribute('data-cursor-icon-circle-spacing')) : 10,
-                            borderRadius: z.getAttribute('data-cursor-icon-radius') || '',
-                            padding: z.getAttribute('data-cursor-icon-padding') || '',
-                            effect: z.getAttribute('data-cursor-icon-effect') || ''
+                        styles: icoStyles
+                    });
+                    // Re-apply visual styles to existing DOM elements
+                    if (iconCursorEl) {
+                        iconCursorEl.style.backgroundColor = icoStyles.bgColor;
+                        if (icoStyles.borderWidth) {
+                            iconCursorEl.style.border = icoStyles.borderWidth + ' solid ' + (icoStyles.borderColor || icoStyles.color || '#000');
+                        } else {
+                            iconCursorEl.style.border = 'none';
                         }
-                    });
+                        if (!icoStyles.fitCircle) {
+                            if (icoStyles.borderRadius) iconCursorEl.style.borderRadius = icoStyles.borderRadius;
+                            if (icoStyles.padding) iconCursorEl.style.padding = icoStyles.padding;
+                        }
+                    }
                     break;
-                // Text cursor: no mutable size/hover props, effect only
                 case 'text':
-                    this._updateProps('text', {
-                        content: z.getAttribute('data-cursor-text'),
-                        styles: { effect: z.getAttribute('data-cursor-text-effect') || '' }
-                    });
+                    var txtStyles = {
+                        color: z.getAttribute('data-cursor-text-color') || '#000000',
+                        bgColor: z.getAttribute('data-cursor-text-bg') || '#ffffff',
+                        borderRadius: z.getAttribute('data-cursor-text-radius') || '150px',
+                        padding: z.getAttribute('data-cursor-text-padding') || '10px',
+                        borderWidth: z.getAttribute('data-cursor-text-border-width') || '',
+                        borderColor: z.getAttribute('data-cursor-text-border-color') || '',
+                        fitCircle: z.getAttribute('data-cursor-text-circle') === 'yes',
+                        circleSpacing: z.hasAttribute('data-cursor-text-circle-spacing') ? parseInt(z.getAttribute('data-cursor-text-circle-spacing')) : 10,
+                        effect: z.getAttribute('data-cursor-text-effect') || ''
+                    };
+                    var txtContent = z.getAttribute('data-cursor-text');
+                    if (txtContent !== textCursorContent && textCursorInner) {
+                        textCursorContent = txtContent;
+                        textCursorInner.textContent = txtContent;
+                    }
+                    textCursorStyles = txtStyles;
+                    textCursorEffect = txtStyles.effect;
+                    // Re-apply visual styles to existing DOM elements
+                    if (textCursorEl && textCursorInner) {
+                        textCursorInner.style.color = txtStyles.color;
+                        textCursorEl.style.backgroundColor = txtStyles.bgColor;
+                        if (txtStyles.borderWidth) {
+                            textCursorEl.style.border = txtStyles.borderWidth + ' solid ' + (txtStyles.borderColor || txtStyles.color || '#000');
+                        } else {
+                            textCursorEl.style.border = 'none';
+                        }
+                        if (!txtStyles.fitCircle) {
+                            textCursorEl.style.borderRadius = txtStyles.borderRadius;
+                            textCursorEl.style.padding = txtStyles.padding;
+                        }
+                    }
                     break;
             }
         },
