@@ -734,6 +734,16 @@
         if (dotSize) el.setAttribute('data-cursor-dot-size', dotSize);
         var dotHoverSize = getSize(s.cmsmasters_cursor_core_dot_hover_size, null);
         if (dotHoverSize) el.setAttribute('data-cursor-dot-hover-size', dotHoverSize);
+
+        // Direct CSS var application for immediate editor preview feedback
+        // (redetect may not reach this element if mouse is in editor panel)
+        var body = document.body;
+        if (dotSize) {
+            body.style.setProperty('--cmsmasters-cursor-dot-size', dotSize + 'px', 'important');
+        }
+        if (dotHoverSize) {
+            body.style.setProperty('--cmsmasters-cursor-dot-hover-size', dotHoverSize + 'px', 'important');
+        }
     }
 
     function applyImageSettings(el, s) {
