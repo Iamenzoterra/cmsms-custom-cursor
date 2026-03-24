@@ -918,9 +918,12 @@
                     if (iconCursorEl) {
                         iconCursorEl.style.backgroundColor = icoStyles.bgColor;
                         if (icoStyles.borderWidth) {
-                            iconCursorEl.style.border = icoStyles.borderWidth + ' solid ' + (icoStyles.borderColor || icoStyles.color || '#000');
+                            iconCursorEl.style.borderWidth = icoStyles.borderWidth;
+                            iconCursorEl.style.borderStyle = 'solid';
+                            iconCursorEl.style.borderColor = icoStyles.borderColor || '#000';
                         } else {
-                            iconCursorEl.style.border = 'none';
+                            iconCursorEl.style.borderWidth = '0';
+                            iconCursorEl.style.borderStyle = 'none';
                         }
                         if (!icoStyles.fitCircle) {
                             if (icoStyles.borderRadius) iconCursorEl.style.borderRadius = icoStyles.borderRadius;
@@ -952,9 +955,12 @@
                         textCursorInner.style.color = txtStyles.color;
                         textCursorEl.style.backgroundColor = txtStyles.bgColor;
                         if (txtStyles.borderWidth) {
-                            textCursorEl.style.border = txtStyles.borderWidth + ' solid ' + (txtStyles.borderColor || txtStyles.color || '#000');
+                            textCursorEl.style.borderWidth = txtStyles.borderWidth;
+                            textCursorEl.style.borderStyle = 'solid';
+                            textCursorEl.style.borderColor = txtStyles.borderColor || '#000';
                         } else {
-                            textCursorEl.style.border = 'none';
+                            textCursorEl.style.borderWidth = '0';
+                            textCursorEl.style.borderStyle = 'none';
                         }
                         if (!txtStyles.fitCircle) {
                             textCursorEl.style.borderRadius = txtStyles.borderRadius;
@@ -1471,9 +1477,12 @@
 
         // Border
         if (styles.borderWidth) {
-            textCursorEl.style.border = styles.borderWidth + ' solid ' + (styles.borderColor || styles.color || '#000');
+            textCursorEl.style.borderWidth = styles.borderWidth;
+            textCursorEl.style.borderStyle = 'solid';
+            textCursorEl.style.borderColor = styles.borderColor || '#000';
         } else {
-            textCursorEl.style.border = 'none';
+            textCursorEl.style.borderWidth = '0';
+            textCursorEl.style.borderStyle = 'none';
         }
 
         // Fit in Circle mode: auto-calculate padding to inscribe text in a circle
@@ -1649,9 +1658,12 @@
 
         // Border
         if (styles.borderWidth) {
-            iconCursorEl.style.border = styles.borderWidth + ' solid ' + (styles.borderColor || styles.color || '#000');
+            iconCursorEl.style.borderWidth = styles.borderWidth;
+            iconCursorEl.style.borderStyle = 'solid';
+            iconCursorEl.style.borderColor = styles.borderColor || '#000';
         } else {
-            iconCursorEl.style.border = 'none';
+            iconCursorEl.style.borderWidth = '0';
+            iconCursorEl.style.borderStyle = 'none';
         }
 
         // Fit in Circle mode
