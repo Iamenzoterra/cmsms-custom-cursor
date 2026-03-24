@@ -1969,8 +1969,7 @@ class Module extends Base_Module {
 		if ( is_array( $border_width ) && ! empty( $border_width['size'] ) && is_numeric( $border_width['size'] ) ) {
 			$element->add_render_attribute( '_wrapper', $attr_prefix . '-border-width', intval( $border_width['size'] ) . 'px' );
 
-			// Use $settings directly — Elementor's get_settings_for_display() already resolves globals
-			$border_color = ! empty( $settings[ $prefix . '_border_color' ] ) ? $settings[ $prefix . '_border_color' ] : '';
+			$border_color = $this->resolve_color_with_fallback( $globals, $prefix . '_border_color', $settings, '' );
 			if ( $border_color ) {
 				$element->add_render_attribute( '_wrapper', $attr_prefix . '-border-color', $border_color );
 			}
