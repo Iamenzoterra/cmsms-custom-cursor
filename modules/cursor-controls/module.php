@@ -332,7 +332,7 @@ class Module extends Base_Module {
 			'cmsmasters_cursor_core_dot_hover_size',
 			array(
 				'label'       => __( 'Size on Hover', 'cmsmasters-elementor' ),
-				'description' => __( 'Dot: Cursor dot diameter on hover, in pixels. Dot + Ring: Cursor ring diameter on hover, in pixels.', 'cmsmasters-elementor' ),
+				'description' => __( 'Dot: Cursor dot diameter on hover, in pixels.', 'cmsmasters-elementor' ) . '<br>' . __( 'Dot + Ring: Cursor ring diameter on hover, in pixels.', 'cmsmasters-elementor' ),
 				'type'        => Controls_Manager::SLIDER,
 				'size_units' => array( 'px' ),
 				'range'      => array( 'px' => array( 'min' => 2, 'max' => 80, 'step' => 1 ) ),
@@ -1969,7 +1969,8 @@ class Module extends Base_Module {
 		if ( is_array( $border_width ) && ! empty( $border_width['size'] ) && is_numeric( $border_width['size'] ) ) {
 			$element->add_render_attribute( '_wrapper', $attr_prefix . '-border-width', intval( $border_width['size'] ) . 'px' );
 
-			$border_color = $this->resolve_color_with_fallback( $globals, $prefix . '_border_color', $settings, '' );
+			// Use $settings directly — Elementor's get_settings_for_display() already resolves globals
+			$border_color = ! empty( $settings[ $prefix . '_border_color' ] ) ? $settings[ $prefix . '_border_color' ] : '';
 			if ( $border_color ) {
 				$element->add_render_attribute( '_wrapper', $attr_prefix . '-border-color', $border_color );
 			}
