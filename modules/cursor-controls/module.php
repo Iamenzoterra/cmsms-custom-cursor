@@ -316,7 +316,7 @@ class Module extends Base_Module {
 		$element->add_control(
 			'cmsmasters_cursor_core_dot_size',
 			array(
-				'label'      => __( 'Dot Size', 'cmsmasters-elementor' ),
+				'label'      => __( 'Cursor Size', 'cmsmasters-elementor' ),
 				'type'       => Controls_Manager::SLIDER,
 				'size_units' => array( 'px' ),
 				'range'      => array( 'px' => array( 'min' => 2, 'max' => 40, 'step' => 1 ) ),
@@ -330,7 +330,7 @@ class Module extends Base_Module {
 		$element->add_control(
 			'cmsmasters_cursor_core_dot_hover_size',
 			array(
-				'label'      => __( 'Dot Hover Size', 'cmsmasters-elementor' ),
+				'label'      => __( 'Size on Hover', 'cmsmasters-elementor' ),
 				'type'       => Controls_Manager::SLIDER,
 				'size_units' => array( 'px' ),
 				'range'      => array( 'px' => array( 'min' => 2, 'max' => 80, 'step' => 1 ) ),
@@ -1743,8 +1743,11 @@ class Module extends Base_Module {
 			$element->add_render_attribute( '_wrapper', 'data-cursor-text-circle', 'yes' );
 			$element->add_render_attribute( '_wrapper', 'data-cursor-text-circle-spacing', intval( $settings['cmsmasters_cursor_text_circle_spacing']['size'] ?? 10 ) );
 		} else {
-			$this->apply_shape_attributes( $element, $settings, 'cmsmasters_cursor_text', 'data-cursor-text', '150', '10' );
+			$this->apply_shape_attributes( $element, $settings, $globals, 'cmsmasters_cursor_text', 'data-cursor-text', '150', '10' );
 		}
+
+		// Border (applies in both fit-circle and custom shape modes)
+		$this->apply_border_attributes( $element, $settings, $globals, 'cmsmasters_cursor_text', 'data-cursor-text' );
 
 		// Effect & Blend
 		$this->apply_effect_and_blend( $element, $settings, 'data-cursor-text-effect' );
@@ -1827,8 +1830,11 @@ class Module extends Base_Module {
 			$element->add_render_attribute( '_wrapper', 'data-cursor-icon-circle', 'yes' );
 			$element->add_render_attribute( '_wrapper', 'data-cursor-icon-circle-spacing', intval( $settings['cmsmasters_cursor_icon_circle_spacing']['size'] ?? 10 ) );
 		} else {
-			$this->apply_shape_attributes( $element, $settings, 'cmsmasters_cursor_icon', 'data-cursor-icon', '8', '8' );
+			$this->apply_shape_attributes( $element, $settings, $globals, 'cmsmasters_cursor_icon', 'data-cursor-icon', '8', '8' );
 		}
+
+		// Border (applies in both fit-circle and custom shape modes)
+		$this->apply_border_attributes( $element, $settings, $globals, 'cmsmasters_cursor_icon', 'data-cursor-icon' );
 
 		// Effect & Blend
 		$this->apply_effect_and_blend( $element, $settings, 'data-cursor-icon-effect' );
@@ -1903,16 +1909,17 @@ class Module extends Base_Module {
 	}
 
 	/**
-	 * Apply shape attributes (border radius and padding).
+	 * Apply shape attributes (border radius, padding, border).
 	 *
 	 * @param \Elementor\Element_Base $element
 	 * @param array                   $settings
+	 * @param array                   $globals         Elementor __globals__ map
 	 * @param string                  $prefix          Settings prefix (e.g., 'cmsmasters_cursor_text')
 	 * @param string                  $attr_prefix     Attribute prefix (e.g., 'data-cursor-text')
 	 * @param string                  $default_radius  Default radius value
 	 * @param string                  $default_padding Default padding value
 	 */
-	private function apply_shape_attributes( $element, $settings, $prefix, $attr_prefix, $default_radius, $default_padding ) {
+	private function apply_shape_attributes( $element, $settings, $globals, $prefix, $attr_prefix, $default_radius, $default_padding ) {
 		$allowed_units = array( 'px', 'em', '%', 'rem', 'vh', 'vw' );
 
 		$radius = $settings[ $prefix . '_border_radius' ] ?? array();
@@ -1941,12 +1948,26 @@ class Module extends Base_Module {
 			$element->add_render_attribute( '_wrapper', $attr_prefix . '-padding', $padding_value );
 		}
 
-		// Border
+	}
+
+	/**
+	 * Apply border attributes (width + color).
+	 *
+	 * Called separately from shape so borders work with both
+	 * custom padding/radius AND fit-in-circle modes.
+	 *
+	 * @param \Elementor\Element_Base $element
+	 * @param array                   $settings
+	 * @param array                   $globals     Elementor __globals__ map
+	 * @param string                  $prefix      Settings prefix (e.g., 'cmsmasters_cursor_text')
+	 * @param string                  $attr_prefix Attribute prefix (e.g., 'data-cursor-text')
+	 */
+	private function apply_border_attributes( $element, $settings, $globals, $prefix, $attr_prefix ) {
 		$border_width = $settings[ $prefix . '_border_width' ] ?? array();
 		if ( is_array( $border_width ) && ! empty( $border_width['size'] ) && is_numeric( $border_width['size'] ) ) {
 			$element->add_render_attribute( '_wrapper', $attr_prefix . '-border-width', intval( $border_width['size'] ) . 'px' );
 
-			$border_color = ! empty( $settings[ $prefix . '_border_color' ] ) ? $settings[ $prefix . '_border_color' ] : '';
+			$border_color = $this->resolve_color_with_fallback( $globals, $prefix . '_border_color', $settings, '' );
 			if ( $border_color ) {
 				$element->add_render_attribute( '_wrapper', $attr_prefix . '-border-color', $border_color );
 			}
