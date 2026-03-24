@@ -316,8 +316,9 @@ class Module extends Base_Module {
 		$element->add_control(
 			'cmsmasters_cursor_core_dot_size',
 			array(
-				'label'      => __( 'Cursor Size', 'cmsmasters-elementor' ),
-				'type'       => Controls_Manager::SLIDER,
+				'label'       => __( 'Cursor Size', 'cmsmasters-elementor' ),
+				'description' => __( 'Cursor dot diameter for normal state, in pixels.', 'cmsmasters-elementor' ),
+				'type'        => Controls_Manager::SLIDER,
 				'size_units' => array( 'px' ),
 				'range'      => array( 'px' => array( 'min' => 2, 'max' => 40, 'step' => 1 ) ),
 				'condition'  => array_merge( $toggle_condition, array(
@@ -330,8 +331,9 @@ class Module extends Base_Module {
 		$element->add_control(
 			'cmsmasters_cursor_core_dot_hover_size',
 			array(
-				'label'      => __( 'Size on Hover', 'cmsmasters-elementor' ),
-				'type'       => Controls_Manager::SLIDER,
+				'label'       => __( 'Size on Hover', 'cmsmasters-elementor' ),
+				'description' => __( 'Dot: Cursor dot diameter on hover, in pixels. Dot + Ring: Cursor ring diameter on hover, in pixels.', 'cmsmasters-elementor' ),
+				'type'        => Controls_Manager::SLIDER,
 				'size_units' => array( 'px' ),
 				'range'      => array( 'px' => array( 'min' => 2, 'max' => 80, 'step' => 1 ) ),
 				'condition'  => array_merge( $toggle_condition, array(
