@@ -1973,6 +1973,11 @@ class Module extends Base_Module {
 			if ( $border_color ) {
 				$element->add_render_attribute( '_wrapper', $attr_prefix . '-border-color', $border_color );
 			}
+
+			// DEBUG: temporary — remove after fixing
+			$global_ref = $globals[ $prefix . '_border_color' ] ?? 'EMPTY';
+			$settings_val = $settings[ $prefix . '_border_color' ] ?? 'EMPTY';
+			$element->add_render_attribute( '_wrapper', 'data-dbg-border', 'gref=' . $global_ref . '|sval=' . $settings_val . '|resolved=' . ( $border_color ?: 'EMPTY' ) );
 		}
 	}
 
