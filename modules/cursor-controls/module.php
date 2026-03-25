@@ -317,7 +317,7 @@ class Module extends Base_Module {
 			'cmsmasters_cursor_core_dot_size',
 			array(
 				'label'       => __( 'Cursor Size', 'cmsmasters-elementor' ),
-				'description' => __( 'Cursor dot diameter for normal state, in pixels.', 'cmsmasters-elementor' ),
+				'description' => __( 'DEPLOY-TEST: Cursor dot diameter for normal state, in pixels.', 'cmsmasters-elementor' ),
 				'type'        => Controls_Manager::SLIDER,
 				'size_units' => array( 'px' ),
 				'range'      => array( 'px' => array( 'min' => 2, 'max' => 40, 'step' => 1 ) ),
