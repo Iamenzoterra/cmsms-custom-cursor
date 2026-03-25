@@ -1965,19 +1965,24 @@ class Module extends Base_Module {
 	 * @param string                  $attr_prefix Attribute prefix (e.g., 'data-cursor-text')
 	 */
 	private function apply_border_attributes( $element, $settings, $globals, $prefix, $attr_prefix ) {
+		// DEBUG: trace before any logic
+		$element->add_render_attribute( '_wrapper', 'data-dbg-border-entry', 'prefix=' . $prefix . '|globals_type=' . gettype( $globals ) . '|globals_keys=' . implode( ',', array_keys( is_array( $globals ) ? $globals : array() ) ) );
+
 		$border_width = $settings[ $prefix . '_border_width' ] ?? array();
 		if ( is_array( $border_width ) && ! empty( $border_width['size'] ) && is_numeric( $border_width['size'] ) ) {
 			$element->add_render_attribute( '_wrapper', $attr_prefix . '-border-width', intval( $border_width['size'] ) . 'px' );
 
+			$global_ref = $globals[ $prefix . '_border_color' ] ?? 'NONE';
+			$settings_val = $settings[ $prefix . '_border_color' ] ?? 'NONE';
+			$element->add_render_attribute( '_wrapper', 'data-dbg-border-pre', 'gref=' . $global_ref . '|sval=' . $settings_val );
+
 			$border_color = $this->resolve_color_with_fallback( $globals, $prefix . '_border_color', $settings, '' );
+
+			$element->add_render_attribute( '_wrapper', 'data-dbg-border-post', 'resolved=' . ( $border_color ?: 'EMPTY' ) );
+
 			if ( $border_color ) {
 				$element->add_render_attribute( '_wrapper', $attr_prefix . '-border-color', $border_color );
 			}
-
-			// DEBUG: temporary — remove after fixing
-			$global_ref = $globals[ $prefix . '_border_color' ] ?? 'EMPTY';
-			$settings_val = $settings[ $prefix . '_border_color' ] ?? 'EMPTY';
-			$element->add_render_attribute( '_wrapper', 'data-dbg-border', 'gref=' . $global_ref . '|sval=' . $settings_val . '|resolved=' . ( $border_color ?: 'EMPTY' ) );
 		}
 	}
 
