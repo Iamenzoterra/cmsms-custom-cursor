@@ -671,6 +671,39 @@
     function getSize(v, d) { return v ? (typeof v === 'object' && v.size !== undefined ? v.size : v) : d; }
     function fmtDims(d) { if (!d) return ''; var u = d.unit || 'px'; return (d.top||0)+u+' '+(d.right||0)+u+' '+(d.bottom||0)+u+' '+(d.left||0)+u; }
 
+    /**
+     * Resolve a color setting, checking __globals__ for Elementor global color references.
+     * @param {Object} s - Full settings object (must include __globals__)
+     * @param {string} key - Setting key, e.g. 'cmsmasters_cursor_text_border_color'
+     * @param {string} fallback - Fallback value if neither global nor local value exists
+     * @returns {string} Resolved hex color or fallback
+     */
+    function resolveColor(s, key, fallback) {
+        // Check for global color reference first
+        var globals = s.__globals__ || {};
+        var ref = globals[key];
+        if (ref && typeof ref === 'string') {
+            // ref format: "globals/colors?id=accent"
+            var match = ref.match(/[?&]id=([^&]+)/);
+            if (match) {
+                var colorId = match[1];
+                try {
+                    var kitId = window.parent.elementor.config.kit_id;
+                    var kitDoc = window.parent.elementor.documents.get(kitId);
+                    if (kitDoc) {
+                        var kitSettings = kitDoc.config.settings.settings;
+                        var allColors = (kitSettings.system_colors || []).concat(kitSettings.custom_colors || []);
+                        for (var i = 0; i < allColors.length; i++) {
+                            if (allColors[i]._id === colorId) return allColors[i].color;
+                        }
+                    }
+                } catch (e) { /* kit not loaded yet */ }
+            }
+        }
+        // Fall back to local setting value
+        return s[key] || fallback;
+    }
+
     function applySettings(elementId, settings, skipClear) {
         var element = findElement(elementId);
         if (!element) return;
@@ -762,8 +795,8 @@
         var text = s.cmsmasters_cursor_text_content;
         if (!text) return;
         el.setAttribute('data-cursor-text', text);
-        el.setAttribute('data-cursor-text-color', s.cmsmasters_cursor_text_color || '#000000');
-        el.setAttribute('data-cursor-text-bg', s.cmsmasters_cursor_text_bg_color || '#ffffff');
+        el.setAttribute('data-cursor-text-color', resolveColor(s, 'cmsmasters_cursor_text_color', '#000000'));
+        el.setAttribute('data-cursor-text-bg', resolveColor(s, 'cmsmasters_cursor_text_bg_color', '#ffffff'));
         var typo = {};
         if (s.cmsmasters_cursor_text_typography_font_family) typo.font_family = s.cmsmasters_cursor_text_typography_font_family;
         if (s.cmsmasters_cursor_text_typography_font_size) {
@@ -821,7 +854,8 @@
         var txtBW = getSize(s.cmsmasters_cursor_text_border_width, null);
         if (txtBW) {
             el.setAttribute('data-cursor-text-border-width', txtBW + 'px');
-            if (s.cmsmasters_cursor_text_border_color) el.setAttribute('data-cursor-text-border-color', s.cmsmasters_cursor_text_border_color);
+            var txtBC = resolveColor(s, 'cmsmasters_cursor_text_border_color', '');
+            if (txtBC) el.setAttribute('data-cursor-text-border-color', txtBC);
         }
         if (s.cmsmasters_cursor_effect) el.setAttribute('data-cursor-text-effect', s.cmsmasters_cursor_effect);
         if (s.cmsmasters_cursor_special_blend) el.setAttribute('data-cursor-blend', s.cmsmasters_cursor_special_blend);
@@ -840,8 +874,8 @@
             html = '<i class="' + icon.value + '"></i>';
         }
         el.setAttribute('data-cursor-icon', html);
-        el.setAttribute('data-cursor-icon-color', s.cmsmasters_cursor_icon_color || '#000000');
-        el.setAttribute('data-cursor-icon-bg', s.cmsmasters_cursor_icon_bg_color || '#ffffff');
+        el.setAttribute('data-cursor-icon-color', resolveColor(s, 'cmsmasters_cursor_icon_color', '#000000'));
+        el.setAttribute('data-cursor-icon-bg', resolveColor(s, 'cmsmasters_cursor_icon_bg_color', '#ffffff'));
         if (s.cmsmasters_cursor_icon_preserve_colors === 'yes') el.setAttribute('data-cursor-icon-preserve', 'yes');
         el.setAttribute('data-cursor-icon-size', getSize(s.cmsmasters_cursor_icon_size_normal, 32));
         el.setAttribute('data-cursor-icon-size-hover', getSize(s.cmsmasters_cursor_icon_size_hover, 48));
@@ -857,7 +891,8 @@
         var icoBW = getSize(s.cmsmasters_cursor_icon_border_width, null);
         if (icoBW) {
             el.setAttribute('data-cursor-icon-border-width', icoBW + 'px');
-            if (s.cmsmasters_cursor_icon_border_color) el.setAttribute('data-cursor-icon-border-color', s.cmsmasters_cursor_icon_border_color);
+            var icoBC = resolveColor(s, 'cmsmasters_cursor_icon_border_color', '');
+            if (icoBC) el.setAttribute('data-cursor-icon-border-color', icoBC);
         }
         if (s.cmsmasters_cursor_effect) el.setAttribute('data-cursor-icon-effect', s.cmsmasters_cursor_effect);
         if (s.cmsmasters_cursor_special_blend) el.setAttribute('data-cursor-blend', s.cmsmasters_cursor_special_blend);
