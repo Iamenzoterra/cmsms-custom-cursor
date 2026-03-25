@@ -291,7 +291,8 @@
 
 		// Resolve colors
 		['cmsmasters_cursor_color', 'cmsmasters_cursor_icon_color', 'cmsmasters_cursor_icon_bg_color',
-		 'cmsmasters_cursor_text_color', 'cmsmasters_cursor_text_bg_color'].forEach(function(key) {
+		 'cmsmasters_cursor_icon_border_color', 'cmsmasters_cursor_text_color', 'cmsmasters_cursor_text_bg_color',
+		 'cmsmasters_cursor_text_border_color'].forEach(function(key) {
 			if (globals[key]) {
 				var color = resolveGlobalColor(globals[key]);
 				if (color) resolved[key] = color;
