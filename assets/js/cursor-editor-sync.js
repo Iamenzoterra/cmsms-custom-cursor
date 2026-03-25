@@ -668,6 +668,10 @@
          'data-cursor-icon-effect'].forEach(function(a) { el.removeAttribute(a); });
     }
 
+    // Default color values for special cursors
+    var DEFAULT_TEXT_COLOR = '#000000';
+    var DEFAULT_BG_COLOR = '#ffffff';
+
     function getSize(v, d) { return v ? (typeof v === 'object' && v.size !== undefined ? v.size : v) : d; }
     function fmtDims(d) { if (!d) return ''; var u = d.unit || 'px'; return (d.top||0)+u+' '+(d.right||0)+u+' '+(d.bottom||0)+u+' '+(d.left||0)+u; }
 
@@ -762,8 +766,8 @@
         var text = s.cmsmasters_cursor_text_content;
         if (!text) return;
         el.setAttribute('data-cursor-text', text);
-        el.setAttribute('data-cursor-text-color', s.cmsmasters_cursor_text_color || '#000000');
-        el.setAttribute('data-cursor-text-bg', s.cmsmasters_cursor_text_bg_color || '#ffffff');
+        el.setAttribute('data-cursor-text-color', s.cmsmasters_cursor_text_color || DEFAULT_TEXT_COLOR);
+        el.setAttribute('data-cursor-text-bg', s.cmsmasters_cursor_text_bg_color || DEFAULT_BG_COLOR);
         var typo = {};
         if (s.cmsmasters_cursor_text_typography_font_family) typo.font_family = s.cmsmasters_cursor_text_typography_font_family;
         if (s.cmsmasters_cursor_text_typography_font_size) {
@@ -840,8 +844,8 @@
             html = '<i class="' + icon.value + '"></i>';
         }
         el.setAttribute('data-cursor-icon', html);
-        el.setAttribute('data-cursor-icon-color', s.cmsmasters_cursor_icon_color || '#000000');
-        el.setAttribute('data-cursor-icon-bg', s.cmsmasters_cursor_icon_bg_color || '#ffffff');
+        el.setAttribute('data-cursor-icon-color', s.cmsmasters_cursor_icon_color || DEFAULT_TEXT_COLOR);
+        el.setAttribute('data-cursor-icon-bg', s.cmsmasters_cursor_icon_bg_color || DEFAULT_BG_COLOR);
         if (s.cmsmasters_cursor_icon_preserve_colors === 'yes') el.setAttribute('data-cursor-icon-preserve', 'yes');
         el.setAttribute('data-cursor-icon-size', getSize(s.cmsmasters_cursor_icon_size_normal, 32));
         el.setAttribute('data-cursor-icon-size-hover', getSize(s.cmsmasters_cursor_icon_size_hover, 48));

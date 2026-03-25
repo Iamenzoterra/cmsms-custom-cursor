@@ -181,6 +181,11 @@
 
     var DETECT_DISTANCE = 5; // Min pixels moved before re-detecting
 
+    // Border defaults for text/icon special cursors
+    var DEFAULT_BORDER_COLOR = '#000';
+    var DEFAULT_TEXT_COLOR = '#000000';
+    var DEFAULT_BG_COLOR = '#ffffff';
+
     /* DISABLED: Adaptive mode — background luminance detection
      * See: DOCS/12-REF-BODY-CLASSES.md → on-light/on-dark
     var HYSTERESIS = 3;
@@ -895,8 +900,8 @@
                     break;
                 case 'icon':
                     var icoStyles = {
-                        color: z.getAttribute('data-cursor-icon-color') || '#000000',
-                        bgColor: z.getAttribute('data-cursor-icon-bg') || '#ffffff',
+                        color: z.getAttribute('data-cursor-icon-color') || DEFAULT_TEXT_COLOR,
+                        bgColor: z.getAttribute('data-cursor-icon-bg') || DEFAULT_BG_COLOR,
                         preserveColors: z.getAttribute('data-cursor-icon-preserve') === 'yes',
                         size: parseInt(z.getAttribute('data-cursor-icon-size')) || 32,
                         sizeHover: parseInt(z.getAttribute('data-cursor-icon-size-hover')) || 48,
@@ -920,7 +925,7 @@
                         if (icoStyles.borderWidth) {
                             iconCursorEl.style.borderWidth = icoStyles.borderWidth;
                             iconCursorEl.style.borderStyle = 'solid';
-                            iconCursorEl.style.borderColor = icoStyles.borderColor || '#000';
+                            iconCursorEl.style.borderColor = icoStyles.borderColor || DEFAULT_BORDER_COLOR;
                         } else {
                             iconCursorEl.style.borderWidth = '0';
                             iconCursorEl.style.borderStyle = 'none';
@@ -933,8 +938,8 @@
                     break;
                 case 'text':
                     var txtStyles = {
-                        color: z.getAttribute('data-cursor-text-color') || '#000000',
-                        bgColor: z.getAttribute('data-cursor-text-bg') || '#ffffff',
+                        color: z.getAttribute('data-cursor-text-color') || DEFAULT_TEXT_COLOR,
+                        bgColor: z.getAttribute('data-cursor-text-bg') || DEFAULT_BG_COLOR,
                         borderRadius: z.getAttribute('data-cursor-text-radius') || '150px',
                         padding: z.getAttribute('data-cursor-text-padding') || '10px',
                         borderWidth: z.getAttribute('data-cursor-text-border-width') || '',
@@ -957,7 +962,7 @@
                         if (txtStyles.borderWidth) {
                             textCursorEl.style.borderWidth = txtStyles.borderWidth;
                             textCursorEl.style.borderStyle = 'solid';
-                            textCursorEl.style.borderColor = txtStyles.borderColor || '#000';
+                            textCursorEl.style.borderColor = txtStyles.borderColor || DEFAULT_BORDER_COLOR;
                         } else {
                             textCursorEl.style.borderWidth = '0';
                             textCursorEl.style.borderStyle = 'none';
@@ -1479,7 +1484,7 @@
         if (styles.borderWidth) {
             textCursorEl.style.borderWidth = styles.borderWidth;
             textCursorEl.style.borderStyle = 'solid';
-            textCursorEl.style.borderColor = styles.borderColor || '#000';
+            textCursorEl.style.borderColor = styles.borderColor || DEFAULT_BORDER_COLOR;
         } else {
             textCursorEl.style.borderWidth = '0';
             textCursorEl.style.borderStyle = 'none';
@@ -1574,13 +1579,13 @@
 
         // Apply styles: color to inner, background to outer
         if (!styles.preserveColors) {
-            iconCursorInner.style.color = styles.color || '#000000';
+            iconCursorInner.style.color = styles.color || DEFAULT_TEXT_COLOR;
             iconCursorEl.classList.remove('cmsmasters-cursor-icon-preserve');
         } else {
             // Add class for CSS isolation from blend mode effects
             iconCursorEl.classList.add('cmsmasters-cursor-icon-preserve');
         }
-        iconCursorEl.style.backgroundColor = styles.bgColor || '#ffffff';
+        iconCursorEl.style.backgroundColor = styles.bgColor || DEFAULT_BG_COLOR;
         iconCursorInner.style.fontSize = styles.size + 'px';
 
         // For SVG images, use CSS mask technique to apply color
@@ -1605,7 +1610,7 @@
                 coloredEl.style.maskRepeat = 'no-repeat';
                 coloredEl.style.webkitMaskPosition = 'center';
                 coloredEl.style.maskPosition = 'center';
-                coloredEl.style.backgroundColor = styles.color || '#000000';
+                coloredEl.style.backgroundColor = styles.color || DEFAULT_TEXT_COLOR;
                 imgEl.replaceWith(coloredEl);
             }
         }
@@ -1660,7 +1665,7 @@
         if (styles.borderWidth) {
             iconCursorEl.style.borderWidth = styles.borderWidth;
             iconCursorEl.style.borderStyle = 'solid';
-            iconCursorEl.style.borderColor = styles.borderColor || '#000';
+            iconCursorEl.style.borderColor = styles.borderColor || DEFAULT_BORDER_COLOR;
         } else {
             iconCursorEl.style.borderWidth = '0';
             iconCursorEl.style.borderStyle = 'none';
@@ -2587,8 +2592,8 @@
             var txtStyles = {
                 typography: typography,
                 typographyJson: typographyJson,
-                color: textEl.getAttribute('data-cursor-text-color') || '#000000',
-                bgColor: textEl.getAttribute('data-cursor-text-bg') || '#ffffff',
+                color: textEl.getAttribute('data-cursor-text-color') || DEFAULT_TEXT_COLOR,
+                bgColor: textEl.getAttribute('data-cursor-text-bg') || DEFAULT_BG_COLOR,
                 borderRadius: textEl.getAttribute('data-cursor-text-radius') || '150px',
                 padding: textEl.getAttribute('data-cursor-text-padding') || '10px',
                 borderWidth: textEl.getAttribute('data-cursor-text-border-width') || '',
@@ -2648,8 +2653,8 @@
             }
 
             var icoStyles = {
-                color: iconElSpecial.getAttribute('data-cursor-icon-color') || '#000000',
-                bgColor: iconElSpecial.getAttribute('data-cursor-icon-bg') || '#ffffff',
+                color: iconElSpecial.getAttribute('data-cursor-icon-color') || DEFAULT_TEXT_COLOR,
+                bgColor: iconElSpecial.getAttribute('data-cursor-icon-bg') || DEFAULT_BG_COLOR,
                 preserveColors: iconElSpecial.getAttribute('data-cursor-icon-preserve') === 'yes',
                 size: parseInt(iconElSpecial.getAttribute('data-cursor-icon-size')) || 32,
                 sizeHover: parseInt(iconElSpecial.getAttribute('data-cursor-icon-size-hover')) || 48,
