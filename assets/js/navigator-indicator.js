@@ -688,7 +688,7 @@
 		var legendHtml = '<div class="cmsmasters-nav-cursor-legend-wrapper">' +
 			'<div class="cmsmasters-nav-cursor-legend-header">' +
 				'<span>Cursor settings in use:</span>' +
-				'<a href="https://cmsmasters.studio" target="_blank" rel="noopener" title="Learn more">' + infoIcon + '</a>' +
+				'<a href="https://docs.cmsmasters.net/how-to-set-up-custom-cursor/" target="_blank" rel="noopener" title="Learn more">' + infoIcon + '</a>' +
 			'</div>' +
 			'<div class="cmsmasters-nav-cursor-legend">' +
 				legendItems +
