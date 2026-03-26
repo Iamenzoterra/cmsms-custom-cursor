@@ -254,6 +254,12 @@
    NAVIGATOR ELEMENT ALIGNMENT FIX
    ===================================================== */
 
+/* Ensure navigator item is flex so order property works */
+.elementor-navigator__item {
+	display: flex !important;
+	align-items: center !important;
+}
+
 /* Reorder: indicators before the eye toggle via CSS order */
 .elementor-navigator__element__toggle {
 	order: 1 !important;
