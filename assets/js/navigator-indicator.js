@@ -625,12 +625,7 @@
 
 				if (!$indicators.length) {
 					$indicators = $('<div class="elementor-navigator__element__indicators"></div>');
-					var $toggle = $item.find('> .elementor-navigator__element__toggle');
-					if ($toggle.length) {
-						$indicators.insertBefore($toggle);
-					} else {
-						$item.append($indicators);
-					}
+					$item.append($indicators);
 				}
 
 

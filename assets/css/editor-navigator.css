@@ -254,7 +254,11 @@
    NAVIGATOR ELEMENT ALIGNMENT FIX
    ===================================================== */
 
-/* Indicators container — sits in flow before the eye toggle */
+/* Reorder: indicators before the eye toggle via CSS order */
+.elementor-navigator__element__toggle {
+	order: 1 !important;
+}
+
 .elementor-navigator__element__indicators {
 	display: flex !important;
 	align-items: center !important;
