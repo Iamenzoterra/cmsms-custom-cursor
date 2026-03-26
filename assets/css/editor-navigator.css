@@ -262,7 +262,7 @@
 /* Position indicators before the eye toggle (eye is absolute at right:15px) */
 .elementor-navigator__element__indicators {
 	position: absolute !important;
-	right: 34px !important;
+	right: 31px !important;
 	top: 50% !important;
 	transform: translateY(-50%) !important;
 	display: flex !important;
