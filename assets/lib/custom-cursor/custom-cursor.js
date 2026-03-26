@@ -2320,11 +2320,18 @@
     function applyForcedDotSize(newSize) {
         if (newSize === forcedDotSize) return;
         forcedDotSize = newSize;
+        body.classList.add('cmsmasters-cursor-size-transitioning');
         if (forcedDotSize !== null) {
             body.style.setProperty('--cmsmasters-cursor-dot-size', forcedDotSize + 'px', 'important');
         } else {
             body.style.removeProperty('--cmsmasters-cursor-dot-size');
         }
+        // 2-frame fence: first RAF queues style, second guarantees commit (Safari timing)
+        requestAnimationFrame(function() {
+            requestAnimationFrame(function() {
+                body.classList.remove('cmsmasters-cursor-size-transitioning');
+            });
+        });
     }
 
     /**
@@ -2333,24 +2340,38 @@
     function applyForcedDotHoverSize(newSize) {
         if (newSize === forcedDotHoverSize) return;
         forcedDotHoverSize = newSize;
+        body.classList.add('cmsmasters-cursor-size-transitioning');
         if (forcedDotHoverSize !== null) {
             body.style.setProperty('--cmsmasters-cursor-dot-hover-size', forcedDotHoverSize + 'px', 'important');
         } else {
             body.style.removeProperty('--cmsmasters-cursor-dot-hover-size');
         }
+        requestAnimationFrame(function() {
+            requestAnimationFrame(function() {
+                body.classList.remove('cmsmasters-cursor-size-transitioning');
+            });
+        });
     }
 
     /**
      * Restore dot sizes to global CSS vars.
      */
     function restoreForcedDotSizes() {
-        if (forcedDotSize !== null) {
-            forcedDotSize = null;
-            body.style.removeProperty('--cmsmasters-cursor-dot-size');
-        }
-        if (forcedDotHoverSize !== null) {
-            forcedDotHoverSize = null;
-            body.style.removeProperty('--cmsmasters-cursor-dot-hover-size');
+        if (forcedDotSize !== null || forcedDotHoverSize !== null) {
+            body.classList.add('cmsmasters-cursor-size-transitioning');
+            if (forcedDotSize !== null) {
+                forcedDotSize = null;
+                body.style.removeProperty('--cmsmasters-cursor-dot-size');
+            }
+            if (forcedDotHoverSize !== null) {
+                forcedDotHoverSize = null;
+                body.style.removeProperty('--cmsmasters-cursor-dot-hover-size');
+            }
+            requestAnimationFrame(function() {
+                requestAnimationFrame(function() {
+                    body.classList.remove('cmsmasters-cursor-size-transitioning');
+                });
+            });
         }
     }
 
