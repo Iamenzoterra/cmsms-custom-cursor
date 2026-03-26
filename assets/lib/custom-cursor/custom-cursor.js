@@ -640,12 +640,9 @@
 
     // Per-element cursor type override (dot/classic, null = use global theme)
     var forcedType = null;
-    // Per-element dot size overrides — uses transform:scale() instead of CSS var (WP-027 Safari fix)
+    // Per-element dot size overrides (null = use global CSS var)
     var forcedDotSize = null;
     var forcedDotHoverSize = null;
-    // Default dot size cached at init for scale ratio computation (WP-027)
-    var defaultDotSize = parseInt(getComputedStyle(body).getPropertyValue('--cmsmasters-cursor-dot-size')) || 20;
-    var dotSizeScale = '';  // '' = no scale, or ' scale(N)' string ready to append to transform
 
     // Image cursor state (Special mode)
     var imageCursorEl = null;           // Outer wrapper element in DOM
@@ -2323,43 +2320,63 @@
     }
 
     /**
-     * Recompute dotSizeScale from current forced sizes.
-     * Uses transform:scale() instead of CSS var to avoid layout changes (WP-027 Safari fix).
-     */
-    function updateDotSizeScale() {
-        var effectiveSize = forcedDotSize !== null ? forcedDotSize : defaultDotSize;
-        if (effectiveSize !== defaultDotSize) {
-            dotSizeScale = ' scale(' + (effectiveSize / defaultDotSize) + ')';
-        } else {
-            dotSizeScale = '';
-        }
-    }
-
-    /**
-     * Apply per-element dot size override via transform:scale().
+     * Apply per-element dot size override via CSS custom property.
      */
     function applyForcedDotSize(newSize) {
         if (newSize === forcedDotSize) return;
         forcedDotSize = newSize;
-        updateDotSizeScale();
+        body.classList.add('cmsmasters-cursor-size-transitioning');
+        if (forcedDotSize !== null) {
+            body.style.setProperty('--cmsmasters-cursor-dot-size', forcedDotSize + 'px', 'important');
+        } else {
+            body.style.removeProperty('--cmsmasters-cursor-dot-size');
+        }
+        // 2-frame fence: first RAF queues style, second guarantees commit (Safari timing)
+        requestAnimationFrame(function() {
+            requestAnimationFrame(function() {
+                body.classList.remove('cmsmasters-cursor-size-transitioning');
+            });
+        });
     }
 
     /**
-     * Apply per-element dot hover size override (stored for hover state).
+     * Apply per-element dot hover size override via CSS custom property.
      */
     function applyForcedDotHoverSize(newSize) {
         if (newSize === forcedDotHoverSize) return;
         forcedDotHoverSize = newSize;
+        body.classList.add('cmsmasters-cursor-size-transitioning');
+        if (forcedDotHoverSize !== null) {
+            body.style.setProperty('--cmsmasters-cursor-dot-hover-size', forcedDotHoverSize + 'px', 'important');
+        } else {
+            body.style.removeProperty('--cmsmasters-cursor-dot-hover-size');
+        }
+        requestAnimationFrame(function() {
+            requestAnimationFrame(function() {
+                body.classList.remove('cmsmasters-cursor-size-transitioning');
+            });
+        });
     }
 
     /**
-     * Restore dot sizes to defaults.
+     * Restore dot sizes to global CSS vars.
      */
     function restoreForcedDotSizes() {
         if (forcedDotSize !== null || forcedDotHoverSize !== null) {
-            forcedDotSize = null;
-            forcedDotHoverSize = null;
-            updateDotSizeScale();
+            body.classList.add('cmsmasters-cursor-size-transitioning');
+            if (forcedDotSize !== null) {
+                forcedDotSize = null;
+                body.style.removeProperty('--cmsmasters-cursor-dot-size');
+            }
+            if (forcedDotHoverSize !== null) {
+                forcedDotHoverSize = null;
+                body.style.removeProperty('--cmsmasters-cursor-dot-hover-size');
+            }
+            requestAnimationFrame(function() {
+                requestAnimationFrame(function() {
+                    body.classList.remove('cmsmasters-cursor-size-transitioning');
+                });
+            });
         }
     }
 
@@ -3053,10 +3070,10 @@
             coreTransform = ' rotate(' + calcBuzzRotation(coreEffectTime, BUZZ_CORE_AMPLITUDE) + 'deg)';
         }
 
-        // Default cursor (dotSizeScale appends scale() for per-element size override — WP-027)
-        dot.style.transform = 'translate3d(' + (dotX + coreOffsetX) + 'px,' + dotY + 'px,0)' + coreTransform + dotSizeScale;
+        // Default cursor
+        dot.style.transform = 'translate3d(' + (dotX + coreOffsetX) + 'px,' + dotY + 'px,0)' + coreTransform;
         if (!isRingHidden) {
-            ring.style.transform = 'translate3d(' + (rx + coreOffsetX) + 'px,' + ry + 'px,0)' + coreTransform + dotSizeScale;
+            ring.style.transform = 'translate3d(' + (rx + coreOffsetX) + 'px,' + ry + 'px,0)' + coreTransform;
         }
 
         // Continue loop (track rafId for pause/resume)
