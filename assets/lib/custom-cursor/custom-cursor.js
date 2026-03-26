@@ -694,6 +694,9 @@
     var iconCurrentRotate = 0;
     var iconSizeVelocity = 0;
     var iconRotateVelocity = 0;
+    // Skip-identical-writes cache for DOM writes (WP-027)
+    var imgLastWrittenSize = 0;
+    var iconLastWrittenSize = 0;
     // Blend mode intensity (global setting, can be overridden per-element via data-cursor-blend)
     // Values: '' (off), 'soft', 'medium', 'strong'
     var globalBlendIntensity = '';
@@ -1405,6 +1408,7 @@
         imgCurrentRotate = 0;
         imgSizeVelocity = 0;
         imgRotateVelocity = 0;
+        imgLastWrittenSize = 0;
     }
 
     function showDefaultCursor() {
@@ -1735,6 +1739,7 @@
         iconCurrentRotate = 0;
         iconSizeVelocity = 0;
         iconRotateVelocity = 0;
+        iconLastWrittenSize = 0;
     }
 
     // Watch for popups
@@ -2828,13 +2833,19 @@
             imgSizeVelocity *= TRANSITION_DAMPING;
             imgCurrentSize += imgSizeVelocity;
 
+            // Snap to target when close enough (WP-027: reduces ~55 frames to ~15)
+            if (Math.abs(imgSizeVelocity) < 0.5 && Math.abs(imgTargetSize - imgCurrentSize) < 0.5) {
+                imgCurrentSize = imgTargetSize;
+                imgSizeVelocity = 0;
+            }
+
             // Spring physics for smooth rotate transition
             var imgRotateForce = (imgTargetRotate - imgCurrentRotate) * TRANSITION_STIFFNESS;
             imgRotateVelocity += imgRotateForce;
             imgRotateVelocity *= TRANSITION_DAMPING;
             imgCurrentRotate += imgRotateVelocity;
 
-            var imgSize = imgCurrentSize;
+            var imgSize = Math.round(imgCurrentSize);
             var imgRotate = imgCurrentRotate;
 
             // Effect calculations via pure functions
@@ -2856,9 +2867,13 @@
                 imgWobbleMatrix = calcWobbleMatrix(imgWobbleState, dx, dy);
             }
 
-            imageCursorEl.style.width = imgSize + 'px';
-            imageCursorEl.style.marginLeft = (-imgSize / 2) + 'px';
-            imageCursorEl.style.marginTop = (-imgSize / 2) + 'px';
+            // Skip identical DOM writes (WP-027: avoids Safari re-layout on unchanged values)
+            if (imgSize !== imgLastWrittenSize) {
+                imgLastWrittenSize = imgSize;
+                imageCursorEl.style.width = imgSize + 'px';
+                imageCursorEl.style.marginLeft = (-imgSize / 2) + 'px';
+                imageCursorEl.style.marginTop = (-imgSize / 2) + 'px';
+            }
 
             // Apply transform - wobble uses matrix, others use scale
             if (imgWobbleMatrix) {
@@ -2951,17 +2966,26 @@
             iconSizeVelocity *= TRANSITION_DAMPING;
             iconCurrentSize += iconSizeVelocity;
 
+            // Snap to target when close enough (WP-027: reduces ~55 frames to ~15)
+            if (Math.abs(iconSizeVelocity) < 0.5 && Math.abs(iconTargetSize - iconCurrentSize) < 0.5) {
+                iconCurrentSize = iconTargetSize;
+                iconSizeVelocity = 0;
+            }
+
             // Spring physics for smooth rotate transition
             var iconRotateForce = (iconTargetRotate - iconCurrentRotate) * TRANSITION_STIFFNESS;
             iconRotateVelocity += iconRotateForce;
             iconRotateVelocity *= TRANSITION_DAMPING;
             iconCurrentRotate += iconRotateVelocity;
 
-            var iconSize = iconCurrentSize;
+            var iconSize = Math.round(iconCurrentSize);
             var iconRotate = iconCurrentRotate;
 
-            // Apply size dynamically to inner (for hover transitions)
-            if (iconCursorInner) iconCursorInner.style.fontSize = iconSize + 'px';
+            // Skip identical DOM writes (WP-027: avoids Safari re-layout on unchanged values)
+            if (iconSize !== iconLastWrittenSize) {
+                iconLastWrittenSize = iconSize;
+                if (iconCursorInner) iconCursorInner.style.fontSize = iconSize + 'px';
+            }
 
             // Smart cache: only update when size changed significantly (>1px)
             if (Math.abs(iconSize - iconCachedSize) > 1) {
